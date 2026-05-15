@@ -1,0 +1,13 @@
+{
+  "activeProviderId": "",
+  "providers": [
+    {
+      "id": "your-uuid-here",
+      "name": "My Provider",
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseUrl": "",
+      "model": "gpt-4o"
+    }
+  ]
+}

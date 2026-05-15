@@ -1,0 +1,8 @@
+node_modules
+dist
+.claude/
+.env
+.worktrees/
+docs/plans/
+docs/superpowers/
+examples/

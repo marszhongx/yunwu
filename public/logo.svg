@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="云雾聊天室">
+  <defs>
+    <linearGradient id="bg" x1="52" y1="28" x2="204" y2="228" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1b4654" />
+      <stop offset="0.55" stop-color="#14313f" />
+      <stop offset="1" stop-color="#081923" />
+    </linearGradient>
+    <linearGradient id="moon" x1="82" y1="42" x2="154" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f0fff9" />
+      <stop offset="0.55" stop-color="#bdf5e8" />
+      <stop offset="1" stop-color="#6edcca" />
+    </linearGradient>
+    <linearGradient id="mist" x1="54" y1="122" x2="206" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#effff9" />
+      <stop offset="0.45" stop-color="#8eeedf" />
+      <stop offset="1" stop-color="#2b6f80" />
+    </linearGradient>
+    <linearGradient id="shadow" x1="72" y1="146" x2="192" y2="214" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e5a68" />
+      <stop offset="1" stop-color="#0b202c" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="58" fill="url(#bg)" />
+  <circle cx="116" cy="88" r="44" fill="url(#moon)" />
+  <path d="M118 44a44 44 0 0 1 36 70 55 55 0 0 0-42-19c-19 0-35 8-47 21a44 44 0 0 1 53-72Z" fill="#eafff8" opacity="0.55" />
+  <path d="M54 152c20-24 47-31 79-20 24 8 40 29 71 17 9-4 18-10 28-18-4 29-21 53-48 66-34 17-77 10-105-17-9-9-17-18-25-28Z" fill="url(#shadow)" opacity="0.82" />
+  <path d="M42 137c28-18 55-23 82-10 22 11 37 31 67 22 13-4 25-12 37-24" fill="none" stroke="#effff9" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.96" />
+  <path d="M36 166c25-12 51-14 77-4 24 9 42 25 71 15 13-4 24-12 36-22" fill="none" stroke="url(#mist)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M56 191c20-7 40-8 61-1 20 7 37 18 61 10 9-3 18-8 27-15" fill="none" stroke="#6edcca" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.82" />
+  <path d="M62 118h38M140 118h54M88 100h22M151 100h26" stroke="#d5faee" stroke-width="7" stroke-linecap="round" opacity="0.72" />
+  <rect x="12" y="12" width="232" height="232" rx="48" fill="none" stroke="#d5faee" stroke-width="8" opacity="0.92" />
+</svg>
