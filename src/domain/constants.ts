@@ -21,6 +21,7 @@ export const GEMINI_SAFETY_SETTINGS = {
 };
 
 export const STREAM_TIMEOUT = 180000;
+export const IMAGE_TIMEOUT = 120000;
 
 export const RESPONSE_INSTRUCTION = `延续剧情，篇幅应尽可能长，不要输出任何元信息或旁注。每条回复必须包含正文、摘要（用 [SUMMARY] 标签包裹）、状态（用 [STATUS] 标签包裹）、选项（用 [CHOICES] 标签包裹）。示例：
 正文内容
@@ -48,4 +49,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   providers: [],
   theme: "dark",
   systemPrompts: DEFAULT_SYSTEM_PROMPTS,
+  imageProvider: undefined,
 };

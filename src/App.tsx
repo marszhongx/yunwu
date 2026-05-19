@@ -5,6 +5,7 @@ import { ChatSidebar } from "@/features/chat/ChatSidebar";
 import { ChatView } from "@/features/chat/ChatView";
 import { CharacterDialog } from "@/features/characters/CharacterDialog";
 import { ChatListDialog } from "@/features/chats/ChatListDialog";
+import { ImageProviderDialog } from "@/features/image-provider/ImageProviderDialog";
 import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { SystemPromptDialog } from "@/features/settings/SystemPromptDialog";
 import { getCharacter } from "@/services/characters";
@@ -18,6 +19,7 @@ export default function App() {
   const [chatsOpen, setChatsOpen] = useState(false);
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [imageProviderOpen, setImageProviderOpen] = useState(false);
   const [systemPromptOpen, setSystemPromptOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState("");
   const currentChatIdRef = useRef(currentChatId);
@@ -97,6 +99,7 @@ export default function App() {
         activeProviderName={activeProviderName}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenImageProvider={() => setImageProviderOpen(true)}
         onOpenSystemPrompt={() => setSystemPromptOpen(true)}
         onOpenChats={() => setChatsOpen(true)}
         onOpenCharacters={() => setCharactersOpen(true)}
@@ -116,6 +119,12 @@ export default function App() {
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
           onChanged={reloadCurrentChat}
+        />
+      ) : null}
+      {imageProviderOpen ? (
+        <ImageProviderDialog
+          open={imageProviderOpen}
+          onOpenChange={setImageProviderOpen}
         />
       ) : null}
       {systemPromptOpen ? (

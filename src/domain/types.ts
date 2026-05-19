@@ -10,14 +10,21 @@ export type ProviderSettings = {
   maxTokens?: number;
 };
 
+export type ImageProviderSettings = {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+};
+
 export type AppSettings = {
   activeProviderId: string;
   providers: ProviderSettings[];
   theme: "dark" | "light";
   systemPrompts: string[];
+  imageProvider?: ImageProviderSettings;
 };
 
-export type MessageRole = "user" | "assistant";
+export type MessageRole = "user" | "assistant" | "image";
 
 export type ChatMessage = {
   id: string;

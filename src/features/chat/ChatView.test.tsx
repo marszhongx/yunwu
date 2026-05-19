@@ -10,10 +10,12 @@ import { toast } from "sonner";
 vi.mock("@/services/chats", () => ({
   addMessage: vi.fn(),
   updateMessage: vi.fn(),
+  deleteMessage: vi.fn(),
 }));
 
 vi.mock("@/services/ai", () => ({
   streamAssistantText: vi.fn(),
+  generateImage: vi.fn(),
 }));
 
 vi.mock("@/services/settings", () => ({
@@ -21,11 +23,22 @@ vi.mock("@/services/settings", () => ({
   getSettings: vi.fn(),
 }));
 
+let imageProvider: { apiKey: string; baseUrl: string; model: string } | null = null;
+
+vi.mock("@/store/appState", () => ({
+  useAppState: Object.assign(
+    (selector: (state: Record<string, unknown>) => unknown) =>
+      selector({ imageProvider }),
+    { getState: () => ({ imageProvider }) },
+  ),
+}));
+
 vi.mock("sonner", () => ({
   toast: { error: vi.fn() },
 }));
 
 beforeEach(() => {
+  imageProvider = null;
   vi.resetAllMocks();
   vi.mocked(settings.getSettings).mockReturnValue({
     activeProviderId: "provider-1",
@@ -108,6 +121,24 @@ test("adds user and assistant messages and displays streamed text", async () => 
   expect(onChanged).toHaveBeenCalledTimes(2);
 });
 
+test("shows a visual loading indicator instead of loading text", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
+  vi.mocked(ai.streamAssistantText).mockImplementation(() => new Promise(() => {}));
+
+  render(<ChatView chat={chat()} character={null} />);
+
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+
+  expect(await screen.findByLabelText("回复生成中")).toBeInTheDocument();
+  expect(screen.queryByText("生成中")).not.toBeInTheDocument();
+});
+
 test("passes custom system prompts into AI request", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(settings.getSettings).mockReturnValue({
@@ -160,6 +191,86 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
   expect(screen.getByText(/状态/)).toBeInTheDocument();
   expect(screen.queryByText(/SUMMARY|STATUS|CHOICES/)).not.toBeInTheDocument();
   expect(screen.getByText("向左走")).toBeInTheDocument();
+});
+
+test("shows a visual image loading bubble while generating an image", async () => {
+  imageProvider = { apiKey: "image-key", baseUrl: "https://api.example.com/v1", model: "gpt-image-1" };
+  vi.mocked(ai.generateImage).mockImplementation(() => new Promise(() => {}));
+
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({ id: "assistant-1", role: "assistant", content: "画一片雾中的森林" }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  fireEvent.click(screen.getAllByRole("button")[0]);
+
+  expect(await screen.findByLabelText("图片生成中")).toBeInTheDocument();
+});
+
+test("hides inactive assistant choices instead of disabling them", () => {
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({
+            id: "assistant-1",
+            role: "assistant",
+            content: "正文\n[CHOICES]\nA: 向左走\nB: 向右走\n[/CHOICES]",
+          }),
+          message({ id: "user-1", role: "user", content: "继续前进" }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  expect(screen.queryByRole("button", { name: "向左走" })).not.toBeInTheDocument();
+});
+
+test("keeps assistant choices enabled when image messages follow", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "向左走" }))
+    .mockResolvedValueOnce(message({ id: "assistant-2", role: "assistant", content: "新的回应" }));
+  vi.mocked(chats.updateMessage).mockResolvedValue(message({ id: "assistant-2", content: "新的回应" }));
+  vi.mocked(ai.streamAssistantText).mockImplementation(async ({ onText }) => {
+    onText("新的回应");
+  });
+
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({
+            id: "assistant-1",
+            role: "assistant",
+            content: "正文\n[CHOICES]\nA: 向左走\nB: 向右走\n[/CHOICES]",
+          }),
+          message({
+            id: "image-1",
+            role: "image",
+            content: "https://pub.example.com/generated.jpg",
+          }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "向左走" }));
+
+  await waitFor(() =>
+    expect(chats.addMessage).toHaveBeenNthCalledWith(1, "chat-1", {
+      role: "user",
+      content: "向左走",
+    }),
+  );
 });
 
 test("does not duplicate pending messages when parent reloads persisted placeholders during stream", async () => {

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import {
   History,
+  Image,
   Menu,
   MessageSquareText,
   Moon,
@@ -22,6 +23,7 @@ type AppShellProps = {
   onOpenSystemPrompt: () => void;
   onOpenCharacters: () => void;
   onOpenChats: () => void;
+  onOpenImageProvider: () => void;
   sidebar: ReactNode;
   children: ReactNode;
 };
@@ -34,6 +36,7 @@ export function AppShell({
   onOpenSystemPrompt,
   onOpenCharacters,
   onOpenChats,
+  onOpenImageProvider,
   sidebar,
   children,
 }: AppShellProps) {
@@ -113,6 +116,16 @@ export function AppShell({
           className="h-9 w-9 lg:h-10 lg:w-10"
         >
           <Settings className="h-4 w-4 lg:h-5 lg:w-5" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onOpenImageProvider}
+          title="图片生成"
+          aria-label="图片生成"
+          className="h-9 w-9 lg:h-10 lg:w-10"
+        >
+          <Image className="h-4 w-4 lg:h-5 lg:w-5" />
         </Button>
         <Button
           size="icon"

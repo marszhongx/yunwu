@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { ProviderSettings } from "../domain/types";
-import { streamAssistantText, requestAssistantText } from "./ai";
+import { streamAssistantText, requestAssistantText, generateImage } from "./ai";
 
 type FetchMock = ReturnType<typeof vi.fn>;
 
@@ -294,5 +294,84 @@ describe("requestAssistantText", () => {
     await expect(
       requestAssistantText({ provider: provider(), messages: [{ role: "user", content: "hello" }] }),
     ).rejects.toThrow("Provider 请求失败：401 bad key");
+  });
+});
+
+describe("generateImage", () => {
+  test("returns data URL from b64_json response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateImage({
+      apiKey: "test-key",
+      baseUrl: "https://api.example.com/v1",
+      model: "dall-e-3",
+      prompt: "a cat",
+    });
+
+    expect(result).toBe("data:image/png;base64,aGVsbG8=");
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.example.com/v1/images/generations");
+    const body = JSON.parse(init.body);
+    expect(body).toEqual({
+      model: "dall-e-3",
+      prompt: "a cat",
+      size: "1024x1024",
+      response_format: "b64_json",
+    });
+  });
+
+  test("defaults base URL to openai", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await generateImage({ apiKey: "k", baseUrl: "", model: "m", prompt: "p" });
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.openai.com/v1/images/generations");
+  });
+
+  test("returns image URL from url response", async () => {
+    const imageUrl = "https://pub.example.com/generated.jpg";
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ data: [{ url: imageUrl }] }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateImage({
+      apiKey: "test-key",
+      baseUrl: "https://api.example.com/v1",
+      model: "gpt-image-1",
+      prompt: "a cat",
+    });
+
+    expect(result).toBe(imageUrl);
+  });
+
+  test("throws on API error", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("bad request", { status: 400 }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateImage({ apiKey: "k", baseUrl: "", model: "m", prompt: "p" }),
+    ).rejects.toThrow("图片生成请求失败：400 bad request");
+  });
+
+  test("throws on empty response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ data: [] }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateImage({ apiKey: "k", baseUrl: "", model: "m", prompt: "p" }),
+    ).rejects.toThrow("图片生成返回了空响应");
   });
 });

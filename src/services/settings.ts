@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS, PROVIDER_TYPES } from "../domain/constants";
 import { uuid } from "../domain/ids";
-import type { AppSettings, ProviderSettings, ProviderType } from "../domain/types";
+import type { AppSettings, ImageProviderSettings, ProviderSettings, ProviderType } from "../domain/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 
@@ -62,6 +62,15 @@ function normalizeProvider(value: unknown): ProviderSettings {
   };
 }
 
+function normalizeImageProvider(value: unknown): ImageProviderSettings | undefined {
+  if (!isRecord(value)) return undefined;
+  const apiKey = toStringValue(value.apiKey);
+  const baseUrl = toStringValue(value.baseUrl);
+  const model = toStringValue(value.model);
+  if (!apiKey && !baseUrl && !model) return undefined;
+  return { apiKey, baseUrl: baseUrl || "https://api.openai.com/v1", model: model || "dall-e-3" };
+}
+
 function normalizeSettings(value: unknown): AppSettings {
   const input = isRecord(value) ? (value as SettingsInput) : {};
   const providers = Array.isArray(input.providers)
@@ -76,6 +85,7 @@ function normalizeSettings(value: unknown): AppSettings {
     providers,
     theme: normalizeTheme(input.theme),
     systemPrompts: normalizeSystemPrompts(input.systemPrompts, input.systemPrompt),
+    imageProvider: normalizeImageProvider(input.imageProvider),
   };
 }
 
@@ -171,4 +181,14 @@ export function saveTheme(theme: unknown): AppSettings {
 
 export function saveSystemPrompts(systemPrompts: unknown): AppSettings {
   return saveSettings({ ...getSettings(), systemPrompts });
+}
+
+export function saveImageProvider(input: unknown): AppSettings {
+  const settings = getSettings();
+  return saveSettings({ ...settings, imageProvider: normalizeImageProvider(input) });
+}
+
+export function getImageProvider(): ImageProviderSettings | null {
+  const settings = getSettings();
+  return settings.imageProvider ?? null;
 }

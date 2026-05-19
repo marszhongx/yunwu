@@ -1,4 +1,4 @@
-import { GEMINI_SAFETY_SETTINGS, STREAM_TIMEOUT } from "../domain/constants";
+import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "../domain/constants";
 import type { ProviderSettings, ProviderType } from "../domain/types";
 
 export type AssistantMessageRole = "system" | "user" | "assistant";
@@ -96,10 +96,16 @@ function getGeminiText(payload: unknown): string {
     .join("");
 }
 
-export function openAIChatCompletionsUrl(baseUrl: string): string {
-  const normalizedBaseUrl = (baseUrl.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
+function normalizedOpenAIBaseUrl(baseUrl: string): string {
+  return (baseUrl.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
+}
 
-  return `${normalizedBaseUrl}/chat/completions`;
+export function openAIChatCompletionsUrl(baseUrl: string): string {
+  return `${normalizedOpenAIBaseUrl(baseUrl)}/chat/completions`;
+}
+
+export function openAIImagesGenerationsUrl(baseUrl: string): string {
+  return `${normalizedOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
 function openAIRequest(
@@ -495,6 +501,65 @@ export async function requestAssistantText({
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("Provider 请求超时");
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+}
+
+export async function generateImage({
+  apiKey,
+  baseUrl,
+  model,
+  prompt,
+}: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  prompt: string;
+}): Promise<string> {
+  const url = openAIImagesGenerationsUrl(baseUrl);
+  const abortController = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        size: "1024x1024",
+        response_format: "b64_json",
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`图片生成请求失败：${response.status} ${errorText}`.trim());
+    }
+
+    const json = (await response.json()) as { data?: { b64_json?: string; url?: string }[] };
+    const image = json.data?.[0];
+
+    if (image?.url) {
+      return image.url;
+    }
+
+    if (image?.b64_json) {
+      return `data:image/png;base64,${image.b64_json}`;
+    }
+
+    throw new Error("图片生成返回了空响应");
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("图片生成请求超时");
     }
 
     throw error;

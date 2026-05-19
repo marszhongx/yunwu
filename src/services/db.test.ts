@@ -47,14 +47,20 @@ describe("IndexedDB data services", () => {
     const character = await createCharacter({ name: "云雾", first_mes: "初见" });
     const chat = await createChat({ charId: character.id });
     const userMessage = await addMessage(chat.id, { role: "user", content: "你好" });
+    const imageMessage = await addMessage(chat.id, {
+      role: "image",
+      content: "https://pub.example.com/generated.jpg",
+    });
     const assistantMessage = await addMessage(chat.id, {
       role: "assistant",
       content: "见到了你 [SUMMARY]met[/SUMMARY] [STATUS]身体：健康[/STATUS]",
     });
 
+    expect(imageMessage.role).toBe("image");
     expect((await getChat(chat.id))?.messages).toEqual([
       expect.objectContaining({ role: "assistant", content: "初见" }),
       userMessage,
+      expect.objectContaining({ role: "image", content: "https://pub.example.com/generated.jpg" }),
       assistantMessage,
     ]);
 
@@ -67,6 +73,7 @@ describe("IndexedDB data services", () => {
 
     expect((await getChat(chat.id))?.messages.map((message) => message.id)).toEqual([
       chat.messages[0]?.id,
+      imageMessage.id,
       assistantMessage.id,
     ]);
 

@@ -158,7 +158,8 @@ function putMessage(message: StoredMessage): Promise<StoredMessage> {
 }
 
 function normalizeRole(role: unknown): MessageRole {
-  return role === "user" ? "user" : "assistant";
+  if (role === "user" || role === "image") return role;
+  return "assistant";
 }
 
 function text(value: unknown): string {

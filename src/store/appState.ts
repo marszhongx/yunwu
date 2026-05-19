@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import type { AppSettings, ProviderSettings } from "@/domain/types";
-import { getActiveProvider, getSettings } from "@/services/settings";
+import type { AppSettings, ImageProviderSettings, ProviderSettings } from "@/domain/types";
+import { getActiveProvider, getImageProvider, getSettings } from "@/services/settings";
 
 type AppState = {
   settings: AppSettings;
   activeProvider: ProviderSettings | null;
+  imageProvider: ImageProviderSettings | null;
   init: () => void;
   reload: () => void;
 };
@@ -12,6 +13,17 @@ type AppState = {
 export const useAppState = create<AppState>((set) => ({
   settings: getSettings(),
   activeProvider: getActiveProvider(),
-  init: () => set({ settings: getSettings(), activeProvider: getActiveProvider() }),
-  reload: () => set({ settings: getSettings(), activeProvider: getActiveProvider() }),
+  imageProvider: getImageProvider(),
+  init: () =>
+    set({
+      settings: getSettings(),
+      activeProvider: getActiveProvider(),
+      imageProvider: getImageProvider(),
+    }),
+  reload: () =>
+    set({
+      settings: getSettings(),
+      activeProvider: getActiveProvider(),
+      imageProvider: getImageProvider(),
+    }),
 }));

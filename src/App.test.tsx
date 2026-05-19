@@ -13,6 +13,7 @@ vi.mock("@/services/settings", () => ({
     systemPrompts: ["默认系统提示"],
   }),
   getActiveProvider: vi.fn().mockReturnValue(null),
+  getImageProvider: vi.fn().mockReturnValue(null),
   saveTheme: vi.fn(),
 }));
 

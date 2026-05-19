@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { buildMessages, parseMessage } from "@/domain/messages";
 import { matchLorebook } from "@/domain/lorebooks";
 import type { CharacterCard, Chat, ChatMessage } from "@/domain/types";
-import { Heart, ScrollText, X } from "lucide-react";
+import { Copy, Download, Heart, Image as ImageIcon, Loader2, ScrollText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { streamAssistantText } from "@/services/ai";
+import { generateImage, streamAssistantText } from "@/services/ai";
 import { addMessage, deleteMessage, updateMessage } from "@/services/chats";
 import { getActiveProvider, getSettings } from "@/services/settings";
+import { useAppState } from "@/store/appState";
 
 type ChatWithMessages = Chat & { messages?: ChatMessage[] };
 
@@ -29,6 +30,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pendingChatId, setPendingChatId] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
   const sendInFlightRef = useRef(false);
   const activeChatId = chat?.id ?? "";
   const isStreaming = streamingId !== "" && streamingChatId === activeChatId;
@@ -110,10 +112,35 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
     }
   }
 
+  async function handleGenerateImage(messageId: string, prompt: string) {
+    const provider = useAppState.getState().imageProvider;
+    if (!provider || !provider.apiKey) {
+      toast.error("请先在设置中配置图片生成");
+      return;
+    }
+
+    setGeneratingImageId(messageId);
+    try {
+      const dataUrl = await generateImage({
+        apiKey: provider.apiKey,
+        baseUrl: provider.baseUrl,
+        model: provider.model,
+        prompt,
+      });
+      await addMessage(chat!.id, { role: "image", content: dataUrl });
+      onChanged?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "图片生成失败");
+    } finally {
+      setGeneratingImageId(null);
+    }
+  }
+
   const messages = useMemo(
     () => mergeMessages(chat?.messages ?? [], activePendingMessages),
     [activePendingMessages, chat?.messages],
   );
+  const lastNonImageIndex = getLastNonImageMessageIndex(messages);
   const showOpeningChoices =
     !isStreaming &&
     !isSending &&
@@ -155,12 +182,12 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
               }
               loading={message.id === streamingId && streamingText === ""}
               onChoice={
-                !isStreaming && !isSending && index === messages.length - 1
+                !isStreaming && !isSending && index === lastNonImageIndex
                   ? (choice) => void sendMessage(choice)
                   : undefined
               }
               extraChoices={
-                showOpeningChoices && index === messages.length - 1
+                showOpeningChoices && index === lastNonImageIndex
                   ? character?.opening_user_choices
                   : undefined
               }
@@ -169,8 +196,18 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
                   ? () => void deleteMessage(chat.id, message.id).then(() => onChanged?.())
                   : undefined
               }
+              onGenerateImage={
+                !isStreaming && !isSending && message.role === "assistant"
+                  ? () => {
+                      const parsed = parseMessage(message.content);
+                      void handleGenerateImage(message.id, parsed?.body ?? message.content);
+                    }
+                  : undefined
+              }
+              generatingImage={generatingImageId === message.id}
             />
           ))}
+          {generatingImageId ? <LoadingBubble label="图片生成中" /> : null}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
@@ -196,6 +233,36 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   );
 }
 
+function getLastNonImageMessageIndex(messages: ChatMessage[]) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role !== "image") return i;
+  }
+
+  return -1;
+}
+
+function LoadingDots({ label }: { label: string }) {
+  return (
+    <span aria-label={label} className="flex h-7 items-center gap-1">
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:-0.2s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:-0.1s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70" />
+    </span>
+  );
+}
+
+function LoadingBubble({ label }: { label: string }) {
+  return (
+    <div className="group flex justify-start">
+      <div className="max-w-[82%]">
+        <div className="whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-border/70 bg-card px-4 py-3 text-sm leading-7 text-card-foreground shadow-sm">
+          <LoadingDots label={label} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function mergeMessages(messages: ChatMessage[], pendingMessages: ChatMessage[]) {
   const merged = [...messages];
   const messageIds = new Set(messages.map((message) => message.id));
@@ -217,6 +284,8 @@ type MessageBubbleProps = {
   extraChoices?: string[];
   onChoice?: (choice: string) => void;
   onDelete?: () => void;
+  onGenerateImage?: () => void;
+  generatingImage?: boolean;
 };
 
 function MessageBubble({
@@ -226,8 +295,45 @@ function MessageBubble({
   extraChoices = [],
   onChoice,
   onDelete,
+  onGenerateImage,
+  generatingImage = false,
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
+  const isImage = message.role === "image";
+
+  if (isImage) {
+    return (
+      <div className="group flex justify-start">
+        <div className="max-w-[82%]">
+          {onDelete && (
+            <div className="mb-1 flex gap-1 justify-start opacity-0 transition-opacity group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = text;
+                  a.download = `image-${message.id}.png`;
+                  a.click();
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+              >
+                <Download className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          <img src={text} alt="生成的图片" className="max-w-full rounded-2xl shadow-sm" />
+        </div>
+      </div>
+    );
+  }
+
   const parsed = isUser ? null : parseMessage(text);
   const bodyText = loading ? "" : isUser ? text : (parsed?.body ?? "");
   const choices = isUser ? [] : [...(parsed?.choices ?? []), ...extraChoices];
@@ -237,57 +343,79 @@ function MessageBubble({
   return (
     <div className={cn("group flex", isUser ? "justify-end" : "justify-start")}>
       <div className="max-w-[82%]">
-        <div className="relative">
+        {onDelete && (
           <div
             className={cn(
-              "whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm",
-              isUser
-                ? "rounded-br-sm bg-primary text-primary-foreground"
-                : "rounded-bl-sm border border-border/70 bg-card text-card-foreground",
+              "mb-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100",
+              isUser ? "justify-end" : "justify-start",
             )}
           >
-            {loading ? (
-              <span className="typing-dots">生成中</span>
-            ) : (
-              <>
-                {bodyText || (message.id ? " " : "")}
-                {summary && (
-                  <span className="mt-2 flex gap-1 text-xs leading-6 text-muted-foreground">
-                    <ScrollText className="mt-[6px] h-3 w-3 shrink-0" />
-                    <span>{summary}</span>
-                  </span>
+            {onGenerateImage && (
+              <button
+                type="button"
+                onClick={onGenerateImage}
+                disabled={generatingImage}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+              >
+                {generatingImage ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <ImageIcon className="h-3 w-3" />
                 )}
-                {status && (
-                  <span className="mt-1 flex gap-1 text-xs leading-6 text-muted-foreground">
-                    <Heart className="mt-[6px] h-3 w-3 shrink-0" />
-                    <span>{status}</span>
-                  </span>
-                )}
-              </>
+              </button>
             )}
-          </div>
-          {onDelete && (
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(bodyText)}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
             <button
               type="button"
               onClick={onDelete}
-              className={cn(
-                "absolute -top-2.5 flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground opacity-0 shadow-sm transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100",
-                isUser ? "-left-2.5" : "-right-2.5",
-              )}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-destructive hover:text-destructive-foreground"
             >
               <X className="h-3 w-3" />
             </button>
+          </div>
+        )}
+        <div
+          className={cn(
+            "whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm",
+            isUser
+              ? "rounded-br-sm bg-primary text-primary-foreground"
+              : "rounded-bl-sm border border-border/70 bg-card text-card-foreground",
+          )}
+        >
+          {loading ? (
+            <LoadingDots label="回复生成中" />
+          ) : (
+            <>
+              {bodyText || (message.id ? " " : "")}
+              {summary && (
+                <span className="mt-2 flex gap-1 text-xs leading-6 text-muted-foreground">
+                  <ScrollText className="mt-[6px] h-3 w-3 shrink-0" />
+                  <span>{summary}</span>
+                </span>
+              )}
+              {status && (
+                <span className="mt-1 flex gap-1 text-xs leading-6 text-muted-foreground">
+                  <Heart className="mt-[6px] h-3 w-3 shrink-0" />
+                  <span>{status}</span>
+                </span>
+              )}
+            </>
           )}
         </div>
-        {choices.length > 0 ? (
+        {choices.length > 0 && onChoice ? (
           <div className="mt-2 flex flex-col gap-2">
             {choices.map((choice) => (
               <button
                 key={choice}
                 type="button"
-                className="max-w-full rounded-lg border border-border/70 bg-background px-3 py-1.5 text-left text-sm leading-7 text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={!onChoice}
-                onClick={() => onChoice?.(choice)}
+                className="max-w-full rounded-lg border border-border/70 bg-background px-3 py-1.5 text-left text-sm leading-7 text-foreground transition-colors hover:bg-accent"
+                onClick={() => onChoice(choice)}
               >
                 {choice}
               </button>
