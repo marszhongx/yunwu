@@ -1,3 +1,4 @@
+import { InferenceClient } from "@huggingface/inference";
 import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "../domain/constants";
 import type { ProviderSettings, ProviderType } from "../domain/types";
 
@@ -9,7 +10,7 @@ export type AssistantMessage = {
 };
 
 type ProviderLike = Partial<ProviderSettings> & {
-  provider?: ProviderType;
+  type?: ProviderType;
 };
 
 type StreamAssistantTextInput = {
@@ -25,7 +26,7 @@ type StreamRequest = {
 };
 
 function validateProvider(provider: ProviderLike | null): ProviderLike & {
-  provider: ProviderType;
+  type: ProviderType;
   apiKey: string;
   model: string;
 } {
@@ -43,7 +44,7 @@ function validateProvider(provider: ProviderLike | null): ProviderLike & {
 
   return {
     ...provider,
-    provider: provider.provider ?? "gemini",
+    type: provider.type ?? "gemini",
     apiKey: provider.apiKey,
     model: provider.model,
   };
@@ -204,14 +205,14 @@ function geminiRequest(
 }
 
 function createRequest(
-  provider: ProviderLike & { provider: ProviderType; apiKey: string; model: string },
+  provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
 ): StreamRequest {
-  if (provider.provider === "openai") {
+  if (provider.type === "openai") {
     return openAIRequest(provider, messages);
   }
 
-  if (provider.provider === "claude") {
+  if (provider.type === "claude") {
     return claudeRequest(provider, messages);
   }
 
@@ -340,14 +341,14 @@ function geminiNonStreamRequest(
 }
 
 function createNonStreamRequest(
-  provider: ProviderLike & { provider: ProviderType; apiKey: string; model: string },
+  provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
 ): NonStreamRequest {
-  if (provider.provider === "openai") {
+  if (provider.type === "openai") {
     return openAINonStreamRequest(provider, messages);
   }
 
-  if (provider.provider === "claude") {
+  if (provider.type === "claude") {
     return claudeNonStreamRequest(provider, messages);
   }
 
@@ -509,17 +510,58 @@ export async function requestAssistantText({
   }
 }
 
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function generateHFImage({
+  apiKey,
+  model,
+  prompt,
+  provider,
+  parameters,
+}: {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  provider?: string;
+  parameters?: Record<string, unknown>;
+}): Promise<string> {
+  const client = new InferenceClient(apiKey);
+  const args: Record<string, unknown> = { model, inputs: prompt };
+  if (provider) args.provider = provider;
+  if (parameters) args.parameters = parameters;
+  const blob = (await client.textToImage(
+    args as Parameters<typeof client.textToImage>[0],
+  )) as unknown as Blob;
+  return blobToDataUrl(blob);
+}
+
 export async function generateImage({
   apiKey,
   baseUrl,
   model,
   prompt,
+  type,
+  provider,
+  parameters,
 }: {
   apiKey: string;
   baseUrl: string;
   model: string;
   prompt: string;
+  type?: ProviderType;
+  provider?: string;
+  parameters?: Record<string, unknown>;
 }): Promise<string> {
+  if (type === "huggingface") {
+    return generateHFImage({ apiKey, model, prompt, provider, parameters });
+  }
   const url = openAIImagesGenerationsUrl(baseUrl);
   const abortController = new AbortController();
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);

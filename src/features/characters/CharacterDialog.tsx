@@ -9,7 +9,6 @@ import { SaveButton } from "@/components/ui/save-button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
 import { exportToJson, importFromJson } from "@/domain/export";
-import { normalizeLorebookEntries } from "@/domain/lorebooks";
 import type { CharacterCard, LorebookEntry } from "@/domain/types";
 import { cn } from "@/lib/utils";
 import {

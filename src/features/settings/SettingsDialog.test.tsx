@@ -17,7 +17,7 @@ test("keeps provider settings usable at narrow widths", () => {
         {
           id: "provider-1",
           name: "grok-4-1-fast-reasoning",
-          provider: "openai",
+          type: "openai",
           apiKey: "key",
           baseUrl: "https://yunwu.ai/v1/",
           model: "grok-4-1-fast-reasoning",
@@ -47,7 +47,7 @@ test("truncates long provider names in the provider list", () => {
         {
           id: "provider-1",
           name: longName,
-          provider: "openai",
+          type: "openai",
           apiKey: "key",
           baseUrl: "https://yunwu.ai/v1/",
           model: "grok-4-fast",
@@ -130,7 +130,7 @@ test("creates, edits, activates, and deletes providers without image provider fi
   expect(settings.providers).toHaveLength(1);
   expect(settings.providers[0]).toMatchObject({
     name: "OpenAI 兼容",
-    provider: "openai",
+    type: "openai",
     apiKey: "gemini-key",
     baseUrl: "https://api.example.com/v1/",
     model: "gpt-4o",
@@ -153,7 +153,7 @@ test("reloads providers from localStorage when dialog opens", () => {
         {
           id: "provider-1",
           name: "Claude",
-          provider: "claude",
+          type: "claude",
           apiKey: "key",
           baseUrl: "",
           model: "claude-sonnet-4-5",

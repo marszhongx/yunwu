@@ -32,7 +32,7 @@ type SettingsDialogProps = {
 
 type ProviderForm = {
   name: string;
-  provider: ProviderType;
+  type: ProviderType;
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -41,7 +41,7 @@ type ProviderForm = {
 
 const emptyForm: ProviderForm = {
   name: "",
-  provider: "openai",
+  type: "openai",
   apiKey: "",
   baseUrl: "",
   model: "",
@@ -65,7 +65,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
   }
 
   function updateProviderType(value: ProviderType) {
-    setForm((current) => ({ ...current, provider: value }));
+    setForm((current) => ({ ...current, type: value }));
   }
 
   function startCreate() {
@@ -83,7 +83,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     setCreating(false);
     setForm({
       name: provider.name,
-      provider: provider.provider,
+      type: provider.type,
       apiKey: provider.apiKey,
       baseUrl: provider.baseUrl,
       model: provider.model,
@@ -184,7 +184,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
           <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
           <div>
             <Label htmlFor="provider-type">类型</Label>
-            <Select value={form.provider} onValueChange={updateProviderType}>
+            <Select value={form.type} onValueChange={updateProviderType}>
               <SelectTrigger id="provider-type" aria-label="类型">
                 <SelectValue />
               </SelectTrigger>
@@ -213,7 +213,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
               value={form.baseUrl}
               onChange={(value) => updateField("baseUrl", value)}
             />
-            {form.provider === "openai" ? (
+            {form.type === "openai" ? (
               <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
             ) : null}
           </div>

@@ -1,3 +1,6 @@
 {
-  "biome.enabled": false
+  "biome.enabled": false,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "oxc.enable": true
 }

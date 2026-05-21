@@ -113,7 +113,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   }
 
   async function handleGenerateImage(messageId: string, prompt: string) {
-    const provider = useAppState.getState().imageProvider;
+    const provider = useAppState.getState().activeImageProvider;
     if (!provider || !provider.apiKey) {
       toast.error("请先在设置中配置图片生成");
       return;
@@ -121,11 +121,17 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
     setGeneratingImageId(messageId);
     try {
+      const parameters = provider.parameters
+        ? (JSON.parse(provider.parameters) as Record<string, unknown>)
+        : undefined;
       const dataUrl = await generateImage({
         apiKey: provider.apiKey,
         baseUrl: provider.baseUrl,
         model: provider.model,
         prompt,
+        type: provider.type,
+        provider: provider.provider,
+        parameters,
       });
       await addMessage(chat!.id, { role: "image", content: dataUrl });
       onChanged?.();

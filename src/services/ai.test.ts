@@ -10,7 +10,7 @@ function provider(overrides: Partial<ProviderSettings> = {}): ProviderSettings {
   return {
     id: "provider-1",
     name: "Provider",
-    provider: "openai",
+    type: "openai",
     apiKey: "api-key",
     baseUrl: "https://example.com/v1/",
     model: "model-name",
@@ -102,7 +102,7 @@ describe("streamAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await streamAssistantText({
-      provider: provider({ provider: "claude", model: "claude-3-5-sonnet" }),
+      provider: provider({ type: "claude", model: "claude-3-5-sonnet" }),
       messages: [
         { role: "system", content: "规则一" },
         { role: "system", content: "规则二" },
@@ -150,7 +150,7 @@ describe("streamAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await streamAssistantText({
-      provider: provider({ provider: "gemini", model: "gemini-2.5-pro" }),
+      provider: provider({ type: "gemini", model: "gemini-2.5-pro" }),
       messages: [
         { role: "system", content: "系统规则" },
         { role: "user", content: "开始" },
@@ -237,7 +237,7 @@ describe("requestAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await requestAssistantText({
-      provider: provider({ provider: "claude", model: "claude-3-5-sonnet" }),
+      provider: provider({ type: "claude", model: "claude-3-5-sonnet" }),
       messages: [
         { role: "system", content: "输出 JSON" },
         { role: "user", content: "生成角色" },
@@ -262,7 +262,7 @@ describe("requestAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await requestAssistantText({
-      provider: provider({ provider: "gemini", model: "gemini-2.5-pro" }),
+      provider: provider({ type: "gemini", model: "gemini-2.5-pro" }),
       messages: [
         { role: "system", content: "输出 JSON" },
         { role: "user", content: "生成角色" },

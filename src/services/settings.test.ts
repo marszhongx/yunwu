@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS } from "../domain/constants";
 import {
+  addImageProvider,
   addProvider,
+  deleteImageProvider,
   deleteProvider,
+  getActiveImageProvider,
   getActiveProvider,
   getSettings,
   saveSystemPrompts,
   saveTheme,
+  setActiveImageProvider,
   setActiveProvider,
+  updateImageProvider,
   updateProvider,
 } from "./settings";
 
@@ -22,19 +27,21 @@ describe("settings service", () => {
       providers: [],
       theme: "dark",
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
+      imageProviders: [],
+      activeImageProviderId: "",
     });
   });
 
   test("adds and activates first provider", () => {
     const provider = addProvider({
-      provider: "gemini",
+      type: "gemini",
       apiKey: "key",
       model: "gemini-1.5-pro",
     });
 
     expect(provider).toMatchObject({
       name: "gemini-1.5-pro",
-      provider: "gemini",
+      type: "gemini",
       apiKey: "key",
       baseUrl: "",
       model: "gemini-1.5-pro",
@@ -45,23 +52,25 @@ describe("settings service", () => {
       providers: [provider],
       theme: "dark",
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
+      imageProviders: [],
+      activeImageProviderId: "",
     });
   });
 
   test("updates provider and getActiveProvider reflects update", () => {
-    const provider = addProvider({ provider: "gemini", model: "old-model" });
+    const provider = addProvider({ type: "gemini", model: "old-model" });
 
     const updated = updateProvider(provider.id, {
       id: "ignored-id",
       name: "Updated",
-      provider: "openai",
+      type: "openai",
       model: "new-model",
     });
 
     expect(updated).toEqual({
       id: provider.id,
       name: "Updated",
-      provider: "openai",
+      type: "openai",
       apiKey: "",
       baseUrl: "",
       model: "new-model",
@@ -71,7 +80,7 @@ describe("settings service", () => {
   });
 
   test("deleting active provider clears active id and removes it", () => {
-    const provider = addProvider({ provider: "gemini", model: "gemini-pro" });
+    const provider = addProvider({ type: "gemini", model: "gemini-pro" });
 
     const settings = deleteProvider(provider.id);
 
@@ -81,8 +90,8 @@ describe("settings service", () => {
   });
 
   test("sets active provider and theme", () => {
-    const first = addProvider({ provider: "gemini", model: "gemini-pro" });
-    const second = addProvider({ provider: "claude", model: "claude-3" });
+    const first = addProvider({ type: "gemini", model: "gemini-pro" });
+    const second = addProvider({ type: "claude", model: "claude-3" });
 
     expect(setActiveProvider(second.id).activeProviderId).toBe(second.id);
     expect(setActiveProvider("missing").activeProviderId).toBe(second.id);
@@ -104,11 +113,13 @@ describe("settings service", () => {
       providers: [],
       theme: "dark",
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
+      imageProviders: [],
+      activeImageProviderId: "",
     });
 
-    const provider = addProvider({ provider: "invalid", model: "" });
+    const provider = addProvider({ type: "invalid", model: "" });
 
-    expect(provider.provider).toBe("gemini");
+    expect(provider.type).toBe("gemini");
     expect(provider.name).toBe("gemini");
   });
 
@@ -142,16 +153,6 @@ describe("settings service", () => {
     );
 
     expect(getSettings().systemPrompts).toEqual(DEFAULT_SYSTEM_PROMPTS);
-
-    localStorage.setItem(
-      "yunwu.settings.v1",
-      JSON.stringify({
-        systemPrompt: "旧提示词",
-        providers: [],
-      }),
-    );
-
-    expect(getSettings().systemPrompts).toEqual(["旧提示词", ...DEFAULT_SYSTEM_PROMPTS.slice(1)]);
   });
 
   test("does not activate malformed providers with empty ids", () => {
@@ -173,5 +174,92 @@ describe("settings service", () => {
     );
 
     expect(getActiveProvider()).toBeNull();
+  });
+
+  test("adds and activates first image provider", () => {
+    const provider = addImageProvider({
+      apiKey: "img-key",
+      model: "dall-e-3",
+    });
+
+    expect(provider).toMatchObject({
+      name: "dall-e-3",
+      type: "openai",
+      apiKey: "img-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "dall-e-3",
+    });
+    expect(provider.id).not.toBe("");
+    expect(getSettings().activeImageProviderId).toBe(provider.id);
+    expect(getSettings().imageProviders).toEqual([provider]);
+    expect(getActiveImageProvider()).toEqual(provider);
+  });
+
+  test("updates image provider", () => {
+    const provider = addImageProvider({ apiKey: "old-key", model: "dall-e-3" });
+
+    const updated = updateImageProvider(provider.id, {
+      name: "My DALL-E",
+      apiKey: "new-key",
+    });
+
+    expect(updated).toMatchObject({
+      id: provider.id,
+      name: "My DALL-E",
+      apiKey: "new-key",
+    });
+    expect(getActiveImageProvider()).toEqual(updated);
+    expect(updateImageProvider("missing", { name: "X" })).toBeNull();
+  });
+
+  test("deleting active image provider clears active id", () => {
+    const provider = addImageProvider({ apiKey: "key", model: "dall-e-3" });
+
+    const settings = deleteImageProvider(provider.id);
+
+    expect(settings.activeImageProviderId).toBe("");
+    expect(settings.imageProviders).toEqual([]);
+    expect(getActiveImageProvider()).toBeNull();
+  });
+
+  test("sets active image provider", () => {
+    addImageProvider({ apiKey: "k1", model: "dall-e-2" });
+    const second = addImageProvider({ apiKey: "k2", model: "dall-e-3" });
+
+    expect(setActiveImageProvider(second.id).activeImageProviderId).toBe(second.id);
+    expect(setActiveImageProvider("missing").activeImageProviderId).toBe(second.id);
+    expect(getActiveImageProvider()).toEqual(second);
+  });
+
+  test("huggingface image provider does not get openai baseUrl default", () => {
+    const provider = addImageProvider({
+      type: "huggingface",
+      apiKey: "hf-key",
+      model: "stabilityai/stable-diffusion-xl-base-1.0",
+    });
+
+    expect(provider).toMatchObject({
+      type: "huggingface",
+      apiKey: "hf-key",
+      baseUrl: "",
+      model: "stabilityai/stable-diffusion-xl-base-1.0",
+    });
+
+    const settings = getSettings();
+    const saved = settings.imageProviders.find((p) => p.id === provider.id);
+    expect(saved?.type).toBe("huggingface");
+    expect(saved?.baseUrl).toBe("");
+  });
+
+  test("preserves provider type through save and reload", () => {
+    const provider = addImageProvider({
+      type: "huggingface",
+      apiKey: "hf-key",
+      model: "black-forest-labs/FLUX.1-schnell",
+    });
+
+    const settings = getSettings();
+    const saved = settings.imageProviders.find((p) => p.id === provider.id);
+    expect(saved?.type).toBe("huggingface");
   });
 });

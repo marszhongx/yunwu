@@ -1,46 +1,106 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ImageProviderDialog } from "./ImageProviderDialog";
-
-vi.mock("@/store/appState", () => ({
-  useAppState: (selector: (state: Record<string, unknown>) => unknown) =>
-    selector({ imageProvider: null, reload: vi.fn() }),
-}));
+import type { ImageProviderSettings } from "@/domain/types";
+import * as settings from "@/services/settings";
 
 vi.mock("@/services/settings", () => ({
-  saveImageProvider: vi.fn(),
+  addImageProvider: vi.fn(),
+  updateImageProvider: vi.fn(),
+  deleteImageProvider: vi.fn(),
+  setActiveImageProvider: vi.fn(),
+  getSettings: vi.fn(),
 }));
+
+vi.mock("@/store/appState", () => ({
+  useAppState: Object.assign(
+    (selector: (state: Record<string, unknown>) => unknown) =>
+      selector(mockState),
+    {
+      getState: () => mockState,
+    },
+  ),
+}));
+
+let mockState: Record<string, unknown> = {
+  settings: { imageProviders: [], activeImageProviderId: "" },
+  reload: vi.fn(),
+};
 
 describe("ImageProviderDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockState = {
+      settings: { imageProviders: [], activeImageProviderId: "" },
+      reload: vi.fn(),
+    };
   });
 
-  test("renders form fields", () => {
+  test("renders empty state with create button", () => {
     render(<ImageProviderDialog open onOpenChange={() => {}} />);
 
     expect(screen.getByText("图片生成设置")).toBeInTheDocument();
-    expect(screen.getByLabelText("API 地址")).toBeInTheDocument();
+    expect(screen.getByText("还没有图片 Provider")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "新建图片 Provider" })).toBeInTheDocument();
+  });
+
+  test("renders form fields when creating", () => {
+    render(<ImageProviderDialog open onOpenChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
+
+    expect(screen.getByLabelText("名称")).toBeInTheDocument();
     expect(screen.getByLabelText("API Key")).toBeInTheDocument();
     expect(screen.getByLabelText("模型")).toBeInTheDocument();
+    expect(screen.getByLabelText("API 地址")).toBeInTheDocument();
   });
 
-  test("has default values", () => {
+  test("shows API preview", () => {
     render(<ImageProviderDialog open onOpenChange={() => {}} />);
 
-    expect(screen.getByLabelText("API 地址")).toHaveValue("https://api.openai.com/v1");
-    expect(screen.getByLabelText("模型")).toHaveValue("dall-e-3");
-  });
-
-  test("previews the resolved image generation endpoint", () => {
-    render(<ImageProviderDialog open onOpenChange={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
 
     expect(screen.getByText("预览：https://api.openai.com/v1/images/generations")).toBeInTheDocument();
   });
 
-  test("renders save button", () => {
-    render(<ImageProviderDialog open onOpenChange={() => {}} />);
+  test("preserves huggingface type after save and reopen", () => {
+    const savedProvider: ImageProviderSettings = {
+      id: "img-1",
+      name: "My HF",
+      type: "huggingface",
+      provider: "fal-ai",
+      apiKey: "hf-key",
+      baseUrl: "",
+      model: "stabilityai/stable-diffusion-xl-base-1.0",
+    };
 
-    expect(screen.getByRole("button", { name: "保存" })).toBeInTheDocument();
+    vi.mocked(settings.addImageProvider).mockImplementation(() => {
+      mockState = {
+        settings: { imageProviders: [savedProvider], activeImageProviderId: "img-1" },
+        reload: vi.fn(),
+      };
+      return savedProvider;
+    });
+
+    const { rerender } = render(<ImageProviderDialog open onOpenChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
+    fireEvent.change(screen.getByLabelText("名称"), { target: { value: "My HF" } });
+    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "hf-key" } });
+    fireEvent.change(screen.getByLabelText("模型"), { target: { value: "stabilityai/stable-diffusion-xl-base-1.0" } });
+
+    const typeSelect = screen.getByRole("combobox", { name: "类型" });
+    fireEvent.click(typeSelect);
+    fireEvent.click(screen.getByRole("option", { name: "Hugging Face" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(settings.addImageProvider).toHaveBeenCalled();
+
+    // Simulate dialog close and reopen
+    rerender(<ImageProviderDialog open={false} onOpenChange={() => {}} />);
+    rerender(<ImageProviderDialog open onOpenChange={() => {}} />);
+
+    expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("Hugging Face");
   });
 });

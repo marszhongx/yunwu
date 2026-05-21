@@ -4,6 +4,7 @@ export const PROVIDER_TYPES = [
   "gemini",
   "openai",
   "claude",
+  "huggingface",
 ] as const satisfies readonly ProviderType[];
 
 export const DEFAULT_SYSTEM_PROMPT = `你是一个开放世界RPG的旁白/GM。生动地叙述故事，操控所有NPC，根据玩家的行动推动剧情发展。使用第二人称。始终使用中文回复。`;
@@ -49,5 +50,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   providers: [],
   theme: "dark",
   systemPrompts: DEFAULT_SYSTEM_PROMPTS,
-  imageProvider: undefined,
+  imageProviders: [],
+  activeImageProviderId: "",
 };

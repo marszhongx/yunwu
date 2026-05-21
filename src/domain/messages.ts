@@ -45,7 +45,11 @@ export function buildMessages({
     result.push({ role: "system", content: charData.mes_example });
   }
 
-  result.push(...buildHistoryMessages(messages).map(({ role, content }) => ({ role, content })));
+  result.push(
+    ...buildHistoryMessages(messages)
+      .filter((msg) => msg.role !== "image")
+      .map(({ role, content }) => ({ role: role as PromptMessage["role"], content })),
+  );
   return result;
 }
 

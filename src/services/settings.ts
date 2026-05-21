@@ -1,11 +1,11 @@
-import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS, PROVIDER_TYPES } from "../domain/constants";
+import { DEFAULT_SETTINGS, PROVIDER_TYPES } from "../domain/constants";
 import { uuid } from "../domain/ids";
 import type { AppSettings, ImageProviderSettings, ProviderSettings, ProviderType } from "../domain/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 
 type ProviderInput = Partial<Record<keyof ProviderSettings, unknown>>;
-type SettingsInput = Partial<Record<keyof AppSettings | "systemPrompt", unknown>>;
+type SettingsInput = Partial<Record<keyof AppSettings, unknown>>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -25,7 +25,7 @@ function normalizeTheme(value: unknown): AppSettings["theme"] {
   return value === "light" ? "light" : "dark";
 }
 
-function normalizeSystemPrompts(value: unknown, legacySystemPrompt?: unknown): string[] {
+function normalizeSystemPrompts(value: unknown): string[] {
   if (Array.isArray(value)) {
     const prompts = value.filter(
       (prompt): prompt is string => typeof prompt === "string" && prompt.trim() !== "",
@@ -33,18 +33,14 @@ function normalizeSystemPrompts(value: unknown, legacySystemPrompt?: unknown): s
     if (prompts.length > 0) return prompts;
   }
 
-  if (typeof legacySystemPrompt === "string" && legacySystemPrompt.trim() !== "") {
-    return [legacySystemPrompt, ...DEFAULT_SYSTEM_PROMPTS.slice(1)];
-  }
-
   return DEFAULT_SETTINGS.systemPrompts;
 }
 
 function normalizeProvider(value: unknown): ProviderSettings {
   const input = isRecord(value) ? value : {};
-  const provider = normalizeProviderType(input.provider);
+  const type = normalizeProviderType(input.type);
   const model = toStringValue(input.model);
-  const name = toStringValue(input.name) || model || provider;
+  const name = toStringValue(input.name) || model || type;
 
   const rawMaxTokens =
     typeof input.maxTokens === "number" ? input.maxTokens : Number(input.maxTokens);
@@ -54,7 +50,7 @@ function normalizeProvider(value: unknown): ProviderSettings {
   return {
     id: toStringValue(input.id),
     name,
-    provider,
+    type,
     apiKey: toStringValue(input.apiKey),
     baseUrl: toStringValue(input.baseUrl),
     model,
@@ -62,13 +58,31 @@ function normalizeProvider(value: unknown): ProviderSettings {
   };
 }
 
-function normalizeImageProvider(value: unknown): ImageProviderSettings | undefined {
-  if (!isRecord(value)) return undefined;
-  const apiKey = toStringValue(value.apiKey);
-  const baseUrl = toStringValue(value.baseUrl);
-  const model = toStringValue(value.model);
-  if (!apiKey && !baseUrl && !model) return undefined;
-  return { apiKey, baseUrl: baseUrl || "https://api.openai.com/v1", model: model || "dall-e-3" };
+function normalizeImageProvider(value: unknown): ImageProviderSettings {
+  const input = isRecord(value) ? value : {};
+  const type =
+    typeof input.type === "string" && PROVIDER_TYPES.includes(input.type as ProviderType)
+      ? (input.type as ProviderType)
+      : "openai";
+  const model = toStringValue(input.model);
+  const name = toStringValue(input.name) || model || "图片生成";
+  const baseUrl = toStringValue(input.baseUrl);
+
+  const parameters =
+    typeof input.parameters === "string" && input.parameters.trim() !== ""
+      ? input.parameters
+      : undefined;
+
+  return {
+    id: toStringValue(input.id),
+    name,
+    type,
+    provider: toStringValue(input.provider),
+    apiKey: toStringValue(input.apiKey),
+    baseUrl: type === "openai" ? baseUrl || "https://api.openai.com/v1" : baseUrl,
+    model: model || (type === "openai" ? "dall-e-3" : ""),
+    parameters,
+  };
 }
 
 function normalizeSettings(value: unknown): AppSettings {
@@ -80,12 +94,24 @@ function normalizeSettings(value: unknown): AppSettings {
   const hasActiveProvider =
     activeProviderId !== "" && providers.some((provider) => provider.id === activeProviderId);
 
+  let imageProviders = Array.isArray(input.imageProviders)
+    ? input.imageProviders.map(normalizeImageProvider).filter((p) => p.id)
+    : DEFAULT_SETTINGS.imageProviders;
+
+  let activeImageProviderId = toStringValue(input.activeImageProviderId);
+
+  const hasActiveImageProvider =
+    activeImageProviderId !== "" && imageProviders.some((p) => p.id === activeImageProviderId);
+
   return {
     activeProviderId: hasActiveProvider ? activeProviderId : DEFAULT_SETTINGS.activeProviderId,
     providers,
     theme: normalizeTheme(input.theme),
-    systemPrompts: normalizeSystemPrompts(input.systemPrompts, input.systemPrompt),
-    imageProvider: normalizeImageProvider(input.imageProvider),
+    systemPrompts: normalizeSystemPrompts(input.systemPrompts),
+    imageProviders,
+    activeImageProviderId: hasActiveImageProvider
+      ? activeImageProviderId
+      : DEFAULT_SETTINGS.activeImageProviderId,
   };
 }
 
@@ -183,12 +209,62 @@ export function saveSystemPrompts(systemPrompts: unknown): AppSettings {
   return saveSettings({ ...getSettings(), systemPrompts });
 }
 
-export function saveImageProvider(input: unknown): AppSettings {
+type ImageProviderInput = Partial<Record<keyof ImageProviderSettings, unknown>>;
+
+export function addImageProvider(input: ImageProviderInput): ImageProviderSettings {
   const settings = getSettings();
-  return saveSettings({ ...settings, imageProvider: normalizeImageProvider(input) });
+  const provider = normalizeImageProvider({ ...input, id: uuid() });
+  const nextSettings = saveSettings({
+    ...settings,
+    activeImageProviderId: settings.activeImageProviderId || provider.id,
+    imageProviders: [...settings.imageProviders, provider],
+  });
+
+  return nextSettings.imageProviders[nextSettings.imageProviders.length - 1] ?? provider;
 }
 
-export function getImageProvider(): ImageProviderSettings | null {
+export function updateImageProvider(
+  id: string,
+  patch: ImageProviderInput,
+): ImageProviderSettings | null {
   const settings = getSettings();
-  return settings.imageProvider ?? null;
+  const index = settings.imageProviders.findIndex((p) => p.id === id);
+
+  if (index === -1) return null;
+
+  const imageProviders = [...settings.imageProviders];
+  imageProviders[index] = normalizeImageProvider({ ...imageProviders[index], ...patch, id });
+  saveSettings({ ...settings, imageProviders });
+
+  return imageProviders[index];
+}
+
+export function deleteImageProvider(id: string): AppSettings {
+  const settings = getSettings();
+  const imageProviders = settings.imageProviders.filter((p) => p.id !== id);
+
+  return saveSettings({
+    ...settings,
+    activeImageProviderId:
+      settings.activeImageProviderId === id ? "" : settings.activeImageProviderId,
+    imageProviders,
+  });
+}
+
+export function setActiveImageProvider(id: string): AppSettings {
+  const settings = getSettings();
+
+  if (!settings.imageProviders.some((p) => p.id === id)) {
+    return settings;
+  }
+
+  return saveSettings({ ...settings, activeImageProviderId: id });
+}
+
+export function getActiveImageProvider(): ImageProviderSettings | null {
+  const settings = getSettings();
+
+  if (settings.activeImageProviderId === "") return null;
+
+  return settings.imageProviders.find((p) => p.id === settings.activeImageProviderId) ?? null;
 }

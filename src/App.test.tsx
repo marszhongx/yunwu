@@ -11,9 +11,11 @@ vi.mock("@/services/settings", () => ({
     providers: [],
     theme: "dark",
     systemPrompts: ["默认系统提示"],
+    imageProviders: [],
+    activeImageProviderId: "",
   }),
   getActiveProvider: vi.fn().mockReturnValue(null),
-  getImageProvider: vi.fn().mockReturnValue(null),
+  getActiveImageProvider: vi.fn().mockReturnValue(null),
   saveTheme: vi.fn(),
 }));
 
@@ -37,6 +39,8 @@ beforeEach(() => {
     providers: [],
     theme: "dark",
     systemPrompts: ["默认系统提示"],
+    imageProviders: [],
+    activeImageProviderId: "",
   });
   vi.mocked(settings.getActiveProvider).mockReturnValue(null);
 });

@@ -60,6 +60,8 @@ test("shows a selection empty state when characters exist but none is selected",
       tags: [],
       creator: "",
       character_version: "",
+      opening_user_choices: [],
+      entries: [],
     },
   ]);
 
@@ -85,6 +87,8 @@ test("places the new character item after existing characters", async () => {
       tags: [],
       creator: "",
       character_version: "",
+      opening_user_choices: [],
+      entries: [],
     },
   ]);
 
@@ -111,6 +115,9 @@ test("generates a new character from the generation description", async () => {
     name: "镜城侦探",
     description: "能在雨夜读取霓虹倒影的私家侦探。",
     first_mes: "雨水敲着招牌时，你推开了事务所的门。",
+    personality: "",
+    scenario: "",
+    mes_example: "",
     opening_user_choices: ["说明委托", "观察房间"],
     entries: [],
   });
@@ -171,6 +178,8 @@ test("resets character generation description when starting or clearing creation
       tags: [],
       creator: "",
       character_version: "",
+      opening_user_choices: [],
+      entries: [],
     },
   ]);
 
@@ -206,6 +215,8 @@ test("shows AI generation only while creating a character", async () => {
       tags: [],
       creator: "",
       character_version: "",
+      opening_user_choices: [],
+      entries: [],
     },
   ]);
 
@@ -237,6 +248,8 @@ test("returns to new character state after deleting the character being edited",
         tags: [],
         creator: "",
         character_version: "",
+      opening_user_choices: [],
+      entries: [],
       },
     ])
     .mockResolvedValueOnce([]);
@@ -272,6 +285,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
         tags: [],
         creator: "",
         character_version: "",
+      opening_user_choices: [],
+      entries: [],
       },
     ])
     .mockResolvedValueOnce([
@@ -288,6 +303,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
         tags: [],
         creator: "",
         character_version: "",
+      opening_user_choices: [],
+      entries: [],
       },
     ])
     .mockResolvedValueOnce([]);
@@ -301,6 +318,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
     scenario: "",
     mes_example: "",
     alternate_greetings: [],
+    opening_user_choices: [],
+    entries: [],
     creator_notes: "",
     tags: [],
     creator: "",
@@ -315,6 +334,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
     scenario: "山间",
     mes_example: "用户: 你好",
     alternate_greetings: [],
+    opening_user_choices: [],
+    entries: [],
     creator_notes: "",
     tags: [],
     creator: "",

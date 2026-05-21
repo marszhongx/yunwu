@@ -1,9 +1,9 @@
-export type ProviderType = "gemini" | "openai" | "claude";
+export type ProviderType = "gemini" | "openai" | "claude" | "huggingface";
 
 export type ProviderSettings = {
   id: string;
   name: string;
-  provider: ProviderType;
+  type: ProviderType;
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -11,9 +11,14 @@ export type ProviderSettings = {
 };
 
 export type ImageProviderSettings = {
+  id: string;
+  name: string;
+  type: ProviderType;
+  provider?: string;
   apiKey: string;
   baseUrl: string;
   model: string;
+  parameters?: string;
 };
 
 export type AppSettings = {
@@ -21,7 +26,8 @@ export type AppSettings = {
   providers: ProviderSettings[];
   theme: "dark" | "light";
   systemPrompts: string[];
-  imageProvider?: ImageProviderSettings;
+  imageProviders: ImageProviderSettings[];
+  activeImageProviderId: string;
 };
 
 export type MessageRole = "user" | "assistant" | "image";
@@ -39,6 +45,12 @@ export type LorebookEntry = {
   keys: string[];
   content: string;
   enabled: boolean;
+};
+
+export type Lorebook = {
+  id: string;
+  name: string;
+  entries: LorebookEntry[];
 };
 
 export type CharacterCard = {
