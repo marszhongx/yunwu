@@ -1,5 +1,7 @@
 export type ProviderType = "gemini" | "openai" | "claude" | "huggingface";
 
+export type ImageProviderType = "dall-e-3" | "openai" | "openai-response" | "huggingface";
+
 export type ProviderSettings = {
   id: string;
   name: string;
@@ -13,7 +15,7 @@ export type ProviderSettings = {
 export type ImageProviderSettings = {
   id: string;
   name: string;
-  type: ProviderType;
+  type: ImageProviderType;
   provider?: string;
   apiKey: string;
   baseUrl: string;

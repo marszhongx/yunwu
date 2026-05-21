@@ -1,6 +1,6 @@
-import { DEFAULT_SETTINGS, PROVIDER_TYPES } from "../domain/constants";
+import { DEFAULT_SETTINGS, IMAGE_PROVIDER_TYPES, PROVIDER_TYPES } from "../domain/constants";
 import { uuid } from "../domain/ids";
-import type { AppSettings, ImageProviderSettings, ProviderSettings, ProviderType } from "../domain/types";
+import type { AppSettings, ImageProviderSettings, ImageProviderType, ProviderSettings, ProviderType } from "../domain/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 
@@ -61,12 +61,13 @@ function normalizeProvider(value: unknown): ProviderSettings {
 function normalizeImageProvider(value: unknown): ImageProviderSettings {
   const input = isRecord(value) ? value : {};
   const type =
-    typeof input.type === "string" && PROVIDER_TYPES.includes(input.type as ProviderType)
-      ? (input.type as ProviderType)
-      : "openai";
+    typeof input.type === "string" && IMAGE_PROVIDER_TYPES.includes(input.type as ImageProviderType)
+      ? (input.type as ImageProviderType)
+      : "dall-e-3";
   const model = toStringValue(input.model);
   const name = toStringValue(input.name) || model || "图片生成";
   const baseUrl = toStringValue(input.baseUrl);
+  const isOpenAI = type !== "huggingface";
 
   const parameters =
     typeof input.parameters === "string" && input.parameters.trim() !== ""
@@ -79,8 +80,8 @@ function normalizeImageProvider(value: unknown): ImageProviderSettings {
     type,
     provider: toStringValue(input.provider),
     apiKey: toStringValue(input.apiKey),
-    baseUrl: type === "openai" ? baseUrl || "https://api.openai.com/v1" : baseUrl,
-    model: model || (type === "openai" ? "dall-e-3" : ""),
+    baseUrl: isOpenAI ? baseUrl || "https://api.openai.com/v1" : baseUrl,
+    model: model || (type === "dall-e-3" ? "dall-e-3" : ""),
     parameters,
   };
 }

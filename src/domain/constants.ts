@@ -1,4 +1,4 @@
-import type { AppSettings, ProviderType } from "./types";
+import type { AppSettings, ImageProviderType, ProviderType } from "./types";
 
 export const PROVIDER_TYPES = [
   "gemini",
@@ -6,6 +6,13 @@ export const PROVIDER_TYPES = [
   "claude",
   "huggingface",
 ] as const satisfies readonly ProviderType[];
+
+export const IMAGE_PROVIDER_TYPES = [
+  "dall-e-3",
+  "openai",
+  "openai-response",
+  "huggingface",
+] as const satisfies readonly ImageProviderType[];
 
 export const DEFAULT_SYSTEM_PROMPT = `你是互动小说的叙事者（GM）。使用第二人称叙述。篇幅应尽可能长，剧情合理。始终使用中文回复。`;
 

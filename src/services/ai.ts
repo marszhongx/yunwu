@@ -1,6 +1,6 @@
 import { InferenceClient } from "@huggingface/inference";
 import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "../domain/constants";
-import type { ProviderSettings, ProviderType } from "../domain/types";
+import type { ImageProviderType, ProviderSettings, ProviderType } from "../domain/types";
 
 export type AssistantMessageRole = "system" | "user" | "assistant";
 
@@ -107,6 +107,10 @@ export function openAIChatCompletionsUrl(baseUrl: string): string {
 
 export function openAIImagesGenerationsUrl(baseUrl: string): string {
   return `${normalizedOpenAIBaseUrl(baseUrl)}/images/generations`;
+}
+
+export function openAIResponsesUrl(baseUrl: string): string {
+  return `${normalizedOpenAIBaseUrl(baseUrl)}/responses`;
 }
 
 function openAIRequest(
@@ -555,13 +559,36 @@ export async function generateImage({
   baseUrl: string;
   model: string;
   prompt: string;
-  type?: ProviderType;
+  type?: ImageProviderType;
   provider?: string;
   parameters?: Record<string, unknown>;
 }): Promise<string> {
   if (type === "huggingface") {
     return generateHFImage({ apiKey, model, prompt, provider, parameters });
   }
+
+  if (type === "openai") {
+    return generateChatImage({ apiKey, baseUrl, model, prompt });
+  }
+
+  if (type === "openai-response") {
+    return generateResponsesImage({ apiKey, baseUrl, model, prompt });
+  }
+
+  return generateDALLEImage({ apiKey, baseUrl, model, prompt });
+}
+
+async function generateDALLEImage({
+  apiKey,
+  baseUrl,
+  model,
+  prompt,
+}: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  prompt: string;
+}): Promise<string> {
   const url = openAIImagesGenerationsUrl(baseUrl);
   const abortController = new AbortController();
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
@@ -596,6 +623,130 @@ export async function generateImage({
 
     if (image?.b64_json) {
       return `data:image/png;base64,${image.b64_json}`;
+    }
+
+    throw new Error("图片生成返回了空响应");
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("图片生成请求超时");
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+}
+
+async function generateChatImage({
+  apiKey,
+  baseUrl,
+  model,
+  prompt,
+}: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  prompt: string;
+}): Promise<string> {
+  const url = openAIChatCompletionsUrl(baseUrl);
+  const abortController = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`图片生成请求失败：${response.status} ${errorText}`.trim());
+    }
+
+    const json = (await response.json()) as {
+      choices?: { message?: { content?: { type?: string; image_url?: { url?: string } }[] | string } }[];
+    };
+    const content = json.choices?.[0]?.message?.content;
+
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      for (const part of content) {
+        if (part.type === "image_url" && part.image_url?.url) {
+          return part.image_url.url;
+        }
+      }
+    }
+
+    throw new Error("图片生成返回了空响应");
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("图片生成请求超时");
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+}
+
+async function generateResponsesImage({
+  apiKey,
+  baseUrl,
+  model,
+  prompt,
+}: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  prompt: string;
+}): Promise<string> {
+  const url = openAIResponsesUrl(baseUrl);
+  const abortController = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        input: prompt,
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`图片生成请求失败：${response.status} ${errorText}`.trim());
+    }
+
+    const json = (await response.json()) as {
+      output?: { type?: string; content?: { type?: string; image_url?: { url?: string } }[] }[];
+    };
+    const outputs = json.output ?? [];
+
+    for (const item of outputs) {
+      if (Array.isArray(item.content)) {
+        for (const part of item.content) {
+          if (part.type === "image_url" && part.image_url?.url) {
+            return part.image_url.url;
+          }
+        }
+      }
     }
 
     throw new Error("图片生成返回了空响应");

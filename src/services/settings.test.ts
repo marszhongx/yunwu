@@ -184,7 +184,7 @@ describe("settings service", () => {
 
     expect(provider).toMatchObject({
       name: "dall-e-3",
-      type: "openai",
+      type: "dall-e-3",
       apiKey: "img-key",
       baseUrl: "https://api.openai.com/v1",
       model: "dall-e-3",
