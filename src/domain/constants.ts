@@ -7,7 +7,7 @@ export const PROVIDER_TYPES = [
   "huggingface",
 ] as const satisfies readonly ProviderType[];
 
-export const DEFAULT_SYSTEM_PROMPT = `你是互动小说的叙事者（GM）。使用第二人称叙述。始终使用中文回复。`;
+export const DEFAULT_SYSTEM_PROMPT = `你是互动小说的叙事者（GM）。使用第二人称叙述。篇幅应尽可能长，剧情合理。始终使用中文回复。`;
 
 export const RESPONSE_INSTRUCTION = `回复必须且仅包含 [CONTENT]、[SUMMARY]、[STATUS]、[CHOICES] 四种标签，不要输出任何其他内容。格式如下：
 
