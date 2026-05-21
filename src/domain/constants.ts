@@ -13,10 +13,7 @@ export const RESPONSE_INSTRUCTION = `回复必须且仅包含 [CONTENT]、[SUMMA
 
 [CONTENT]正文内容[/CONTENT]
 [SUMMARY]一句话摘要[/SUMMARY]
-[STATUS]
-- 地点：当前地点
-- 时间：当前时间
-[/STATUS]
+[STATUS]当前状态[/STATUS]
 [CHOICES]
 A: 选项一
 B: 选项二
