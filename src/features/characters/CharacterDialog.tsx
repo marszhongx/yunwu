@@ -24,6 +24,7 @@ type CharacterDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChanged?: () => void;
+  onStartChat?: (characterId: string) => void;
 };
 
 type LorebookEntryForm = {
@@ -58,7 +59,7 @@ const emptyForm: CharacterForm = {
   entries: [createEmptyEntry()],
 };
 
-export function CharacterDialog({ open, onOpenChange, onChanged }: CharacterDialogProps) {
+export function CharacterDialog({ open, onOpenChange, onChanged, onStartChat }: CharacterDialogProps) {
   const [characters, setCharacters] = useState<CharacterCard[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -243,6 +244,15 @@ export function CharacterDialog({ open, onOpenChange, onChanged }: CharacterDial
               <>
                 <Button type="button" variant="outline" onClick={handleExport}>
                   导出
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onStartChat?.(selectedId);
+                    onOpenChange(false);
+                  }}
+                >
+                  开始对话
                 </Button>
                 <Button
                   type="button"

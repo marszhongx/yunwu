@@ -9,7 +9,7 @@ import { ImageProviderDialog } from "@/features/image-provider/ImageProviderDial
 import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { SystemPromptDialog } from "@/features/settings/SystemPromptDialog";
 import { getCharacter } from "@/services/characters";
-import { getChat } from "@/services/chats";
+import { createChat, getChat } from "@/services/chats";
 import { saveTheme } from "@/services/settings";
 import { useAppState } from "@/store/appState";
 
@@ -139,6 +139,10 @@ export default function App() {
           open={charactersOpen}
           onOpenChange={setCharactersOpen}
           onChanged={reloadCurrentChat}
+          onStartChat={async (characterId) => {
+            const chat = await createChat({ charId: characterId });
+            setCurrentChatId(chat.id);
+          }}
         />
       ) : null}
       {chatsOpen ? (
