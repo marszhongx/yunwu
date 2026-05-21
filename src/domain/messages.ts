@@ -119,6 +119,8 @@ export function parseStatus(content: string): string | null {
 }
 
 export function parseContent(content: string): string {
+  const extracted = parseTag(content, "CONTENT");
+  if (extracted) return extracted;
   return ["CHOICES", "SUMMARY", "STATUS"]
     .reduce((current, tag) => current.replace(tagPattern(tag, "g"), ""), content)
     .trim();
@@ -142,7 +144,9 @@ export function parseMessage(content: string): ParsedMessage {
 function compressContent(content: string): string {
   const summary = parseSummary(content);
   if (summary) return summary;
-  return parseContent(content);
+  return ["CONTENT", "CHOICES", "SUMMARY", "STATUS"]
+    .reduce((current, tag) => current.replace(tagPattern(tag, "g"), ""), content)
+    .trim();
 }
 
 function parseTag(content: string, tag: string): string | null {

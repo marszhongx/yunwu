@@ -35,7 +35,6 @@ describe("messages domain", () => {
     expect(result).toEqual([
       expect.objectContaining({ role: "system" }),
       expect.objectContaining({ role: "system" }),
-      expect.objectContaining({ role: "system" }),
       {
         role: "system",
         content: "来自雾中城的旅人",
@@ -69,19 +68,19 @@ describe("messages domain", () => {
       {
         id: "a1",
         role: "assistant",
-        content: "旧正文[SUMMARY]主角进入大厅[/SUMMARY][STATUS]身体：无[/STATUS]",
+        content: "[CONTENT]旧正文[/CONTENT][SUMMARY]主角进入大厅[/SUMMARY][STATUS]身体：无[/STATUS]",
       },
       { id: "u2", role: "user", content: "查看四周" },
       {
         id: "a2",
         role: "assistant",
-        content: "中篇正文[SUMMARY]发现宝箱[/SUMMARY][STATUS]身体：疲惫[/STATUS]",
+        content: "[CONTENT]中篇正文[/CONTENT][SUMMARY]发现宝箱[/SUMMARY][STATUS]身体：疲惫[/STATUS]",
       },
       { id: "u3", role: "user", content: "打开宝箱" },
       {
         id: "a3",
         role: "assistant",
-        content: "最新正文[SUMMARY]获得钥匙[/SUMMARY][STATUS]身体：良好[/STATUS]",
+        content: "[CONTENT]最新正文[/CONTENT][SUMMARY]获得钥匙[/SUMMARY][STATUS]身体：良好[/STATUS]",
       },
     ]);
 
@@ -126,7 +125,11 @@ describe("messages domain", () => {
     );
   });
 
-  it("parseContent removes CHOICES/SUMMARY/STATUS blocks", () => {
+  it("parseContent extracts CONTENT tag", () => {
+    expect(parseContent("[CONTENT]正文内容[/CONTENT][SUMMARY]摘要[/SUMMARY]")).toBe("正文内容");
+  });
+
+  it("parseContent falls back to stripping tags when no CONTENT tag", () => {
     const content =
       "正文[CHOICES]A: 走[/CHOICES]\n中段【SUMMARY】摘要【/SUMMARY】\n末尾[STATUS]身体：无[/STATUS]";
 

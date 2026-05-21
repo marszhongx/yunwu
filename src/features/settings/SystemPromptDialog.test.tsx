@@ -16,14 +16,13 @@ test("saves, adds, deletes, and resets system prompts", () => {
   expect(screen.getByText("系统提示词")).toBeInTheDocument();
   expect(screen.getByLabelText("内置系统提示词 1")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[0]);
   expect(screen.getByLabelText("内置系统提示词 2")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[1]);
-  expect(screen.getByLabelText("内置系统提示词 3")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[2]);
 
   fireEvent.change(screen.getByLabelText("内置系统提示词 1"), {
     target: { value: "自定义第一条" },
   });
   fireEvent.click(screen.getByRole("button", { name: "新增提示词" }));
-  fireEvent.change(screen.getByLabelText("内置系统提示词 4"), {
-    target: { value: "新增第四条" },
+  fireEvent.change(screen.getByLabelText("内置系统提示词 3"), {
+    target: { value: "新增第三条" },
   });
   fireEvent.click(screen.getAllByRole("button", { name: "删除" })[1]);
   fireEvent.click(screen.getByRole("button", { name: "保存提示词" }));
@@ -31,8 +30,7 @@ test("saves, adds, deletes, and resets system prompts", () => {
   let settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
   expect(settings.systemPrompts).toEqual([
     "自定义第一条",
-    DEFAULT_SETTINGS.systemPrompts[2],
-    "新增第四条",
+    "新增第三条",
   ]);
   expect(onChanged).toHaveBeenCalledTimes(1);
 
@@ -42,7 +40,6 @@ test("saves, adds, deletes, and resets system prompts", () => {
   expect(settings.systemPrompts).toEqual(DEFAULT_SETTINGS.systemPrompts);
   expect(screen.getByLabelText("内置系统提示词 1")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[0]);
   expect(screen.getByLabelText("内置系统提示词 2")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[1]);
-  expect(screen.getByLabelText("内置系统提示词 3")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[2]);
   expect(onChanged).toHaveBeenCalledTimes(2);
 });
 

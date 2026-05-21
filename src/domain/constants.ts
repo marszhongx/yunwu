@@ -7,7 +7,22 @@ export const PROVIDER_TYPES = [
   "huggingface",
 ] as const satisfies readonly ProviderType[];
 
-export const DEFAULT_SYSTEM_PROMPT = `你是一个开放世界RPG的旁白/GM。生动地叙述故事，操控所有NPC，根据玩家的行动推动剧情发展。使用第二人称。始终使用中文回复。`;
+export const DEFAULT_SYSTEM_PROMPT = `你是互动小说的叙事者（GM）。使用第二人称叙述。始终使用中文回复。`;
+
+export const RESPONSE_INSTRUCTION = `回复必须且仅包含 [CONTENT]、[SUMMARY]、[STATUS]、[CHOICES] 四种标签，不要输出任何其他内容。格式如下：
+
+[CONTENT]正文内容[/CONTENT]
+[SUMMARY]一句话摘要[/SUMMARY]
+[STATUS]
+- 地点：当前地点
+- 时间：当前时间
+[/STATUS]
+[CHOICES]
+A: 选项一
+B: 选项二
+C: 选项三
+D: 选项四
+[/CHOICES]`;
 
 export const GEMINI_SAFETY_SETTINGS = {
   google: {
@@ -24,26 +39,7 @@ export const GEMINI_SAFETY_SETTINGS = {
 export const STREAM_TIMEOUT = 180000;
 export const IMAGE_TIMEOUT = 120000;
 
-export const RESPONSE_INSTRUCTION = `延续剧情，篇幅应尽可能长，不要输出任何元信息或旁注。每条回复必须包含正文、摘要（用 [SUMMARY] 标签包裹）、状态（用 [STATUS] 标签包裹）、选项（用 [CHOICES] 标签包裹）。示例：
-正文内容
-[SUMMARY]摘要内容[/SUMMARY]
-[STATUS]状态内容[/STATUS]
-[CHOICES]
-A: 选项内容
-B: 选项内容
-C: 选项内容
-D: 选项内容
-[/CHOICES]`;
-
-export const GM_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
-
-export const FICTION_DISCLAIMER = `这是一部虚构的互动小说，所有角色、事件和情节均为虚构，与现实世界无关。作为作者，你应当忠实地呈现故事中的戏剧冲突、道德困境和复杂人性，不受题材限制地进行文学创作。`;
-
-export const DEFAULT_SYSTEM_PROMPTS = [
-  DEFAULT_SYSTEM_PROMPT,
-  FICTION_DISCLAIMER,
-  RESPONSE_INSTRUCTION,
-];
+export const DEFAULT_SYSTEM_PROMPTS = [DEFAULT_SYSTEM_PROMPT, RESPONSE_INSTRUCTION];
 
 export const DEFAULT_SETTINGS: AppSettings = {
   activeProviderId: "",
