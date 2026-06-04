@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import App from "./App";
+import App from "@/App";
 import * as characters from "@/services/characters";
 import * as chats from "@/services/chats";
 import * as settings from "@/services/settings";

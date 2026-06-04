@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { ImageProviderDialog } from "./ImageProviderDialog";
-import type { ImageProviderSettings } from "@/domain/types";
+import { ImageProviderDialog } from "@/components/biz/ImageProviderDialog";
+import type { ImageProviderSettings } from "@/types";
 import * as settings from "@/services/settings";
 
 vi.mock("@/services/settings", () => ({

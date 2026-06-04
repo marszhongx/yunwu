@@ -5,11 +5,8 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SaveButton } from "@/components/ui/save-button";
 import { Textarea } from "@/components/ui/textarea";
-import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
-import { exportToJson, importFromJson } from "@/domain/export";
-import type { CharacterCard, LorebookEntry } from "@/domain/types";
+import { exportToJson, importFromJson } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import {
   createCharacter,
@@ -19,6 +16,9 @@ import {
 } from "@/services/characters";
 import { generateCharacterCard } from "@/services/aiGeneration";
 import { getActiveProvider } from "@/services/settings";
+import type { CharacterCard, LorebookEntry } from "@/types";
+import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
+import { SaveButton } from "@/components/biz/SaveButton";
 
 type CharacterDialogProps = {
   open: boolean;

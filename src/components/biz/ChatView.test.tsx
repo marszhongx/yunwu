@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { ChatView } from "./ChatView";
-import type { CharacterCard, Chat, ChatMessage, ProviderSettings } from "@/domain/types";
+import { ChatView } from "@/components/biz/ChatView";
+import type { CharacterCard, Chat, ChatMessage, ProviderSettings } from "@/types";
 import * as chats from "@/services/chats";
 import * as ai from "@/services/ai";
 import * as settings from "@/services/settings";

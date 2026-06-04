@@ -1,5 +1,5 @@
-import type { CharacterCard, LorebookEntry, ProviderSettings } from "@/domain/types";
-import { requestAssistantText } from "./ai";
+import type { CharacterCard, LorebookEntry, ProviderSettings } from "@/types";
+import { requestAssistantText } from "@/services/ai";
 
 type CharacterGeneration = Pick<
   CharacterCard,

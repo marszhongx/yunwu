@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS } from "../domain/constants";
+import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS } from "@/constants";
 import {
   addImageProvider,
   addProvider,
@@ -14,7 +14,7 @@ import {
   setActiveProvider,
   updateImageProvider,
   updateProvider,
-} from "./settings";
+} from "@/services/settings";
 
 describe("settings service", () => {
   beforeEach(() => {

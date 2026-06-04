@@ -1,6 +1,6 @@
 import { BookOpen, Heart, ScrollText, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CharacterCard, Chat, LorebookEntry } from "@/domain/types";
+import type { CharacterCard, Chat, LorebookEntry } from "@/types";
 
 type ChatSidebarProps = {
   chat: Chat | null;

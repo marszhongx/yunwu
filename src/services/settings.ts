@@ -1,12 +1,12 @@
-import { DEFAULT_SETTINGS, IMAGE_PROVIDER_TYPES, PROVIDER_TYPES } from "../domain/constants";
-import { uuid } from "../domain/ids";
+import { DEFAULT_SETTINGS, IMAGE_PROVIDER_TYPES, PROVIDER_TYPES } from "@/constants";
+import { uuid } from "@/lib/ids";
 import type {
   AppSettings,
   ImageProviderSettings,
   ImageProviderType,
   ProviderSettings,
   ProviderType,
-} from "../domain/types";
+} from "@/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 

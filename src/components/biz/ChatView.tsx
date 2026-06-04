@@ -3,15 +3,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { buildMessages, parseMessage } from "@/domain/messages";
-import { matchLorebook } from "@/domain/lorebooks";
-import type { CharacterCard, Chat, ChatMessage } from "@/domain/types";
+import { buildMessages, parseMessage } from "@/lib/messages";
+import { matchLorebook } from "@/lib/lorebooks";
 import { Copy, Download, Heart, Image as ImageIcon, Loader2, ScrollText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateImage, streamAssistantText } from "@/services/ai";
 import { addMessage, deleteMessage, updateMessage } from "@/services/chats";
 import { getActiveProvider, getSettings } from "@/services/settings";
 import { useAppState } from "@/store/appState";
+import type { CharacterCard, Chat, ChatMessage } from "@/types";
 
 type ChatWithMessages = Chat & { messages?: ChatMessage[] };
 

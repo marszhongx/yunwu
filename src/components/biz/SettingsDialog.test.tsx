@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { SettingsDialog } from "./SettingsDialog";
+import { SettingsDialog } from "@/components/biz/SettingsDialog";
 
 beforeEach(() => {
   localStorage.clear();

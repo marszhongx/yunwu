@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SaveButton } from "@/components/ui/save-button";
 import {
   Select,
   SelectContent,
@@ -12,82 +11,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
-import type { ImageProviderSettings, ImageProviderType } from "@/domain/types";
+import type { ProviderSettings, ProviderType } from "@/types";
 import { cn } from "@/lib/utils";
+import { openAIChatCompletionsUrl } from "@/services/ai";
 import {
-  openAIChatCompletionsUrl,
-  openAIImagesGenerationsUrl,
-  openAIResponsesUrl,
-} from "@/services/ai";
-import {
-  addImageProvider,
-  deleteImageProvider,
-  setActiveImageProvider,
-  updateImageProvider,
+  addProvider,
+  deleteProvider,
+  setActiveProvider,
+  updateProvider,
 } from "@/services/settings";
 import { useAppState } from "@/store/appState";
+import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
+import { SaveButton } from "@/components/biz/SaveButton";
 
-type ImageProviderDialogProps = {
+type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onChanged?: () => void;
 };
 
-type ImageProviderForm = {
+type ProviderForm = {
   name: string;
-  type: ImageProviderType;
+  type: ProviderType;
   apiKey: string;
   baseUrl: string;
   model: string;
+  maxTokens: string;
 };
 
-const emptyForm: ImageProviderForm = {
+const emptyForm: ProviderForm = {
   name: "",
-  type: "dall-e-3",
+  type: "openai",
   apiKey: "",
-  baseUrl: "https://api.openai.com/v1",
-  model: "dall-e-3",
+  baseUrl: "",
+  model: "",
+  maxTokens: "",
 };
 
-export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogProps) {
+export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialogProps) {
   const settings = useAppState((s) => s.settings);
   const reload = useAppState((s) => s.reload);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<ImageProviderForm>(emptyForm);
 
   useEffect(() => {
-    if (open) {
-      reload();
-      const current = useAppState.getState().settings;
-      const target =
-        current.imageProviders.find((p) => p.id === current.activeImageProviderId) ??
-        current.imageProviders[0];
-      if (target) {
-        setSelectedId(target.id);
-        setCreating(false);
-        setForm({
-          name: target.name,
-          type: target.type,
-          apiKey: target.apiKey,
-          baseUrl: target.baseUrl,
-          model: target.model,
-        });
-      }
-    }
+    if (open) reload();
   }, [open, reload]);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<ProviderForm>(emptyForm);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  function updateField(field: keyof ImageProviderForm, value: string) {
+  function updateField(field: keyof ProviderForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function updateProviderType(value: ImageProviderType) {
-    setForm((current) => ({
-      ...current,
-      type: value,
-      baseUrl: current.baseUrl || "https://api.openai.com/v1",
-      model: current.model || (value === "dall-e-3" ? "dall-e-3" : ""),
-    }));
+  function updateProviderType(value: ProviderType) {
+    setForm((current) => ({ ...current, type: value }));
   }
 
   function startCreate() {
@@ -100,7 +78,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     setForm(emptyForm);
   }
 
-  function editProvider(provider: ImageProviderSettings) {
+  function editProvider(provider: ProviderSettings) {
     setSelectedId(provider.id);
     setCreating(false);
     setForm({
@@ -109,6 +87,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
       apiKey: provider.apiKey,
       baseUrl: provider.baseUrl,
       model: provider.model,
+      maxTokens: provider.maxTokens != null ? String(provider.maxTokens) : "",
     });
   }
 
@@ -116,50 +95,47 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     if (!creating && !selectedId) return;
 
     if (selectedId) {
-      updateImageProvider(selectedId, form);
+      updateProvider(selectedId, form);
     } else {
-      const provider = addImageProvider(form);
+      const provider = addProvider(form);
       setSelectedId(provider.id);
     }
 
     setCreating(false);
     reload();
+    onChanged?.();
   }
 
   function activateSelectedProvider() {
     if (!selectedId) return;
 
-    setActiveImageProvider(selectedId);
+    setActiveProvider(selectedId);
     reload();
+    onChanged?.();
   }
 
   function removeSelectedProvider() {
     if (!selectedId) return;
 
-    deleteImageProvider(selectedId);
+    deleteProvider(selectedId);
     setSelectedId(null);
     setCreating(false);
     setForm(emptyForm);
     reload();
+    onChanged?.();
   }
 
-  const showList = settings.imageProviders.length > 0 || creating || selectedId;
-  const apiPreview =
-    form.type === "dall-e-3"
-      ? openAIImagesGenerationsUrl(form.baseUrl)
-      : form.type === "openai"
-        ? openAIChatCompletionsUrl(form.baseUrl)
-        : form.type === "openai-response"
-          ? openAIResponsesUrl(form.baseUrl)
-          : "";
+  const showList = settings.providers.length > 0 || creating || selectedId;
+  const apiPreview = openAIChatCompletionsUrl(form.baseUrl);
+
   const isEditing = creating || selectedId !== null;
 
   return (
     <ConfigDialogLayout
       open={open}
       onOpenChange={onOpenChange}
-      title="图片生成设置"
-      description="管理图片生成 Provider 配置。"
+      title="Provider 设置"
+      description="管理本地 AI Provider 配置。"
       rightScroll={isEditing}
       rightFooter={
         isEditing ? (
@@ -184,19 +160,19 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
       left={
         showList ? (
           <div className="w-full min-w-0 space-y-2">
-            {settings.imageProviders.map((provider) => (
-              <ImageProviderListButton
+            {settings.providers.map((provider) => (
+              <ProviderListButton
                 key={provider.id}
                 active={selectedId === provider.id}
-                current={provider.id === settings.activeImageProviderId}
+                current={provider.id === settings.activeProviderId}
                 label={provider.name}
                 onClick={() => editProvider(provider)}
               />
             ))}
-            <ImageProviderListButton
+            <ProviderListButton
               active={creating}
               dashed
-              label="新建图片 Provider"
+              label="新建 Provider"
               onClick={startCreate}
             />
           </div>
@@ -207,15 +183,15 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
           <div>
-            <Label htmlFor="image-provider-type">类型</Label>
+            <Label htmlFor="provider-type">类型</Label>
             <Select value={form.type} onValueChange={updateProviderType}>
-              <SelectTrigger id="image-provider-type" aria-label="类型">
+              <SelectTrigger id="provider-type" aria-label="类型">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dall-e-3">DALL-E / Images API</SelectItem>
-                <SelectItem value="openai">Chat Completions</SelectItem>
-                <SelectItem value="openai-response">Responses API</SelectItem>
+                <SelectItem value="gemini">Gemini</SelectItem>
+                <SelectItem value="claude">Claude</SelectItem>
+                <SelectItem value="openai">OpenAI 兼容</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -227,32 +203,56 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           />
           <Field
             label="模型"
-            placeholder={form.type === "dall-e-3" ? "dall-e-3" : "gpt-4o"}
             value={form.model}
             onChange={(value) => updateField("model", value)}
           />
           <div className="space-y-2 md:col-span-2">
             <Field
               label="API 地址"
-              placeholder="https://api.openai.com/v1"
+              placeholder="https://api.example.com/v1"
               value={form.baseUrl}
               onChange={(value) => updateField("baseUrl", value)}
             />
-            <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+            {form.type === "openai" ? (
+              <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+            ) : null}
+          </div>
+          <div className="md:col-span-2">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <span className="mr-1.5 inline-block w-4 text-center text-sm leading-none">
+                {showAdvanced ? "▼" : "▶"}
+              </span>
+              高级设置
+            </button>
+            {showAdvanced ? (
+              <div className="grid gap-4 pt-3 md:grid-cols-2">
+                <Field
+                  label="最大输出 Token"
+                  type="number"
+                  placeholder="不填则使用模型默认值"
+                  value={form.maxTokens}
+                  onChange={(value) => updateField("maxTokens", value)}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       ) : (
         <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
           <h3 className="text-base font-medium">
-            {settings.imageProviders.length === 0 ? "还没有图片 Provider" : "选择一个图片 Provider"}
+            {settings.providers.length === 0 ? "还没有 Provider" : "选择一个 Provider"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            {settings.imageProviders.length === 0
-              ? "先创建一个图片 Provider，再开始生成图片。"
-              : "从左侧选择图片 Provider 进行编辑，或创建一个新图片 Provider。"}
+            {settings.providers.length === 0
+              ? "先创建一个 Provider，再开始调用 AI 模型。"
+              : "从左侧选择 Provider 进行编辑，或创建一个新 Provider。"}
           </p>
           <Button type="button" className="mt-4" onClick={startCreate}>
-            新建图片 Provider
+            新建 Provider
           </Button>
         </div>
       )}
@@ -260,7 +260,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   );
 }
 
-type ImageProviderListButtonProps = {
+type ProviderListButtonProps = {
   active: boolean;
   current?: boolean;
   dashed?: boolean;
@@ -268,13 +268,13 @@ type ImageProviderListButtonProps = {
   onClick: () => void;
 };
 
-function ImageProviderListButton({
+function ProviderListButton({
   active,
   current = false,
   dashed = false,
   label,
   onClick,
-}: ImageProviderListButtonProps) {
+}: ProviderListButtonProps) {
   return (
     <button
       type="button"
@@ -311,9 +311,9 @@ type FieldProps = {
 function Field({ label, value, onChange, type = "text", placeholder }: FieldProps) {
   return (
     <div className="min-w-0">
-      <Label htmlFor={`image-provider-${label}`}>{label}</Label>
+      <Label htmlFor={`provider-${label}`}>{label}</Label>
       <Input
-        id={`image-provider-${label}`}
+        id={`provider-${label}`}
         type={type}
         placeholder={placeholder}
         value={value}

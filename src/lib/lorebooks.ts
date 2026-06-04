@@ -1,4 +1,4 @@
-import type { LorebookEntry } from "./types";
+import type { LorebookEntry } from "@/types";
 
 type Match = {
   content: string;

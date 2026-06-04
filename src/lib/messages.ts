@@ -1,5 +1,5 @@
-import { DEFAULT_SYSTEM_PROMPTS } from "./constants";
-import type { CharacterCard, ChatMessage } from "./types";
+import { DEFAULT_SYSTEM_PROMPTS } from "@/constants";
+import type { CharacterCard, ChatMessage } from "@/types";
 
 type PromptMessage = {
   role: "system" | "user" | "assistant";

@@ -1,7 +1,7 @@
-import { uuid } from "../domain/ids";
-import { normalizeLorebookEntries } from "../domain/lorebooks";
-import type { CharacterCard } from "../domain/types";
-import { deleteOne, getAll, getOne, putOne } from "./db";
+import { uuid } from "@/lib/ids";
+import { normalizeLorebookEntries } from "@/lib/lorebooks";
+import type { CharacterCard } from "@/types";
+import { deleteOne, getAll, getOne, putOne } from "@/services/db";
 
 type CharacterInput = Partial<Record<keyof CharacterCard, unknown>>;
 

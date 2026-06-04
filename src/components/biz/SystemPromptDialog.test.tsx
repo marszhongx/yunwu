@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { DEFAULT_SETTINGS } from "@/domain/constants";
-import { SystemPromptDialog } from "./SystemPromptDialog";
+import { DEFAULT_SETTINGS } from "@/constants";
+import { SystemPromptDialog } from "@/components/biz/SystemPromptDialog";
 
 beforeEach(() => {
   localStorage.clear();

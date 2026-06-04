@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { ChatListDialog } from "./ChatListDialog";
+import { ChatListDialog } from "@/components/biz/ChatListDialog";
 import * as characters from "@/services/characters";
 import * as chats from "@/services/chats";
 vi.mock("@/services/chats", () => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SYSTEM_PROMPTS } from "./constants";
+import { DEFAULT_SYSTEM_PROMPTS } from "@/constants";
 import {
   buildHistoryMessages,
   buildMessages,
@@ -8,9 +8,9 @@ import {
   parseStatus,
   parseSummary,
   parseContent,
-} from "./messages";
+} from "@/lib/messages";
 
-import type { ChatMessage, CharacterCard } from "./types";
+import type { ChatMessage, CharacterCard } from "@/types";
 
 describe("messages domain", () => {
   it("buildMessages builds system prompts, character info, lorebook context, and history", () => {

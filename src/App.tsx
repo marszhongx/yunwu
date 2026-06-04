@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell } from "@/components/layout/AppShell";
-import type { CharacterCard, Chat } from "@/domain/types";
-import { ChatSidebar } from "@/features/chat/ChatSidebar";
-import { ChatView } from "@/features/chat/ChatView";
-import { CharacterDialog } from "@/features/characters/CharacterDialog";
-import { ChatListDialog } from "@/features/chats/ChatListDialog";
-import { ImageProviderDialog } from "@/features/image-provider/ImageProviderDialog";
-import { SettingsDialog } from "@/features/settings/SettingsDialog";
-import { SystemPromptDialog } from "@/features/settings/SystemPromptDialog";
+import { CharacterDialog } from "@/components/biz/CharacterDialog";
+import { ChatListDialog } from "@/components/biz/ChatListDialog";
+import { ChatSidebar } from "@/components/biz/ChatSidebar";
+import { ChatView } from "@/components/biz/ChatView";
+import { ImageProviderDialog } from "@/components/biz/ImageProviderDialog";
+import { SettingsDialog } from "@/components/biz/SettingsDialog";
+import { SystemPromptDialog } from "@/components/biz/SystemPromptDialog";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { CharacterCard, Chat } from "@/types";
+import {
+  History,
+  Image,
+  Menu,
+  MessageSquareText,
+  Moon,
+  Settings,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import { getCharacter } from "@/services/characters";
 import { createChat, getChat } from "@/services/chats";
 import { saveTheme } from "@/services/settings";
@@ -26,6 +37,7 @@ export default function App() {
   const reloadRequestIdRef = useRef(0);
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [currentCharacter, setCurrentCharacter] = useState<CharacterCard | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     useAppState.getState().init();
@@ -92,26 +104,130 @@ export default function App() {
     useAppState.getState().reload();
   }
 
+  const ThemeIcon = theme === "dark" ? Sun : Moon;
+
   return (
     <>
-      <AppShell
-        theme={theme}
-        activeProviderName={activeProviderName}
-        onToggleTheme={toggleTheme}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onOpenImageProvider={() => setImageProviderOpen(true)}
-        onOpenSystemPrompt={() => setSystemPromptOpen(true)}
-        onOpenChats={() => setChatsOpen(true)}
-        onOpenCharacters={() => setCharactersOpen(true)}
-        sidebar={<ChatSidebar chat={currentChat} character={currentCharacter} />}
-      >
-        <ChatView
-          chat={currentChat}
-          character={currentCharacter}
-          onChanged={reloadCurrentChat}
-          onCreateChat={() => setChatsOpen(true)}
-        />
-      </AppShell>
+      <div className="flex h-screen bg-background text-foreground">
+        <aside className="hidden w-72 shrink-0 flex-col border-r border-border/70 bg-card/50 p-4 lg:flex">
+          <h1 className="mb-4 text-lg font-semibold">
+            云雾聊天室
+            {activeProviderName ? (
+              <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                {activeProviderName}
+              </span>
+            ) : null}
+          </h1>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ChatSidebar chat={currentChat} character={currentCharacter} />
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex items-center gap-2 border-b border-border/70 px-3 py-2 lg:hidden">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setSidebarOpen(true)}
+              title="菜单"
+              aria-label="菜单"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <span className="text-sm font-semibold">云雾聊天室</span>
+            {activeProviderName ? (
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                {activeProviderName}
+              </span>
+            ) : null}
+          </header>
+          <main className="flex flex-1 min-h-0 p-3 lg:p-6">
+            <ChatView
+              chat={currentChat}
+              character={currentCharacter}
+              onChanged={reloadCurrentChat}
+              onCreateChat={() => setChatsOpen(true)}
+            />
+          </main>
+        </div>
+        <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-border/70 bg-card/50 p-1.5 lg:p-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setChatsOpen(true)}
+            title="记录"
+            aria-label="记录"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <History className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setCharactersOpen(true)}
+            title="角色"
+            aria-label="角色"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <UserRound className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setSystemPromptOpen(true)}
+            title="提示词"
+            aria-label="提示词"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <MessageSquareText className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setSettingsOpen(true)}
+            title="设置"
+            aria-label="设置"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <Settings className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setImageProviderOpen(true)}
+            title="图片生成"
+            aria-label="图片生成"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <Image className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleTheme}
+            title="切换主题"
+            aria-label="切换主题"
+            className="h-9 w-9 lg:h-10 lg:w-10"
+          >
+            <ThemeIcon className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+        </nav>
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="w-72 p-4 lg:hidden">
+            <SheetTitle className="sr-only">侧栏</SheetTitle>
+            <h1 className="mb-4 text-lg font-semibold">
+              云雾聊天室
+              {activeProviderName ? (
+                <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                  {activeProviderName}
+                </span>
+              ) : null}
+            </h1>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <ChatSidebar chat={currentChat} character={currentCharacter} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
       {settingsOpen ? (
         <SettingsDialog
           open={settingsOpen}

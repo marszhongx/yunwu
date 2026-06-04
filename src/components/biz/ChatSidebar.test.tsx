@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
-import { ChatSidebar } from "./ChatSidebar";
-import type { CharacterCard, Chat } from "@/domain/types";
+import { ChatSidebar } from "@/components/biz/ChatSidebar";
+import type { CharacterCard, Chat } from "@/types";
 
 test("renders selected chat, character, and enabled lorebook entries", () => {
   render(

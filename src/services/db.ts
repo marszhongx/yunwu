@@ -1,4 +1,4 @@
-import type { CharacterCard, Chat, ChatMessage, Lorebook } from "../domain/types";
+import type { CharacterCard, Chat, ChatMessage, Lorebook } from "@/types";
 
 type MessageRecord = ChatMessage & {
   id: string;

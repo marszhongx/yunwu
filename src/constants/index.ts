@@ -1,4 +1,4 @@
-import type { AppSettings, ImageProviderType, ProviderType } from "./types";
+import type { AppSettings, ImageProviderType, ProviderType } from "@/types";
 
 export const PROVIDER_TYPES = [
   "gemini",

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SaveButton } from "@/components/ui/save-button";
 import {
   Select,
   SelectContent,
@@ -12,11 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
-import type { CharacterCard, Chat } from "@/domain/types";
 import { cn } from "@/lib/utils";
 import { listCharacters } from "@/services/characters";
 import { createChat, deleteChat, listChats, renameChat } from "@/services/chats";
+import type { CharacterCard, Chat } from "@/types";
+import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
+import { SaveButton } from "@/components/biz/SaveButton";
 
 type ChatListDialogProps = {
   open: boolean;

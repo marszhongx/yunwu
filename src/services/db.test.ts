@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { createCharacter, deleteCharacter, listCharacters, updateCharacter } from "./characters";
+import {
+  createCharacter,
+  deleteCharacter,
+  listCharacters,
+  updateCharacter,
+} from "@/services/characters";
 import {
   addMessage,
   createChat,
@@ -9,8 +14,8 @@ import {
   listChats,
   renameChat,
   updateMessage,
-} from "./chats";
-import { clearDatabase } from "./db";
+} from "@/services/chats";
+import { clearDatabase } from "@/services/db";
 
 describe("IndexedDB data services", () => {
   beforeEach(async () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { ProviderSettings } from "../domain/types";
-import { streamAssistantText, requestAssistantText, generateImage } from "./ai";
+import type { ProviderSettings } from "@/types";
+import { streamAssistantText, requestAssistantText, generateImage } from "@/services/ai";
 
 type FetchMock = ReturnType<typeof vi.fn>;
 

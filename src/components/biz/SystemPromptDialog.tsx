@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { SaveButton } from "@/components/ui/save-button";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_SETTINGS } from "@/domain/constants";
+import { DEFAULT_SETTINGS } from "@/constants";
 import { saveSystemPrompts } from "@/services/settings";
 import { useAppState } from "@/store/appState";
+import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
+import { SaveButton } from "@/components/biz/SaveButton";
 
 type SystemPromptDialogProps = {
   open: boolean;

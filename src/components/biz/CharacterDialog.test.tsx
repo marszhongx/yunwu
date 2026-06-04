@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { CharacterDialog } from "./CharacterDialog";
+import { CharacterDialog } from "@/components/biz/CharacterDialog";
 import * as aiGeneration from "@/services/aiGeneration";
 import * as characters from "@/services/characters";
 import * as settings from "@/services/settings";
@@ -140,7 +140,9 @@ test("generates a new character from the generation description", async () => {
     expect(aiGeneration.generateCharacterCard).toHaveBeenCalledWith(provider, "赛博雨夜侦探"),
   );
   expect(screen.getByRole("textbox", { name: "AI 生成角色描述" })).toHaveValue("赛博雨夜侦探");
-  expect(screen.getByRole("textbox", { name: "名称" })).toHaveValue("镜城侦探");
+  await waitFor(() =>
+    expect(screen.getByRole("textbox", { name: "名称" })).toHaveValue("镜城侦探"),
+  );
   expect(screen.getByRole("textbox", { name: "描述" })).toHaveValue(
     "能在雨夜读取霓虹倒影的私家侦探。",
   );

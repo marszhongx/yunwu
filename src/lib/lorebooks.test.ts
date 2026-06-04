@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchLorebook, normalizeLorebookEntries } from "./lorebooks";
+import { matchLorebook, normalizeLorebookEntries } from "@/lib/lorebooks";
 
 describe("lorebooks domain", () => {
   it("normalizeLorebookEntries turns comma and Chinese comma separated keys into array", () => {

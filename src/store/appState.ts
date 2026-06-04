@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppSettings, ImageProviderSettings, ProviderSettings } from "@/domain/types";
+import type { AppSettings, ImageProviderSettings, ProviderSettings } from "@/types";
 import { getActiveImageProvider, getActiveProvider, getSettings } from "@/services/settings";
 
 type AppState = {

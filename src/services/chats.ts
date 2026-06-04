@@ -1,6 +1,6 @@
-import { uuid } from "../domain/ids";
-import { parseStatus, parseSummary } from "../domain/messages";
-import type { Chat, ChatMessage, MessageRole } from "../domain/types";
+import { uuid } from "@/lib/ids";
+import { parseStatus, parseSummary } from "@/lib/messages";
+import type { Chat, ChatMessage, MessageRole } from "@/types";
 import {
   deleteMessagesByChatId,
   deleteOne,
@@ -8,8 +8,8 @@ import {
   getMessagesByChatId,
   getOne,
   putOne,
-} from "./db";
-import { getCharacter } from "./characters";
+} from "@/services/db";
+import { getCharacter } from "@/services/characters";
 
 type ChatWithMessages = Chat & { messages: StoredMessage[] };
 type ChatInput = { charId: string; title?: string };

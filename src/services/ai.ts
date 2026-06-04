@@ -1,5 +1,5 @@
-import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "../domain/constants";
-import type { ImageProviderType, ProviderSettings, ProviderType } from "../domain/types";
+import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "@/constants";
+import type { ImageProviderType, ProviderSettings, ProviderType } from "@/types";
 
 export type AssistantMessageRole = "system" | "user" | "assistant";
 
