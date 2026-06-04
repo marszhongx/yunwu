@@ -289,7 +289,10 @@ function ProviderListButton({
       onClick={onClick}
     >
       {dashed ? <Plus className="size-4" /> : null}
-      <span className="block min-w-0 truncate text-sm" style={{ flex: dashed ? "0 1 auto" : "1 1 0%", maxWidth: "100%" }}>
+      <span
+        className="block min-w-0 truncate text-sm"
+        style={{ flex: dashed ? "0 1 auto" : "1 1 0%", maxWidth: "100%" }}
+      >
         {label}
       </span>
       {current ? <span className="shrink-0 text-xs text-muted-foreground">当前</span> : null}

@@ -3,7 +3,6 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveButton } from "@/components/ui/save-button";
 import {
@@ -16,7 +15,11 @@ import {
 import { ConfigDialogLayout } from "@/components/layout/config-dialog-layout";
 import type { ImageProviderSettings, ImageProviderType } from "@/domain/types";
 import { cn } from "@/lib/utils";
-import { openAIChatCompletionsUrl, openAIImagesGenerationsUrl, openAIResponsesUrl } from "@/services/ai";
+import {
+  openAIChatCompletionsUrl,
+  openAIImagesGenerationsUrl,
+  openAIResponsesUrl,
+} from "@/services/ai";
 import {
   addImageProvider,
   deleteImageProvider,
@@ -33,21 +36,17 @@ type ImageProviderDialogProps = {
 type ImageProviderForm = {
   name: string;
   type: ImageProviderType;
-  provider: string;
   apiKey: string;
   baseUrl: string;
   model: string;
-  parameters: string;
 };
 
 const emptyForm: ImageProviderForm = {
   name: "",
   type: "dall-e-3",
-  provider: "",
   apiKey: "",
   baseUrl: "https://api.openai.com/v1",
   model: "dall-e-3",
-  parameters: "",
 };
 
 export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogProps) {
@@ -70,11 +69,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
         setForm({
           name: target.name,
           type: target.type,
-          provider: target.provider ?? "",
           apiKey: target.apiKey,
           baseUrl: target.baseUrl,
           model: target.model,
-          parameters: target.parameters ?? "",
         });
       }
     }
@@ -88,11 +85,8 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     setForm((current) => ({
       ...current,
       type: value,
-      baseUrl: value === "huggingface" ? "" : current.baseUrl || "https://api.openai.com/v1",
-      model:
-        value === "huggingface"
-          ? current.model || ""
-          : current.model || (value === "dall-e-3" ? "dall-e-3" : ""),
+      baseUrl: current.baseUrl || "https://api.openai.com/v1",
+      model: current.model || (value === "dall-e-3" ? "dall-e-3" : ""),
     }));
   }
 
@@ -112,11 +106,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     setForm({
       name: provider.name,
       type: provider.type,
-      provider: provider.provider ?? "",
       apiKey: provider.apiKey,
       baseUrl: provider.baseUrl,
       model: provider.model,
-      parameters: provider.parameters ?? "",
     });
   }
 
@@ -152,14 +144,14 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   }
 
   const showList = settings.imageProviders.length > 0 || creating || selectedId;
-  const isOpenAI = form.type !== "huggingface";
-  const apiPreview = form.type === "dall-e-3"
-    ? openAIImagesGenerationsUrl(form.baseUrl)
-    : form.type === "openai"
-      ? openAIChatCompletionsUrl(form.baseUrl)
-      : form.type === "openai-response"
-        ? openAIResponsesUrl(form.baseUrl)
-        : "";
+  const apiPreview =
+    form.type === "dall-e-3"
+      ? openAIImagesGenerationsUrl(form.baseUrl)
+      : form.type === "openai"
+        ? openAIChatCompletionsUrl(form.baseUrl)
+        : form.type === "openai-response"
+          ? openAIResponsesUrl(form.baseUrl)
+          : "";
   const isEditing = creating || selectedId !== null;
 
   return (
@@ -224,7 +216,6 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
                 <SelectItem value="dall-e-3">DALL-E / Images API</SelectItem>
                 <SelectItem value="openai">Chat Completions</SelectItem>
                 <SelectItem value="openai-response">Responses API</SelectItem>
-                <SelectItem value="huggingface">Hugging Face</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -236,57 +227,24 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           />
           <Field
             label="模型"
-            placeholder={form.type === "dall-e-3" ? "dall-e-3" : form.type === "huggingface" ? "stabilityai/stable-diffusion-xl-base-1.0" : "gpt-4o"}
+            placeholder={form.type === "dall-e-3" ? "dall-e-3" : "gpt-4o"}
             value={form.model}
             onChange={(value) => updateField("model", value)}
           />
-          {!isOpenAI ? (
+          <div className="space-y-2 md:col-span-2">
             <Field
-              label="推理 Provider"
-              placeholder="fal-ai"
-              value={form.provider}
-              onChange={(value) => updateField("provider", value)}
+              label="API 地址"
+              placeholder="https://api.openai.com/v1"
+              value={form.baseUrl}
+              onChange={(value) => updateField("baseUrl", value)}
             />
-          ) : null}
-          {!isOpenAI ? (
-            <div className="min-w-0 md:col-span-2">
-              <Label htmlFor="image-provider-parameters">参数 (JSON)</Label>
-              <Textarea
-                id="image-provider-parameters"
-                placeholder='{"num_inference_steps": 5}'
-                value={form.parameters}
-                onChange={(event) => updateField("parameters", event.target.value)}
-                rows={2}
-              />
-            </div>
-          ) : null}
-          {isOpenAI ? (
-            <div className="space-y-2 md:col-span-2">
-              <Field
-                label="API 地址"
-                placeholder="https://api.openai.com/v1"
-                value={form.baseUrl}
-                onChange={(value) => updateField("baseUrl", value)}
-              />
-              <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
-            </div>
-          ) : (
-            <div className="space-y-2 md:col-span-2">
-              <Label>API 地址</Label>
-              <p className="break-all text-sm text-muted-foreground">
-                {form.model
-                  ? `https://api-inference.huggingface.co/models/${form.model}`
-                  : "https://api-inference.huggingface.co/models/{model}"}
-              </p>
-            </div>
-          )}
+            <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+          </div>
         </div>
       ) : (
         <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
           <h3 className="text-base font-medium">
-            {settings.imageProviders.length === 0
-              ? "还没有图片 Provider"
-              : "选择一个图片 Provider"}
+            {settings.imageProviders.length === 0 ? "还没有图片 Provider" : "选择一个图片 Provider"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
             {settings.imageProviders.length === 0

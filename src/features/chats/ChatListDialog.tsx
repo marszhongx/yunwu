@@ -43,10 +43,7 @@ export function ChatListDialog({
   const [charId, setCharId] = useState("");
 
   const reload = useCallback(async () => {
-    const [nextChats, nextCharacters] = await Promise.all([
-      listChats(),
-      listCharacters(),
-    ]);
+    const [nextChats, nextCharacters] = await Promise.all([listChats(), listCharacters()]);
 
     setChats(nextChats);
     setCharacters(nextCharacters);

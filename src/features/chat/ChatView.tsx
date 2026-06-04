@@ -121,17 +121,12 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
     setGeneratingImageId(messageId);
     try {
-      const parameters = provider.parameters
-        ? (JSON.parse(provider.parameters) as Record<string, unknown>)
-        : undefined;
       const dataUrl = await generateImage({
         apiKey: provider.apiKey,
         baseUrl: provider.baseUrl,
         model: provider.model,
         prompt,
         type: provider.type,
-        provider: provider.provider,
-        parameters,
       });
       await addMessage(chat!.id, { role: "image", content: dataUrl });
       onChanged?.();

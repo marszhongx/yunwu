@@ -68,19 +68,22 @@ describe("messages domain", () => {
       {
         id: "a1",
         role: "assistant",
-        content: "[CONTENT]旧正文[/CONTENT][SUMMARY]主角进入大厅[/SUMMARY][STATUS]身体：无[/STATUS]",
+        content:
+          "[CONTENT]旧正文[/CONTENT][SUMMARY]主角进入大厅[/SUMMARY][STATUS]身体：无[/STATUS]",
       },
       { id: "u2", role: "user", content: "查看四周" },
       {
         id: "a2",
         role: "assistant",
-        content: "[CONTENT]中篇正文[/CONTENT][SUMMARY]发现宝箱[/SUMMARY][STATUS]身体：疲惫[/STATUS]",
+        content:
+          "[CONTENT]中篇正文[/CONTENT][SUMMARY]发现宝箱[/SUMMARY][STATUS]身体：疲惫[/STATUS]",
       },
       { id: "u3", role: "user", content: "打开宝箱" },
       {
         id: "a3",
         role: "assistant",
-        content: "[CONTENT]最新正文[/CONTENT][SUMMARY]获得钥匙[/SUMMARY][STATUS]身体：良好[/STATUS]",
+        content:
+          "[CONTENT]最新正文[/CONTENT][SUMMARY]获得钥匙[/SUMMARY][STATUS]身体：良好[/STATUS]",
       },
     ]);
 

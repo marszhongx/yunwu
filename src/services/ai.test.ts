@@ -284,7 +284,10 @@ describe("requestAssistantText", () => {
     );
 
     await expect(
-      requestAssistantText({ provider: provider(), messages: [{ role: "user", content: "hello" }] }),
+      requestAssistantText({
+        provider: provider(),
+        messages: [{ role: "user", content: "hello" }],
+      }),
     ).rejects.toThrow("Provider 返回了空响应");
   });
 
@@ -292,16 +295,19 @@ describe("requestAssistantText", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("bad key", { status: 401 })));
 
     await expect(
-      requestAssistantText({ provider: provider(), messages: [{ role: "user", content: "hello" }] }),
+      requestAssistantText({
+        provider: provider(),
+        messages: [{ role: "user", content: "hello" }],
+      }),
     ).rejects.toThrow("Provider 请求失败：401 bad key");
   });
 });
 
 describe("generateImage", () => {
   test("returns data URL from b64_json response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] }),
-    ) as FetchMock;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await generateImage({
@@ -325,9 +331,9 @@ describe("generateImage", () => {
   });
 
   test("defaults base URL to openai", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] }),
-    ) as FetchMock;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await generateImage({ apiKey: "k", baseUrl: "", model: "m", prompt: "p" });
@@ -338,9 +344,9 @@ describe("generateImage", () => {
 
   test("returns image URL from url response", async () => {
     const imageUrl = "https://pub.example.com/generated.jpg";
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({ data: [{ url: imageUrl }] }),
-    ) as FetchMock;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ data: [{ url: imageUrl }] })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await generateImage({
@@ -354,9 +360,9 @@ describe("generateImage", () => {
   });
 
   test("throws on API error", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response("bad request", { status: 400 }),
-    ) as FetchMock;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("bad request", { status: 400 })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
@@ -365,9 +371,7 @@ describe("generateImage", () => {
   });
 
   test("throws on empty response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({ data: [] }),
-    ) as FetchMock;
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: [] })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(

@@ -1,6 +1,12 @@
 import { DEFAULT_SETTINGS, IMAGE_PROVIDER_TYPES, PROVIDER_TYPES } from "../domain/constants";
 import { uuid } from "../domain/ids";
-import type { AppSettings, ImageProviderSettings, ImageProviderType, ProviderSettings, ProviderType } from "../domain/types";
+import type {
+  AppSettings,
+  ImageProviderSettings,
+  ImageProviderType,
+  ProviderSettings,
+  ProviderType,
+} from "../domain/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 
@@ -67,22 +73,14 @@ function normalizeImageProvider(value: unknown): ImageProviderSettings {
   const model = toStringValue(input.model);
   const name = toStringValue(input.name) || model || "图片生成";
   const baseUrl = toStringValue(input.baseUrl);
-  const isOpenAI = type !== "huggingface";
-
-  const parameters =
-    typeof input.parameters === "string" && input.parameters.trim() !== ""
-      ? input.parameters
-      : undefined;
 
   return {
     id: toStringValue(input.id),
     name,
     type,
-    provider: toStringValue(input.provider),
     apiKey: toStringValue(input.apiKey),
-    baseUrl: isOpenAI ? baseUrl || "https://api.openai.com/v1" : baseUrl,
+    baseUrl: baseUrl || "https://api.openai.com/v1",
     model: model || (type === "dall-e-3" ? "dall-e-3" : ""),
-    parameters,
   };
 }
 

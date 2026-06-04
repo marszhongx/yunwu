@@ -103,9 +103,7 @@ export default function App() {
         onOpenSystemPrompt={() => setSystemPromptOpen(true)}
         onOpenChats={() => setChatsOpen(true)}
         onOpenCharacters={() => setCharactersOpen(true)}
-        sidebar={
-          <ChatSidebar chat={currentChat} character={currentCharacter} />
-        }
+        sidebar={<ChatSidebar chat={currentChat} character={currentCharacter} />}
       >
         <ChatView
           chat={currentChat}
@@ -122,10 +120,7 @@ export default function App() {
         />
       ) : null}
       {imageProviderOpen ? (
-        <ImageProviderDialog
-          open={imageProviderOpen}
-          onOpenChange={setImageProviderOpen}
-        />
+        <ImageProviderDialog open={imageProviderOpen} onOpenChange={setImageProviderOpen} />
       ) : null}
       {systemPromptOpen ? (
         <SystemPromptDialog

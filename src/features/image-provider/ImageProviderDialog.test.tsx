@@ -14,8 +14,7 @@ vi.mock("@/services/settings", () => ({
 
 vi.mock("@/store/appState", () => ({
   useAppState: Object.assign(
-    (selector: (state: Record<string, unknown>) => unknown) =>
-      selector(mockState),
+    (selector: (state: Record<string, unknown>) => unknown) => selector(mockState),
     {
       getState: () => mockState,
     },
@@ -60,18 +59,19 @@ describe("ImageProviderDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
 
-    expect(screen.getByText("预览：https://api.openai.com/v1/images/generations")).toBeInTheDocument();
+    expect(
+      screen.getByText("预览：https://api.openai.com/v1/images/generations"),
+    ).toBeInTheDocument();
   });
 
-  test("preserves huggingface type after save and reopen", () => {
+  test("preserves selected image provider type after save and reopen", () => {
     const savedProvider: ImageProviderSettings = {
       id: "img-1",
-      name: "My HF",
-      type: "huggingface",
-      provider: "fal-ai",
-      apiKey: "hf-key",
-      baseUrl: "",
-      model: "stabilityai/stable-diffusion-xl-base-1.0",
+      name: "My Responses",
+      type: "openai-response",
+      apiKey: "image-key",
+      baseUrl: "https://api.example.com/v1",
+      model: "gpt-4o",
     };
 
     vi.mocked(settings.addImageProvider).mockImplementation(() => {
@@ -85,13 +85,13 @@ describe("ImageProviderDialog", () => {
     const { rerender } = render(<ImageProviderDialog open onOpenChange={() => {}} />);
 
     fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
-    fireEvent.change(screen.getByLabelText("名称"), { target: { value: "My HF" } });
-    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "hf-key" } });
-    fireEvent.change(screen.getByLabelText("模型"), { target: { value: "stabilityai/stable-diffusion-xl-base-1.0" } });
+    fireEvent.change(screen.getByLabelText("名称"), { target: { value: "My Responses" } });
+    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "image-key" } });
+    fireEvent.change(screen.getByLabelText("模型"), { target: { value: "gpt-4o" } });
 
     const typeSelect = screen.getByRole("combobox", { name: "类型" });
     fireEvent.click(typeSelect);
-    fireEvent.click(screen.getByRole("option", { name: "Hugging Face" }));
+    fireEvent.click(screen.getByRole("option", { name: "Responses API" }));
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
@@ -101,6 +101,6 @@ describe("ImageProviderDialog", () => {
     rerender(<ImageProviderDialog open={false} onOpenChange={() => {}} />);
     rerender(<ImageProviderDialog open onOpenChange={() => {}} />);
 
-    expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("Hugging Face");
+    expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("Responses API");
   });
 });

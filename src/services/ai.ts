@@ -1,4 +1,3 @@
-import { InferenceClient } from "@huggingface/inference";
 import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "../domain/constants";
 import type { ImageProviderType, ProviderSettings, ProviderType } from "../domain/types";
 
@@ -136,13 +135,17 @@ function openAIRequest(
   };
 }
 
-function claudeSystemBlocks(messages: AssistantMessage[]): { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[] {
+function claudeSystemBlocks(
+  messages: AssistantMessage[],
+): { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[] {
   const systemMessages = messages.filter((message) => message.role === "system");
 
   return systemMessages.map((message, index) => ({
     type: "text" as const,
     text: message.content,
-    ...(index === systemMessages.length - 1 ? { cache_control: { type: "ephemeral" as const } } : {}),
+    ...(index === systemMessages.length - 1
+      ? { cache_control: { type: "ephemeral" as const } }
+      : {}),
   }));
 }
 
@@ -288,8 +291,11 @@ function claudeNonStreamRequest(
       const content = (json as Record<string, unknown>).content;
       if (!Array.isArray(content)) return "";
       return content
-        .filter((block): block is { type: string; text: string } =>
-          typeof block === "object" && block !== null && (block as { type?: string }).type === "text",
+        .filter(
+          (block): block is { type: string; text: string } =>
+            typeof block === "object" &&
+            block !== null &&
+            (block as { type?: string }).type === "text",
         )
         .map((block) => block.text)
         .join("");
@@ -514,59 +520,19 @@ export async function requestAssistantText({
   }
 }
 
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function generateHFImage({
-  apiKey,
-  model,
-  prompt,
-  provider,
-  parameters,
-}: {
-  apiKey: string;
-  model: string;
-  prompt: string;
-  provider?: string;
-  parameters?: Record<string, unknown>;
-}): Promise<string> {
-  const client = new InferenceClient(apiKey);
-  const args: Record<string, unknown> = { model, inputs: prompt };
-  if (provider) args.provider = provider;
-  if (parameters) args.parameters = parameters;
-  const blob = (await client.textToImage(
-    args as Parameters<typeof client.textToImage>[0],
-  )) as unknown as Blob;
-  return blobToDataUrl(blob);
-}
-
 export async function generateImage({
   apiKey,
   baseUrl,
   model,
   prompt,
   type,
-  provider,
-  parameters,
 }: {
   apiKey: string;
   baseUrl: string;
   model: string;
   prompt: string;
   type?: ImageProviderType;
-  provider?: string;
-  parameters?: Record<string, unknown>;
 }): Promise<string> {
-  if (type === "huggingface") {
-    return generateHFImage({ apiKey, model, prompt, provider, parameters });
-  }
-
   if (type === "openai") {
     return generateChatImage({ apiKey, baseUrl, model, prompt });
   }
@@ -672,7 +638,9 @@ async function generateChatImage({
     }
 
     const json = (await response.json()) as {
-      choices?: { message?: { content?: { type?: string; image_url?: { url?: string } }[] | string } }[];
+      choices?: {
+        message?: { content?: { type?: string; image_url?: { url?: string } }[] | string };
+      }[];
     };
     const content = json.choices?.[0]?.message?.content;
 

@@ -1,7 +1,17 @@
 import type { CharacterCard, LorebookEntry, ProviderSettings } from "@/domain/types";
 import { requestAssistantText } from "./ai";
 
-type CharacterGeneration = Pick<CharacterCard, "name" | "description" | "personality" | "scenario" | "first_mes" | "mes_example" | "opening_user_choices" | "entries">;
+type CharacterGeneration = Pick<
+  CharacterCard,
+  | "name"
+  | "description"
+  | "personality"
+  | "scenario"
+  | "first_mes"
+  | "mes_example"
+  | "opening_user_choices"
+  | "entries"
+>;
 
 const CHARACTER_SCHEMA = `{
   "name": "角色名称，简短有辨识度",

@@ -129,7 +129,9 @@ test("generates a new character from the generation description", async () => {
   fireEvent.change(screen.getByRole("textbox", { name: "AI 生成角色描述" }), {
     target: { value: "赛博雨夜侦探" },
   });
-  expect(generationRegion).toContainElement(screen.getByRole("textbox", { name: "AI 生成角色描述" }));
+  expect(generationRegion).toContainElement(
+    screen.getByRole("textbox", { name: "AI 生成角色描述" }),
+  );
   expect(generationRegion).toContainElement(screen.getByRole("button", { name: "立即生成" }));
   fireEvent.change(screen.getByRole("textbox", { name: "名称" }), { target: { value: "旧草稿" } });
   fireEvent.click(screen.getByRole("button", { name: "立即生成" }));
@@ -139,7 +141,9 @@ test("generates a new character from the generation description", async () => {
   );
   expect(screen.getByRole("textbox", { name: "AI 生成角色描述" })).toHaveValue("赛博雨夜侦探");
   expect(screen.getByRole("textbox", { name: "名称" })).toHaveValue("镜城侦探");
-  expect(screen.getByRole("textbox", { name: "描述" })).toHaveValue("能在雨夜读取霓虹倒影的私家侦探。");
+  expect(screen.getByRole("textbox", { name: "描述" })).toHaveValue(
+    "能在雨夜读取霓虹倒影的私家侦探。",
+  );
 });
 
 test("does not generate a character without a generation description", async () => {
@@ -248,8 +252,8 @@ test("returns to new character state after deleting the character being edited",
         tags: [],
         creator: "",
         character_version: "",
-      opening_user_choices: [],
-      entries: [],
+        opening_user_choices: [],
+        entries: [],
       },
     ])
     .mockResolvedValueOnce([]);
@@ -285,8 +289,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
         tags: [],
         creator: "",
         character_version: "",
-      opening_user_choices: [],
-      entries: [],
+        opening_user_choices: [],
+        entries: [],
       },
     ])
     .mockResolvedValueOnce([
@@ -303,8 +307,8 @@ test("creates, edits, and deletes characters without avatar fields", async () =>
         tags: [],
         creator: "",
         character_version: "",
-      opening_user_choices: [],
-      entries: [],
+        opening_user_choices: [],
+        entries: [],
       },
     ])
     .mockResolvedValueOnce([]);

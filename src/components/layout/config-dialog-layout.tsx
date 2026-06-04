@@ -46,7 +46,9 @@ export function ConfigDialogLayout({
           )}
         >
           {hasLeft ? (
-            <section className="min-h-0 space-y-3 overflow-auto pr-4 md:border-r md:border-border/70">{left}</section>
+            <section className="min-h-0 space-y-3 overflow-auto pr-4 md:border-r md:border-border/70">
+              {left}
+            </section>
           ) : null}
           {rightScroll ? (
             <section className="flex min-h-0 flex-col space-y-4">

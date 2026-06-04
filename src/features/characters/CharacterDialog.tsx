@@ -59,7 +59,12 @@ const emptyForm: CharacterForm = {
   entries: [createEmptyEntry()],
 };
 
-export function CharacterDialog({ open, onOpenChange, onChanged, onStartChat }: CharacterDialogProps) {
+export function CharacterDialog({
+  open,
+  onOpenChange,
+  onChanged,
+  onStartChat,
+}: CharacterDialogProps) {
   const [characters, setCharacters] = useState<CharacterCard[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -178,7 +183,9 @@ export function CharacterDialog({ open, onOpenChange, onChanged, onStartChat }: 
 
     const characterInput = {
       ...form,
-      opening_user_choices: form.opening_user_choices.map((choice) => choice.trim()).filter(Boolean),
+      opening_user_choices: form.opening_user_choices
+        .map((choice) => choice.trim())
+        .filter(Boolean),
       entries: entriesFromForm(form.entries),
     };
 
@@ -332,7 +339,11 @@ export function CharacterDialog({ open, onOpenChange, onChanged, onStartChat }: 
                 onClick={() => void handleGenerate()}
                 disabled={isGenerating}
               >
-                {isGenerating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
+                {isGenerating ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 size-4" />
+                )}
                 立即生成
               </Button>
             </section>
@@ -588,7 +599,9 @@ function entriesToForm(entries: LorebookEntry[]): LorebookEntryForm[] {
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
 
-      const keys = Array.isArray(entry.keys) ? entry.keys.filter((k): k is string => typeof k === "string") : [];
+      const keys = Array.isArray(entry.keys)
+        ? entry.keys.filter((k): k is string => typeof k === "string")
+        : [];
       const content = typeof entry.content === "string" ? entry.content : "";
       const enabled = entry.enabled !== false;
 

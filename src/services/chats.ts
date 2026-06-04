@@ -31,10 +31,7 @@ export async function getChat(id: string): Promise<ChatWithMessages | null> {
   return { ...chat, messages: await getMessagesByChatId(id) };
 }
 
-export async function createChat({
-  charId,
-  title,
-}: ChatInput): Promise<ChatWithMessages> {
+export async function createChat({ charId, title }: ChatInput): Promise<ChatWithMessages> {
   const character = await getCharacter(charId);
   const now = nowIso();
   const chat: Chat = {

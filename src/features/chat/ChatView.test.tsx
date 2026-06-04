@@ -1,18 +1,7 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { ChatView } from "./ChatView";
-import type {
-  CharacterCard,
-  Chat,
-  ChatMessage,
-  ProviderSettings,
-} from "@/domain/types";
+import type { CharacterCard, Chat, ChatMessage, ProviderSettings } from "@/domain/types";
 import * as chats from "@/services/chats";
 import * as ai from "@/services/ai";
 import * as settings from "@/services/settings";
@@ -39,14 +28,11 @@ let activeImageProvider: {
   baseUrl: string;
   model: string;
   type: string;
-  provider?: string;
-  parameters?: string;
 } | null = null;
 
 vi.mock("@/store/appState", () => ({
   useAppState: Object.assign(
-    (selector: (state: Record<string, unknown>) => unknown) =>
-      selector({ activeImageProvider }),
+    (selector: (state: Record<string, unknown>) => unknown) => selector({ activeImageProvider }),
     { getState: () => ({ activeImageProvider }) },
   ),
 }));
@@ -73,17 +59,12 @@ test("shows provider error and does not add messages when no provider is active"
 
   render(<ChatView chat={chat()} character={null} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
-  await waitFor(() =>
-    expect(toast.error).toHaveBeenCalledWith("请先配置并激活 Provider"),
-  );
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("请先配置并激活 Provider"));
   expect(chats.addMessage).not.toHaveBeenCalled();
   expect(ai.streamAssistantText).not.toHaveBeenCalled();
 });
@@ -93,12 +74,8 @@ test("adds user and assistant messages and displays streamed text", async () => 
   const onChanged = vi.fn();
   vi.mocked(settings.getActiveProvider).mockReturnValue(provider);
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
@@ -114,16 +91,11 @@ test("adds user and assistant messages and displays streamed text", async () => 
       }),
   );
 
-  render(
-    <ChatView chat={chat()} character={character()} onChanged={onChanged} />,
-  );
+  render(<ChatView chat={chat()} character={character()} onChanged={onChanged} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "  走进雾中  " },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "  走进雾中  " },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
   expect(await screen.findByText("雾")).toBeInTheDocument();
@@ -156,24 +128,15 @@ test("adds user and assistant messages and displays streamed text", async () => 
 test("shows a visual loading indicator instead of loading text", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
-  vi.mocked(ai.streamAssistantText).mockImplementation(
-    () => new Promise(() => {}),
-  );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
+  vi.mocked(ai.streamAssistantText).mockImplementation(() => new Promise(() => {}));
 
   render(<ChatView chat={chat()} character={null} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
   expect(await screen.findByLabelText("回复生成中")).toBeInTheDocument();
@@ -191,12 +154,8 @@ test("passes custom system prompts into AI request", async () => {
     activeImageProviderId: "",
   });
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
@@ -204,18 +163,13 @@ test("passes custom system prompts into AI request", async () => {
 
   render(<ChatView chat={chat()} character={null} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
   await waitFor(() => expect(ai.streamAssistantText).toHaveBeenCalled());
-  expect(
-    vi.mocked(ai.streamAssistantText).mock.calls[0]?.[0].messages.slice(0, 2),
-  ).toEqual([
+  expect(vi.mocked(ai.streamAssistantText).mock.calls[0]?.[0].messages.slice(0, 2)).toEqual([
     { role: "system", content: "自定义第一条" },
     { role: "system", content: "自定义第二条" },
   ]);
@@ -291,20 +245,14 @@ test("hides inactive assistant choices instead of disabling them", () => {
     />,
   );
 
-  expect(
-    screen.queryByRole("button", { name: "向左走" }),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "向左走" })).not.toBeInTheDocument();
 });
 
 test("keeps assistant choices enabled when image messages follow", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "向左走" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-2", role: "assistant", content: "新的回应" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "向左走" }))
+    .mockResolvedValueOnce(message({ id: "assistant-2", role: "assistant", content: "新的回应" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-2", content: "新的回应" }),
   );
@@ -346,12 +294,8 @@ test("keeps assistant choices enabled when image messages follow", async () => {
 test("does not duplicate pending messages when parent reloads persisted placeholders during stream", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
@@ -383,12 +327,9 @@ test("does not duplicate pending messages when parent reloads persisted placehol
     />,
   );
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
   expect(await screen.findByText("雾")).toBeInTheDocument();
@@ -420,12 +361,8 @@ test("keeps duplicate send attempts visible while a send is in flight", async ()
 test("does not leak pending streaming state when switching chats mid-stream", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
@@ -438,20 +375,14 @@ test("does not leak pending streaming state when switching chats mid-stream", as
 
   const { rerender } = render(<ChatView chat={chat()} character={null} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
   expect(await screen.findByText("走进雾中")).toBeInTheDocument();
 
   rerender(
-    <ChatView
-      chat={chat({ id: "chat-2", title: "另一段旅途", messages: [] })}
-      character={null}
-    />,
+    <ChatView chat={chat({ id: "chat-2", title: "另一段旅途", messages: [] })} character={null} />,
   );
 
   expect(screen.queryByText("走进雾中")).not.toBeInTheDocument();
@@ -461,12 +392,8 @@ test("does not leak pending streaming state when switching chats mid-stream", as
 test("writes failure message and surfaces toast when stream rejects", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "走进雾中" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({
       id: "assistant-1",
@@ -478,12 +405,9 @@ test("writes failure message and surfaces toast when stream rejects", async () =
 
   render(<ChatView chat={chat()} character={null} />);
 
-  fireEvent.change(
-    screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"),
-    {
-      target: { value: "走进雾中" },
-    },
-  );
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
   await waitFor(() =>
@@ -505,12 +429,8 @@ test("shows opening user choices before the first user message and sends the sel
     activeImageProviderId: "",
   });
   vi.mocked(chats.addMessage)
-    .mockResolvedValueOnce(
-      message({ id: "user-1", role: "user", content: "观察四周" }),
-    )
-    .mockResolvedValueOnce(
-      message({ id: "assistant-1", role: "assistant", content: "" }),
-    );
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "观察四周" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", content: "新的回应" }),
   );
@@ -590,9 +510,7 @@ function character(overrides: Partial<CharacterCard> = {}): CharacterCard {
   };
 }
 
-function activeProvider(
-  overrides: Partial<ProviderSettings> = {},
-): ProviderSettings {
+function activeProvider(overrides: Partial<ProviderSettings> = {}): ProviderSettings {
   return {
     id: "provider-1",
     name: "Gemini",

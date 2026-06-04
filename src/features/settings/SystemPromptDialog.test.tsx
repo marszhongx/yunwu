@@ -28,10 +28,7 @@ test("saves, adds, deletes, and resets system prompts", () => {
   fireEvent.click(screen.getByRole("button", { name: "保存提示词" }));
 
   let settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
-  expect(settings.systemPrompts).toEqual([
-    "自定义第一条",
-    "新增第三条",
-  ]);
+  expect(settings.systemPrompts).toEqual(["自定义第一条", "新增第三条"]);
   expect(onChanged).toHaveBeenCalledTimes(1);
 
   fireEvent.click(screen.getByRole("button", { name: "恢复默认" }));

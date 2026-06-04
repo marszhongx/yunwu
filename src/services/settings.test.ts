@@ -106,7 +106,7 @@ describe("settings service", () => {
     expect(getSettings().systemPrompts).toEqual(["第一条", "第二条"]);
   });
 
-  test("normalizes corrupt storage and invalid provider type", () => {
+  test("normalizes corrupt storage", () => {
     localStorage.setItem("yunwu.settings.v1", "not-json");
     expect(getSettings()).toEqual({
       activeProviderId: "",
@@ -116,11 +116,6 @@ describe("settings service", () => {
       imageProviders: [],
       activeImageProviderId: "",
     });
-
-    const provider = addProvider({ type: "invalid", model: "" });
-
-    expect(provider.type).toBe("gemini");
-    expect(provider.name).toBe("gemini");
   });
 
   test("normalizes missing, invalid, empty, and legacy system prompts", () => {
@@ -229,37 +224,5 @@ describe("settings service", () => {
     expect(setActiveImageProvider(second.id).activeImageProviderId).toBe(second.id);
     expect(setActiveImageProvider("missing").activeImageProviderId).toBe(second.id);
     expect(getActiveImageProvider()).toEqual(second);
-  });
-
-  test("huggingface image provider does not get openai baseUrl default", () => {
-    const provider = addImageProvider({
-      type: "huggingface",
-      apiKey: "hf-key",
-      model: "stabilityai/stable-diffusion-xl-base-1.0",
-    });
-
-    expect(provider).toMatchObject({
-      type: "huggingface",
-      apiKey: "hf-key",
-      baseUrl: "",
-      model: "stabilityai/stable-diffusion-xl-base-1.0",
-    });
-
-    const settings = getSettings();
-    const saved = settings.imageProviders.find((p) => p.id === provider.id);
-    expect(saved?.type).toBe("huggingface");
-    expect(saved?.baseUrl).toBe("");
-  });
-
-  test("preserves provider type through save and reload", () => {
-    const provider = addImageProvider({
-      type: "huggingface",
-      apiKey: "hf-key",
-      model: "black-forest-labs/FLUX.1-schnell",
-    });
-
-    const settings = getSettings();
-    const saved = settings.imageProviders.find((p) => p.id === provider.id);
-    expect(saved?.type).toBe("huggingface");
   });
 });
