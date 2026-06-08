@@ -48,7 +48,7 @@ describe("messages domain", () => {
       { role: "system", content: "雾都常年笼罩在迷雾中。" },
       { role: "system", content: "你：你好\n旁白：雾气回应了你。" },
       { role: "user", content: "推门进入" },
-      { role: "assistant", content: "门后传来风声<status>身体：无</status>" },
+      { role: "assistant", content: "门后传来风声" },
     ]);
   });
 
@@ -204,11 +204,40 @@ describe("messages domain", () => {
     expect(parsed.choices).toEqual(["A: 前进", "B: 等"]);
   });
 
-  it("parseContent falls back to original text when no content tag", () => {
+  it("parseContent uses leading text before response tags when content tag is missing", () => {
     const content =
       "正文<choices>A: 走</choices>\n中段<summary>摘要</summary>\n末尾<status>身体：无</status>";
 
-    expect(parseContent(content)).toBe(content);
+    expect(parseContent(content)).toBe("正文");
+  });
+
+  it("parseMessage uses leading text as body when content tag is missing", () => {
+    const parsed = parseMessage(
+      "正文\n\n<summary>摘要</summary>\n\n<status>状态</status>\n\n<choices>\nA: 前进\nB: 等待\n</choices>",
+    );
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual(["A: 前进", "B: 等待"]);
+  });
+
+  it("parseMessage keeps leading text when following tags are partially streamed", () => {
+    const parsed = parseMessage("正文\n\n<summary>摘要</summary>\n\n<status>状");
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状");
+    expect(parsed.choices).toEqual([]);
+  });
+
+  it("parseMessage hides a partially streamed response tag name from leading body", () => {
+    const parsed = parseMessage("正文\n\n<sum");
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBeNull();
+    expect(parsed.status).toBeNull();
+    expect(parsed.choices).toEqual([]);
   });
 
   it("parseChoices extracts choices from XML tag", () => {

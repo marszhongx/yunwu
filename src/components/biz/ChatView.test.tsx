@@ -199,6 +199,30 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
   expect(screen.getByText("A: 向左走")).toBeInTheDocument();
 });
 
+test("hides XML tags from message body when content tag is missing", () => {
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({
+            id: "assistant-1",
+            role: "assistant",
+            content:
+              "正文\n\n<summary>摘要</summary>\n\n<status>状态</status>\n\n<choices>\nA: 向左走\nB: 向右走\n</choices>",
+          }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  expect(screen.getByText(/^正文$/)).toBeInTheDocument();
+  expect(screen.getByText(/摘要/)).toBeInTheDocument();
+  expect(screen.getByText(/状态/)).toBeInTheDocument();
+  expect(screen.queryByText(/<summary>|<status>|<choices>/)).not.toBeInTheDocument();
+  expect(screen.getByText("A: 向左走")).toBeInTheDocument();
+});
+
 test("shows a visual image loading bubble while generating an image", async () => {
   activeImageProvider = {
     apiKey: "image-key",

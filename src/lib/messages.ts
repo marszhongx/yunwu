@@ -120,7 +120,8 @@ export function parseStatus(content: string): string | null {
 }
 
 export function parseContent(content: string): string {
-  return parseXmlResponse(content)[ResponseTag.CONTENT][0] ?? content;
+  const parsed = parseXmlResponse(content);
+  return resolveBody(content, parsed[ResponseTag.CONTENT][0]);
 }
 
 export type ParsedMessage = {
@@ -133,7 +134,7 @@ export type ParsedMessage = {
 export function parseMessage(content: string): ParsedMessage {
   const parsed = parseXmlResponse(content);
   return {
-    body: parsed[ResponseTag.CONTENT][0] ?? content,
+    body: resolveBody(content, parsed[ResponseTag.CONTENT][0]),
     choices: resolveChoices(parsed[ResponseTag.CHOICES][0] ?? ""),
     summary: parsed[ResponseTag.SUMMARY][0] ?? null,
     status: parsed[ResponseTag.STATUS][0] ?? null,
@@ -142,7 +143,41 @@ export function parseMessage(content: string): ParsedMessage {
 
 function compressContent(content: string): string {
   const parsed = parseXmlResponse(content);
-  return parsed[ResponseTag.SUMMARY][0] ?? parsed[ResponseTag.CONTENT][0] ?? content;
+  return parsed[ResponseTag.SUMMARY][0] ?? resolveBody(content, parsed[ResponseTag.CONTENT][0]);
+}
+
+function resolveBody(content: string, parsedContent: string | undefined): string {
+  if (parsedContent !== undefined) return parsedContent;
+  const tagStart = findFirstResponseTagStart(content);
+  if (tagStart === -1) return content;
+  const leadingText = content.slice(0, tagStart).trim();
+  return leadingText || content;
+}
+
+function findFirstResponseTagStart(content: string): number {
+  let first = -1;
+  for (const tag of RESPONSE_TAGS) {
+    const fullOpen = content.indexOf(`<${tag}>`);
+    const partialOpen = findPartialOpenTagStart(content, tag);
+    const index = minKnownIndex(fullOpen, partialOpen);
+    if (index !== -1 && (first === -1 || index < first)) first = index;
+  }
+  return first;
+}
+
+function findPartialOpenTagStart(content: string, tag: string): number {
+  const minLength = 2;
+  for (let length = minLength; length < tag.length + 2; length++) {
+    const partial = `<${tag.slice(0, length - 1)}`;
+    if (content.endsWith(partial)) return content.length - partial.length;
+  }
+  return -1;
+}
+
+function minKnownIndex(a: number, b: number): number {
+  if (a === -1) return b;
+  if (b === -1) return a;
+  return Math.min(a, b);
 }
 
 function parseTag(content: string, tag: ResponseTag): string | null {
