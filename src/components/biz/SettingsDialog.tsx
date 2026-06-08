@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ProviderSettings, ProviderType } from "@/types";
+import { ProviderType } from "@/constants";
+import type { ProviderSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import { openAIChatCompletionsUrl } from "@/services/ai";
 import {
@@ -41,7 +42,7 @@ type ProviderForm = {
 
 const emptyForm: ProviderForm = {
   name: "",
-  type: "openai",
+  type: ProviderType.OPENAI,
   apiKey: "",
   baseUrl: "",
   model: "",
@@ -189,9 +190,9 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gemini">Gemini</SelectItem>
-                <SelectItem value="claude">Claude</SelectItem>
-                <SelectItem value="openai">OpenAI 兼容</SelectItem>
+                <SelectItem value={ProviderType.GEMINI}>Gemini</SelectItem>
+                <SelectItem value={ProviderType.CLAUDE}>Claude</SelectItem>
+                <SelectItem value={ProviderType.OPENAI}>OpenAI 兼容</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -213,7 +214,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
               value={form.baseUrl}
               onChange={(value) => updateField("baseUrl", value)}
             />
-            {form.type === "openai" ? (
+            {form.type === ProviderType.OPENAI ? (
               <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
             ) : null}
           </div>

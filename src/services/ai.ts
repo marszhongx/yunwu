@@ -1,5 +1,11 @@
-import { GEMINI_SAFETY_SETTINGS, IMAGE_TIMEOUT, STREAM_TIMEOUT } from "@/constants";
-import type { ImageProviderType, ProviderSettings, ProviderType } from "@/types";
+import {
+  GEMINI_SAFETY_SETTINGS,
+  ImageProviderType,
+  IMAGE_TIMEOUT,
+  ProviderType,
+  STREAM_TIMEOUT,
+} from "@/constants";
+import type { ProviderSettings } from "@/types";
 
 export type AssistantMessageRole = "system" | "user" | "assistant";
 
@@ -43,7 +49,7 @@ function validateProvider(provider: ProviderLike | null): ProviderLike & {
 
   return {
     ...provider,
-    type: provider.type ?? "gemini",
+    type: provider.type ?? ProviderType.GEMINI,
     apiKey: provider.apiKey,
     model: provider.model,
   };
@@ -215,11 +221,11 @@ function createRequest(
   provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
 ): StreamRequest {
-  if (provider.type === "openai") {
+  if (provider.type === ProviderType.OPENAI) {
     return openAIRequest(provider, messages);
   }
 
-  if (provider.type === "claude") {
+  if (provider.type === ProviderType.CLAUDE) {
     return claudeRequest(provider, messages);
   }
 
@@ -354,11 +360,11 @@ function createNonStreamRequest(
   provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
 ): NonStreamRequest {
-  if (provider.type === "openai") {
+  if (provider.type === ProviderType.OPENAI) {
     return openAINonStreamRequest(provider, messages);
   }
 
-  if (provider.type === "claude") {
+  if (provider.type === ProviderType.CLAUDE) {
     return claudeNonStreamRequest(provider, messages);
   }
 
@@ -533,11 +539,11 @@ export async function generateImage({
   prompt: string;
   type?: ImageProviderType;
 }): Promise<string> {
-  if (type === "openai") {
+  if (type === ImageProviderType.OPENAI) {
     return generateChatImage({ apiKey, baseUrl, model, prompt });
   }
 
-  if (type === "openai-response") {
+  if (type === ImageProviderType.OPENAI_RESPONSE) {
     return generateResponsesImage({ apiKey, baseUrl, model, prompt });
   }
 

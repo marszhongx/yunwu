@@ -1,6 +1,4 @@
-export type ProviderType = "gemini" | "openai" | "claude";
-
-export type ImageProviderType = "dall-e-3" | "openai" | "openai-response";
+import type { ImageProviderType, ProviderType } from "@/constants";
 
 export type ProviderSettings = {
   id: string;

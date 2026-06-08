@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ProviderType } from "@/constants";
 import { beforeEach, expect, test, vi } from "vitest";
 import { CharacterDialog } from "@/components/biz/CharacterDialog";
 import * as aiGeneration from "@/services/aiGeneration";
@@ -103,7 +104,7 @@ test("generates a new character from the generation description", async () => {
   const provider = {
     id: "provider-1",
     name: "测试 Provider",
-    type: "openai" as const,
+    type: ProviderType.OPENAI,
     apiKey: "key",
     baseUrl: "https://example.test",
     model: "test-model",
@@ -152,7 +153,7 @@ test("does not generate a character without a generation description", async () 
   const provider = {
     id: "provider-1",
     name: "测试 Provider",
-    type: "openai" as const,
+    type: ProviderType.OPENAI,
     apiKey: "key",
     baseUrl: "https://example.test",
     model: "test-model",

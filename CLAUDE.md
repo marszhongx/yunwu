@@ -40,6 +40,7 @@ Yunwu is a static, browser-only AI roleplay chat app inspired by SillyTavern. AI
 ## Development notes
 
 - Use the `@/` alias for imports from `src`.
+- Do not use re-exports or barrel files. Types, enums, constants, functions, and components must be imported directly from the module where they are defined.
 - Keep the app static/browser-only; do not add a backend requirement for normal operation.
 - When changing UI behavior, run the dev server and verify the flow in a browser in addition to running relevant tests.
 - Provider secrets are user-supplied browser settings; avoid moving them into committed config or server assumptions.

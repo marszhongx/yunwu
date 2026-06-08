@@ -241,10 +241,7 @@ describe("messages domain", () => {
   });
 
   it("parseChoices extracts choices from XML tag", () => {
-    expect(parseChoices("<choices>\nA: 走近\nB: 等待\n</choices>")).toEqual([
-      "A: 走近",
-      "B: 等待",
-    ]);
+    expect(parseChoices("<choices>\nA: 走近\nB: 等待\n</choices>")).toEqual(["A: 走近", "B: 等待"]);
   });
 
   it("stops an unclosed XML tag before the next known response tag", () => {
@@ -269,17 +266,13 @@ describe("messages domain", () => {
 
   it("uses the first repeated XML tag block", () => {
     expect(parseSummary("<summary>第一次</summary><summary>第二次</summary>")).toBe("第一次");
-    expect(parseChoices("<choices>\nA: 第一次\n</choices><choices>\nA: 第二次\n</choices>")).toEqual([
-      "A: 第一次",
-    ]);
+    expect(
+      parseChoices("<choices>\nA: 第一次\n</choices><choices>\nA: 第二次\n</choices>"),
+    ).toEqual(["A: 第一次"]);
   });
 
   it("resolveChoices returns trimmed non-empty lines", () => {
-    expect(resolveChoices("A: 走近\nB: 等待\nC: 逃跑")).toEqual([
-      "A: 走近",
-      "B: 等待",
-      "C: 逃跑",
-    ]);
+    expect(resolveChoices("A: 走近\nB: 等待\nC: 逃跑")).toEqual(["A: 走近", "B: 等待", "C: 逃跑"]);
   });
 
   it("resolveChoices returns empty array for empty string", () => {

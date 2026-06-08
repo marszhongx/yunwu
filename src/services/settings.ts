@@ -1,12 +1,6 @@
-import { DEFAULT_SETTINGS, IMAGE_PROVIDER_TYPES, PROVIDER_TYPES } from "@/constants";
+import { DEFAULT_SETTINGS, ImageProviderType, ProviderType } from "@/constants";
 import { uuid } from "@/lib/ids";
-import type {
-  AppSettings,
-  ImageProviderSettings,
-  ImageProviderType,
-  ProviderSettings,
-  ProviderType,
-} from "@/types";
+import type { AppSettings, ImageProviderSettings, ProviderSettings } from "@/types";
 
 const SETTINGS_KEY = "yunwu.settings.v1";
 
@@ -22,9 +16,9 @@ function toStringValue(value: unknown): string {
 }
 
 function normalizeProviderType(value: unknown): ProviderType {
-  return typeof value === "string" && PROVIDER_TYPES.includes(value as ProviderType)
+  return typeof value === "string" && Object.values(ProviderType).includes(value as ProviderType)
     ? (value as ProviderType)
-    : "gemini";
+    : ProviderType.GEMINI;
 }
 
 function normalizeTheme(value: unknown): AppSettings["theme"] {
@@ -67,9 +61,10 @@ function normalizeProvider(value: unknown): ProviderSettings {
 function normalizeImageProvider(value: unknown): ImageProviderSettings {
   const input = isRecord(value) ? value : {};
   const type =
-    typeof input.type === "string" && IMAGE_PROVIDER_TYPES.includes(input.type as ImageProviderType)
+    typeof input.type === "string" &&
+    Object.values(ImageProviderType).includes(input.type as ImageProviderType)
       ? (input.type as ImageProviderType)
-      : "dall-e-3";
+      : ImageProviderType.DALL_E_3;
   const model = toStringValue(input.model);
   const name = toStringValue(input.name) || model || "图片生成";
   const baseUrl = toStringValue(input.baseUrl);
@@ -80,7 +75,7 @@ function normalizeImageProvider(value: unknown): ImageProviderSettings {
     type,
     apiKey: toStringValue(input.apiKey),
     baseUrl: baseUrl || "https://api.openai.com/v1",
-    model: model || (type === "dall-e-3" ? "dall-e-3" : ""),
+    model: model || (type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : ""),
   };
 }
 

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { streamAssistantText, requestAssistantText, generateImage } from "@/services/ai";
 
@@ -10,7 +11,7 @@ function provider(overrides: Partial<ProviderSettings> = {}): ProviderSettings {
   return {
     id: "provider-1",
     name: "Provider",
-    type: "openai",
+    type: ProviderType.OPENAI,
     apiKey: "api-key",
     baseUrl: "https://example.com/v1/",
     model: "model-name",
@@ -102,7 +103,7 @@ describe("streamAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await streamAssistantText({
-      provider: provider({ type: "claude", model: "claude-3-5-sonnet" }),
+      provider: provider({ type: ProviderType.CLAUDE, model: "claude-3-5-sonnet" }),
       messages: [
         { role: "system", content: "规则一" },
         { role: "system", content: "规则二" },
@@ -150,7 +151,7 @@ describe("streamAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await streamAssistantText({
-      provider: provider({ type: "gemini", model: "gemini-2.5-pro" }),
+      provider: provider({ type: ProviderType.GEMINI, model: "gemini-2.5-pro" }),
       messages: [
         { role: "system", content: "系统规则" },
         { role: "user", content: "开始" },
@@ -237,7 +238,7 @@ describe("requestAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await requestAssistantText({
-      provider: provider({ type: "claude", model: "claude-3-5-sonnet" }),
+      provider: provider({ type: ProviderType.CLAUDE, model: "claude-3-5-sonnet" }),
       messages: [
         { role: "system", content: "输出 JSON" },
         { role: "user", content: "生成角色" },
@@ -262,7 +263,7 @@ describe("requestAssistantText", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await requestAssistantText({
-      provider: provider({ type: "gemini", model: "gemini-2.5-pro" }),
+      provider: provider({ type: ProviderType.GEMINI, model: "gemini-2.5-pro" }),
       messages: [
         { role: "system", content: "输出 JSON" },
         { role: "user", content: "生成角色" },

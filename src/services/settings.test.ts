@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS } from "@/constants";
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_SYSTEM_PROMPTS,
+  ImageProviderType,
+  ProviderType,
+} from "@/constants";
 import {
   addImageProvider,
   addProvider,
@@ -34,14 +39,14 @@ describe("settings service", () => {
 
   test("adds and activates first provider", () => {
     const provider = addProvider({
-      type: "gemini",
+      type: ProviderType.GEMINI,
       apiKey: "key",
       model: "gemini-1.5-pro",
     });
 
     expect(provider).toMatchObject({
       name: "gemini-1.5-pro",
-      type: "gemini",
+      type: ProviderType.GEMINI,
       apiKey: "key",
       baseUrl: "",
       model: "gemini-1.5-pro",
@@ -58,12 +63,12 @@ describe("settings service", () => {
   });
 
   test("updates provider and getActiveProvider reflects update", () => {
-    const provider = addProvider({ type: "gemini", model: "old-model" });
+    const provider = addProvider({ type: ProviderType.GEMINI, model: "old-model" });
 
     const updated = updateProvider(provider.id, {
       id: "ignored-id",
       name: "Updated",
-      type: "openai",
+      type: ProviderType.OPENAI,
       model: "new-model",
     });
 
@@ -80,7 +85,7 @@ describe("settings service", () => {
   });
 
   test("deleting active provider clears active id and removes it", () => {
-    const provider = addProvider({ type: "gemini", model: "gemini-pro" });
+    const provider = addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
 
     const settings = deleteProvider(provider.id);
 
@@ -90,8 +95,8 @@ describe("settings service", () => {
   });
 
   test("sets active provider and theme", () => {
-    const first = addProvider({ type: "gemini", model: "gemini-pro" });
-    const second = addProvider({ type: "claude", model: "claude-3" });
+    const first = addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
+    const second = addProvider({ type: ProviderType.CLAUDE, model: "claude-3" });
 
     expect(setActiveProvider(second.id).activeProviderId).toBe(second.id);
     expect(setActiveProvider("missing").activeProviderId).toBe(second.id);
@@ -174,7 +179,7 @@ describe("settings service", () => {
   test("adds and activates first image provider", () => {
     const provider = addImageProvider({
       apiKey: "img-key",
-      model: "dall-e-3",
+      model: ImageProviderType.DALL_E_3,
     });
 
     expect(provider).toMatchObject({
@@ -182,7 +187,7 @@ describe("settings service", () => {
       type: "dall-e-3",
       apiKey: "img-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "dall-e-3",
+      model: ImageProviderType.DALL_E_3,
     });
     expect(provider.id).not.toBe("");
     expect(getSettings().activeImageProviderId).toBe(provider.id);

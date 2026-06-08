@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ImageProviderDialog } from "@/components/biz/ImageProviderDialog";
+import { ImageProviderType } from "@/constants";
 import type { ImageProviderSettings } from "@/types";
 import * as settings from "@/services/settings";
 
@@ -68,7 +69,7 @@ describe("ImageProviderDialog", () => {
     const savedProvider: ImageProviderSettings = {
       id: "img-1",
       name: "My Responses",
-      type: "openai-response",
+      type: ImageProviderType.OPENAI_RESPONSE,
       apiKey: "image-key",
       baseUrl: "https://api.example.com/v1",
       model: "gpt-4o",

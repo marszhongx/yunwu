@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { ChatView } from "@/components/biz/ChatView";
+import { ProviderType } from "@/constants";
 import type { CharacterCard, Chat, ChatMessage, ProviderSettings } from "@/types";
 import * as chats from "@/services/chats";
 import * as ai from "@/services/ai";
@@ -228,7 +229,7 @@ test("shows a visual image loading bubble while generating an image", async () =
     apiKey: "image-key",
     baseUrl: "https://api.example.com/v1",
     model: "gpt-image-1",
-    type: "openai",
+    type: ProviderType.OPENAI,
   };
   vi.mocked(ai.generateImage).mockImplementation(() => new Promise(() => {}));
 
@@ -538,7 +539,7 @@ function activeProvider(overrides: Partial<ProviderSettings> = {}): ProviderSett
   return {
     id: "provider-1",
     name: "Gemini",
-    type: "gemini",
+    type: ProviderType.GEMINI,
     apiKey: "key",
     baseUrl: "",
     model: "gemini-test",

@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ImageProviderSettings, ImageProviderType } from "@/types";
+import { ImageProviderType } from "@/constants";
+import type { ImageProviderSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   openAIChatCompletionsUrl,
@@ -43,10 +44,10 @@ type ImageProviderForm = {
 
 const emptyForm: ImageProviderForm = {
   name: "",
-  type: "dall-e-3",
+  type: ImageProviderType.DALL_E_3,
   apiKey: "",
   baseUrl: "https://api.openai.com/v1",
-  model: "dall-e-3",
+  model: ImageProviderType.DALL_E_3,
 };
 
 export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogProps) {
@@ -86,7 +87,8 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
       ...current,
       type: value,
       baseUrl: current.baseUrl || "https://api.openai.com/v1",
-      model: current.model || (value === "dall-e-3" ? "dall-e-3" : ""),
+      model:
+        current.model || (value === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : ""),
     }));
   }
 
@@ -145,11 +147,11 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
 
   const showList = settings.imageProviders.length > 0 || creating || selectedId;
   const apiPreview =
-    form.type === "dall-e-3"
+    form.type === ImageProviderType.DALL_E_3
       ? openAIImagesGenerationsUrl(form.baseUrl)
-      : form.type === "openai"
+      : form.type === ImageProviderType.OPENAI
         ? openAIChatCompletionsUrl(form.baseUrl)
-        : form.type === "openai-response"
+        : form.type === ImageProviderType.OPENAI_RESPONSE
           ? openAIResponsesUrl(form.baseUrl)
           : "";
   const isEditing = creating || selectedId !== null;
@@ -213,9 +215,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dall-e-3">DALL-E / Images API</SelectItem>
-                <SelectItem value="openai">Chat Completions</SelectItem>
-                <SelectItem value="openai-response">Responses API</SelectItem>
+                <SelectItem value={ImageProviderType.DALL_E_3}>DALL-E / Images API</SelectItem>
+                <SelectItem value={ImageProviderType.OPENAI}>Chat Completions</SelectItem>
+                <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>Responses API</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -227,7 +229,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           />
           <Field
             label="模型"
-            placeholder={form.type === "dall-e-3" ? "dall-e-3" : "gpt-4o"}
+            placeholder={
+              form.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "gpt-4o"
+            }
             value={form.model}
             onChange={(value) => updateField("model", value)}
           />

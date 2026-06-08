@@ -61,11 +61,7 @@ describe("xml2json", () => {
 
   it("stops an unclosed tag before the next known opening tag", () => {
     expect(
-      xml2json("<content>正文<summary>摘要<status>状态</status>", [
-        "content",
-        "summary",
-        "status",
-      ]),
+      xml2json("<content>正文<summary>摘要<status>状态</status>", ["content", "summary", "status"]),
     ).toEqual({
       content: ["正文"],
       summary: ["摘要"],
