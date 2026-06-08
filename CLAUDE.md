@@ -1,35 +1,45 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project overview
 
-云雾聊天室是一个 AI 开放世界角色扮演聊天应用。用户通过角色卡扮演主角，与作为旁白 / GM 的 AI 在同一个世界中互动。项目是 React + Vite + TypeScript 静态前端应用。
-
-- 聊天：支持 Gemini、Claude、OpenAI 兼容提供商
-- 图片生成：支持 OpenAI 兼容端点和 Hugging Face Inference API（`@huggingface/inference` SDK）
+Yunwu is a static, browser-only AI roleplay chat app inspired by SillyTavern. AI requests are made directly from the browser, while settings, provider config, character cards, lorebooks, chats, and messages are stored locally in the browser.
 
 ## Commands
 
-```bash
-npm run dev
-npm run lint
-npm run format
-npm run test
-npm run build
-```
+- `npm install` - install dependencies.
+- `npm run dev` - start the Vite development server.
+- `npm run build` - build the static app into `dist/`.
+- `npm run preview` - preview the production build locally.
+- `npm run lint` - run type-aware `oxlint` over `src`.
+- `npm run format` - run `oxfmt --check src`.
+- `npm run test` - run the Vitest suite once.
+- `npx vitest run src/path/to/file.test.tsx` - run a single test file.
+- `npx vitest run -t "test name"` - run tests matching a name pattern.
 
-## Core architecture
+## Architecture
 
-- 单页应用入口位于 `index.html`，前端源码位于 `src/`
-- 使用 React、Vite、TypeScript 和 Tailwind CSS
-- 聊天 AI 调用在浏览器端直接接入各提供商
-- 图片生成通过 `@huggingface/inference` SDK（Hugging Face）或直接调用 OpenAI 兼容 API
-- 数据存储在浏览器本地（localStorage + IndexedDB），不引入数据库
+- The app uses Vite, React 19, TypeScript, Tailwind CSS v4, Radix UI primitives, Zustand, and Vitest with jsdom.
+- `src/main.tsx` mounts `App` and the global Sonner toaster.
+- `src/App.tsx` owns top-level screen state: selected chat/character, mobile sheet state, theme toggling, and opening the settings/character/chat dialogs.
+- Business UI lives under `src/components/biz/`; low-level reusable UI wrappers live under `src/components/ui/`.
+- Global derived app state is centralized in `src/store/appState.ts`. It loads settings and active providers through `src/services/settings.ts` and exposes a `reload()` action used after local persistence changes.
+- Persistent structured data is handled by `src/services/db.ts`, an IndexedDB wrapper with stores for `characters`, `chats`, and `messages`. Settings and provider configuration are stored in localStorage via `src/services/settings.ts`.
+- Domain services in `src/services/characters.ts` and `src/services/chats.ts` provide CRUD operations over IndexedDB and normalize records before returning them to UI code.
+- `src/services/ai.ts` contains provider API calls for Gemini, OpenAI-compatible Chat Completions, OpenAI-compatible Responses, Claude, and image generation endpoints. `src/services/aiGeneration.ts` builds on it for character-card generation.
+- Prompt/message preparation is in `src/lib/messages.ts`; lorebook key normalization and matching is in `src/lib/lorebooks.ts`; JSON import/export helpers are in `src/lib/export.ts`.
+- Shared domain types are in `src/types/index.ts`, including provider settings, image provider settings, chat messages, lorebook entries, character cards, and chats.
 
-## Key constraints
+## Testing notes
 
-- 保持静态前端部署形态，不引入运行时 Node 服务
-- 不引入数据库，数据全部浏览器本地
-- UI 调整优先复用现有组件，避免无必要的自定义样式覆盖
-- 不写向后兼容代码，不写迁移代码
+- Tests live beside source files as `*.test.ts` / `*.test.tsx` under `src/`.
+- Vitest is configured in `vite.config.ts` with `jsdom`, globals, `src/test/setup.ts`, and `passWithNoTests: true`.
+- UI tests use Testing Library and fake browser storage where needed; persistence tests cover IndexedDB behavior with fake-indexeddb.
+
+## Development notes
+
+- Use the `@/` alias for imports from `src`.
+- Keep the app static/browser-only; do not add a backend requirement for normal operation.
+- When changing UI behavior, run the dev server and verify the flow in a browser in addition to running relevant tests.
+- Provider secrets are user-supplied browser settings; avoid moving them into committed config or server assumptions.
