@@ -1,4 +1,5 @@
-import { DEFAULT_SYSTEM_PROMPTS } from "@/constants";
+import { DEFAULT_SYSTEM_PROMPTS, ResponseTag } from "@/constants";
+import { xml2json } from "@/lib/xml";
 import type { CharacterCard, ChatMessage } from "@/types";
 
 type PromptMessage = {
@@ -12,9 +13,6 @@ type BuildMessagesOptions = {
   lbEntries?: string[];
   systemPrompts?: string[];
 };
-
-const tagEnd = "(?:\\]|】)";
-const openBracket = "(?:\\[|【)";
 
 export function buildMessages({
   messages = [],
@@ -99,31 +97,30 @@ export function buildHistoryMessages(messages: unknown): ChatMessage[] {
   }));
 }
 
-export function parseChoices(content: string): string[] {
-  const raw = parseTag(content, "CHOICES");
-  if (!raw) return [];
+const RESPONSE_TAGS = Object.values(ResponseTag);
 
+export function resolveChoices(raw: string): string[] {
   return raw
     .split(/\n/)
     .map((line) => line.trim())
-    .filter((line) => /^[A-Z]:\s/.test(line))
-    .map((line) => line.slice(2).trim());
+    .filter((line) => line.length > 0);
+}
+
+export function parseChoices(content: string): string[] {
+  const raw = parseTag(content, ResponseTag.CHOICES);
+  return raw ? resolveChoices(raw) : [];
 }
 
 export function parseSummary(content: string): string | null {
-  return parseTag(content, "SUMMARY");
+  return parseTag(content, ResponseTag.SUMMARY);
 }
 
 export function parseStatus(content: string): string | null {
-  return parseTag(content, "STATUS");
+  return parseTag(content, ResponseTag.STATUS);
 }
 
 export function parseContent(content: string): string {
-  const extracted = parseTag(content, "CONTENT");
-  if (extracted) return extracted;
-  return ["CHOICES", "SUMMARY", "STATUS"]
-    .reduce((current, tag) => current.replace(tagPattern(tag, "g"), ""), content)
-    .trim();
+  return parseXmlResponse(content)[ResponseTag.CONTENT][0] ?? content;
 }
 
 export type ParsedMessage = {
@@ -134,31 +131,26 @@ export type ParsedMessage = {
 };
 
 export function parseMessage(content: string): ParsedMessage {
-  const choices = parseChoices(content);
-  const summary = parseSummary(content);
-  const status = parseStatus(content);
-  const body = parseContent(content);
-  return { body, choices, summary, status };
+  const parsed = parseXmlResponse(content);
+  return {
+    body: parsed[ResponseTag.CONTENT][0] ?? content,
+    choices: resolveChoices(parsed[ResponseTag.CHOICES][0] ?? ""),
+    summary: parsed[ResponseTag.SUMMARY][0] ?? null,
+    status: parsed[ResponseTag.STATUS][0] ?? null,
+  };
 }
 
 function compressContent(content: string): string {
-  const summary = parseSummary(content);
-  if (summary) return summary;
-  return ["CONTENT", "CHOICES", "SUMMARY", "STATUS"]
-    .reduce((current, tag) => current.replace(tagPattern(tag, "g"), ""), content)
-    .trim();
+  const parsed = parseXmlResponse(content);
+  return parsed[ResponseTag.SUMMARY][0] ?? parsed[ResponseTag.CONTENT][0] ?? content;
 }
 
-function parseTag(content: string, tag: string): string | null {
-  const match = content.match(tagPattern(tag));
-  return match ? match[1].trim() : null;
+function parseTag(content: string, tag: ResponseTag): string | null {
+  return parseXmlResponse(content)[tag][0] ?? null;
 }
 
-function tagPattern(tag: string, flags?: string): RegExp {
-  return new RegExp(
-    `${openBracket}${tag}${tagEnd}([\\s\\S]*?)(${openBracket}/${tag}${tagEnd}|$)`,
-    flags,
-  );
+function parseXmlResponse(content: string) {
+  return xml2json(content, RESPONSE_TAGS);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

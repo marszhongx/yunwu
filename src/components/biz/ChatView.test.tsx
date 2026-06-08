@@ -184,7 +184,7 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
             id: "assistant-1",
             role: "assistant",
             content:
-              "正文\n【SUMMARY】摘要【/SUMMARY】\n[STATUS]状态[/STATUS]\n[CHOICES]\nA: 向左走\nB: 向右走\nC: 原地等待\nD: 呼叫同伴\n[/CHOICES]",
+              "<content>正文</content>\n<summary>摘要</summary>\n<status>状态</status>\n<choices>\nA: 向左走\nB: 向右走\nC: 原地等待\nD: 呼叫同伴\n</choices>",
           }),
         ],
       })}
@@ -196,7 +196,7 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
   expect(screen.getByText(/摘要/)).toBeInTheDocument();
   expect(screen.getByText(/状态/)).toBeInTheDocument();
   expect(screen.queryByText(/SUMMARY|STATUS|CHOICES/)).not.toBeInTheDocument();
-  expect(screen.getByText("向左走")).toBeInTheDocument();
+  expect(screen.getByText("A: 向左走")).toBeInTheDocument();
 });
 
 test("shows a visual image loading bubble while generating an image", async () => {
@@ -236,7 +236,7 @@ test("hides inactive assistant choices instead of disabling them", () => {
           message({
             id: "assistant-1",
             role: "assistant",
-            content: "正文\n[CHOICES]\nA: 向左走\nB: 向右走\n[/CHOICES]",
+            content: "正文\n<choices>\nA: 向左走\nB: 向右走\n</choices>",
           }),
           message({ id: "user-1", role: "user", content: "继续前进" }),
         ],
@@ -245,7 +245,7 @@ test("hides inactive assistant choices instead of disabling them", () => {
     />,
   );
 
-  expect(screen.queryByRole("button", { name: "向左走" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "A: 向左走" })).not.toBeInTheDocument();
 });
 
 test("keeps assistant choices enabled when image messages follow", async () => {
@@ -268,7 +268,7 @@ test("keeps assistant choices enabled when image messages follow", async () => {
           message({
             id: "assistant-1",
             role: "assistant",
-            content: "正文\n[CHOICES]\nA: 向左走\nB: 向右走\n[/CHOICES]",
+            content: "正文\n<choices>\nA: 向左走\nB: 向右走\n</choices>",
           }),
           message({
             id: "image-1",
@@ -281,12 +281,12 @@ test("keeps assistant choices enabled when image messages follow", async () => {
     />,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "向左走" }));
+  fireEvent.click(screen.getByRole("button", { name: "A: 向左走" }));
 
   await waitFor(() =>
     expect(chats.addMessage).toHaveBeenNthCalledWith(1, "chat-1", {
       role: "user",
-      content: "向左走",
+      content: "A: 向左走",
     }),
   );
 });

@@ -5,9 +5,12 @@ import {
   buildMessages,
   normalizeMessage,
   normalizeMessages,
+  parseChoices,
+  parseMessage,
   parseStatus,
   parseSummary,
   parseContent,
+  resolveChoices,
 } from "@/lib/messages";
 
 import type { ChatMessage, CharacterCard } from "@/types";
@@ -23,7 +26,7 @@ describe("messages domain", () => {
 
     const messages: ChatMessage[] = [
       { id: "u1", role: "user", content: "推门进入" },
-      { id: "a1", role: "assistant", content: "门后传来风声[STATUS]身体：无[/STATUS]" },
+      { id: "a1", role: "assistant", content: "门后传来风声<status>身体：无</status>" },
     ];
 
     const result = buildMessages({
@@ -45,7 +48,7 @@ describe("messages domain", () => {
       { role: "system", content: "雾都常年笼罩在迷雾中。" },
       { role: "system", content: "你：你好\n旁白：雾气回应了你。" },
       { role: "user", content: "推门进入" },
-      { role: "assistant", content: "门后传来风声" },
+      { role: "assistant", content: "门后传来风声<status>身体：无</status>" },
     ]);
   });
 
@@ -69,21 +72,21 @@ describe("messages domain", () => {
         id: "a1",
         role: "assistant",
         content:
-          "[CONTENT]旧正文[/CONTENT][SUMMARY]主角进入大厅[/SUMMARY][STATUS]身体：无[/STATUS]",
+          "<content>旧正文</content><summary>主角进入大厅</summary><status>身体：无</status>",
       },
       { id: "u2", role: "user", content: "查看四周" },
       {
         id: "a2",
         role: "assistant",
         content:
-          "[CONTENT]中篇正文[/CONTENT][SUMMARY]发现宝箱[/SUMMARY][STATUS]身体：疲惫[/STATUS]",
+          "<content>中篇正文</content><summary>发现宝箱</summary><status>身体：疲惫</status>",
       },
       { id: "u3", role: "user", content: "打开宝箱" },
       {
         id: "a3",
         role: "assistant",
         content:
-          "[CONTENT]最新正文[/CONTENT][SUMMARY]获得钥匙[/SUMMARY][STATUS]身体：良好[/STATUS]",
+          "<content>最新正文</content><summary>获得钥匙</summary><status>身体：良好</status>",
       },
     ]);
 
@@ -95,6 +98,23 @@ describe("messages domain", () => {
       { id: "u3", role: "user", content: "打开宝箱" },
       { id: "a3", role: "assistant", content: "最新正文" },
     ]);
+  });
+
+  it("buildHistoryMessages keeps older assistant content when summary is missing", () => {
+    const result = buildHistoryMessages([
+      { id: "u1", role: "user", content: "继续前进" },
+      {
+        id: "a1",
+        role: "assistant",
+        content: "<content>没有摘要的旧正文</content><status>身体：无</status>",
+      },
+      { id: "u2", role: "user", content: "查看四周" },
+      { id: "a2", role: "assistant", content: "<content>中篇正文</content>" },
+      { id: "u3", role: "user", content: "打开宝箱" },
+      { id: "a3", role: "assistant", content: "<content>最新正文</content>" },
+    ]);
+
+    expect(result[1]?.content).toBe("没有摘要的旧正文");
   });
 
   it("normalizeMessages drops image role objects entirely", () => {
@@ -121,21 +141,75 @@ describe("messages domain", () => {
     });
   });
 
-  it("parseSummary and parseStatus extract tags", () => {
-    expect(parseSummary("正文【SUMMARY】雾散了【/SUMMARY】结尾")).toBe("雾散了");
-    expect(parseStatus("正文[STATUS]身体：疲惫\n地点：驿站[/STATUS]结尾")).toBe(
+  it("parseSummary and parseStatus extract XML tags", () => {
+    expect(parseSummary("正文<summary>雾散了</summary>结尾")).toBe("雾散了");
+    expect(parseStatus("正文<status>身体：疲惫\n地点：驿站</status>结尾")).toBe(
       "身体：疲惫\n地点：驿站",
     );
   });
 
-  it("parseContent extracts CONTENT tag", () => {
-    expect(parseContent("[CONTENT]正文内容[/CONTENT][SUMMARY]摘要[/SUMMARY]")).toBe("正文内容");
+  it("parseContent extracts content XML tag", () => {
+    expect(parseContent("<content>正文内容</content><summary>摘要</summary>")).toBe("正文内容");
   });
 
-  it("parseContent falls back to stripping tags when no CONTENT tag", () => {
+  it("parseContent falls back to original text when no content tag", () => {
     const content =
-      "正文[CHOICES]A: 走[/CHOICES]\n中段【SUMMARY】摘要【/SUMMARY】\n末尾[STATUS]身体：无[/STATUS]";
+      "正文<choices>A: 走</choices>\n中段<summary>摘要</summary>\n末尾<status>身体：无</status>";
 
-    expect(parseContent(content)).toBe("正文\n中段\n末尾");
+    expect(parseContent(content)).toBe(content);
+  });
+
+  it("parseChoices extracts choices from XML tag", () => {
+    expect(parseChoices("<choices>\nA: 走近\nB: 等待\n</choices>")).toEqual([
+      "A: 走近",
+      "B: 等待",
+    ]);
+  });
+
+  it("stops an unclosed XML tag before the next known response tag", () => {
+    const parsed = parseMessage(
+      "<content>正文<summary>摘要<status>状态</status><choices>\nA: 前进\n</choices>",
+    );
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual(["A: 前进"]);
+  });
+
+  it("handles missing XML tags without dropping available content", () => {
+    const parsed = parseMessage("<content>只有正文</content>");
+
+    expect(parsed.body).toBe("只有正文");
+    expect(parsed.summary).toBeNull();
+    expect(parsed.status).toBeNull();
+    expect(parsed.choices).toEqual([]);
+  });
+
+  it("uses the first repeated XML tag block", () => {
+    expect(parseSummary("<summary>第一次</summary><summary>第二次</summary>")).toBe("第一次");
+    expect(parseChoices("<choices>\nA: 第一次\n</choices><choices>\nA: 第二次\n</choices>")).toEqual([
+      "A: 第一次",
+    ]);
+  });
+
+  it("resolveChoices returns trimmed non-empty lines", () => {
+    expect(resolveChoices("A: 走近\nB: 等待\nC: 逃跑")).toEqual([
+      "A: 走近",
+      "B: 等待",
+      "C: 逃跑",
+    ]);
+  });
+
+  it("resolveChoices returns empty array for empty string", () => {
+    expect(resolveChoices("")).toEqual([]);
+  });
+
+  it("uses original text as body fallback when content tag is missing", () => {
+    const content = "<summary>第一次</summary>第二次</summary>";
+    const parsed = parseMessage(content);
+
+    expect(parsed.summary).toBe("第一次");
+    expect(parsed.body).toBe(content);
   });
 });

@@ -58,7 +58,7 @@ describe("IndexedDB data services", () => {
     });
     const assistantMessage = await addMessage(chat.id, {
       role: "assistant",
-      content: "见到了你 [SUMMARY]met[/SUMMARY] [STATUS]身体：健康[/STATUS]",
+      content: "见到了你 <summary>met</summary> <status>身体：健康</status>",
     });
 
     expect(imageMessage.role).toBe("image");
@@ -94,11 +94,11 @@ describe("IndexedDB data services", () => {
 
     await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]first[/SUMMARY] [STATUS]旧[/STATUS]",
+      content: "<summary>first</summary> <status>旧</status>",
     });
     await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]second[/SUMMARY] 没有状态标签",
+      content: "<summary>second</summary> 没有状态标签",
     });
 
     const updated = await getChat(chat.id);
@@ -113,7 +113,7 @@ describe("IndexedDB data services", () => {
 
     await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]old[/SUMMARY] [STATUS]旧[/STATUS]",
+      content: "<summary>old</summary> <status>旧</status>",
     });
     await addMessage(chat.id, {
       role: "assistant",
@@ -131,11 +131,11 @@ describe("IndexedDB data services", () => {
     const chat = await createChat({ charId: character.id });
     const first = await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]old[/SUMMARY] [STATUS]旧[/STATUS]",
+      content: "<summary>old</summary> <status>旧</status>",
     });
     const second = await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]new[/SUMMARY] [STATUS]新[/STATUS]",
+      content: "<summary>new</summary> <status>新</status>",
     });
 
     expect((await getChat(chat.id))?.summaries).toEqual(["old", "new"]);
@@ -154,7 +154,7 @@ describe("IndexedDB data services", () => {
     });
     const fourth = await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]newest[/SUMMARY] [STATUS]最新[/STATUS]",
+      content: "<summary>newest</summary> <status>最新</status>",
     });
 
     await deleteMessage(chat.id, fourth.id);
@@ -180,7 +180,7 @@ describe("IndexedDB data services", () => {
     const chat = await createChat({ charId: character.id });
     const message = await addMessage(chat.id, {
       role: "assistant",
-      content: "[SUMMARY]old[/SUMMARY] [STATUS]旧[/STATUS]",
+      content: "<summary>old</summary> <status>旧</status>",
     });
 
     await updateMessage(chat.id, message.id, { content: "没有摘要和状态标签" });
