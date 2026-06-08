@@ -30,7 +30,10 @@ class LooseXmlParser<T extends string> {
 
     while (index < content.length) {
       const token = this.readTagToken(content, index);
-      if (!token) break;
+      if (!token) {
+        this.text(content.slice(index));
+        break;
+      }
 
       this.text(content.slice(index, token.start));
 

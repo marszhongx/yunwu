@@ -152,6 +152,58 @@ describe("messages domain", () => {
     expect(parseContent("<content>正文内容</content><summary>摘要</summary>")).toBe("正文内容");
   });
 
+  it("parseContent extracts streaming content before the content tag is closed", () => {
+    expect(parseContent("<content>正文内容")).toBe("正文内容");
+  });
+
+  it("parses streaming response tags before they are closed", () => {
+    expect(parseSummary("<summary>摘要")).toBe("摘要");
+    expect(parseStatus("<status>状态")).toBe("状态");
+    expect(parseChoices("<choices>\nA: 前进")).toEqual(["A: 前进"]);
+  });
+
+  it("parses streaming choices when cut off on the second choice", () => {
+    expect(parseChoices("<choices>\nA: 前进\nB: 等")).toEqual(["A: 前进", "B: 等"]);
+  });
+
+  it("parseMessage keeps completed tags and current unclosed content tag", () => {
+    const parsed = parseMessage("<summary>摘要</summary><status>状态</status><content>正文");
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual([]);
+  });
+
+  it("parseMessage keeps completed tags and current unclosed summary tag", () => {
+    const parsed = parseMessage("<content>正文</content><summary>摘要");
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBeNull();
+    expect(parsed.choices).toEqual([]);
+  });
+
+  it("parseMessage keeps completed tags and current unclosed status tag", () => {
+    const parsed = parseMessage("<content>正文</content><summary>摘要</summary><status>状态");
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual([]);
+  });
+
+  it("parseMessage keeps completed tags and current unclosed choices tag", () => {
+    const parsed = parseMessage(
+      "<content>正文</content><summary>摘要</summary><status>状态</status><choices>\nA: 前进\nB: 等",
+    );
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual(["A: 前进", "B: 等"]);
+  });
+
   it("parseContent falls back to original text when no content tag", () => {
     const content =
       "正文<choices>A: 走</choices>\n中段<summary>摘要</summary>\n末尾<status>身体：无</status>";

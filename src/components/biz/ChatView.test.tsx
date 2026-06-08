@@ -77,16 +77,16 @@ test("adds user and assistant messages and displays streamed text", async () => 
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
     .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
   vi.mocked(chats.updateMessage).mockResolvedValue(
-    message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
+    message({ id: "assistant-1", role: "assistant", content: "<content>雾来了</content>" }),
   );
   let finishStream: (() => void) | undefined;
   vi.mocked(ai.streamAssistantText).mockImplementation(
     ({ onText }) =>
       new Promise((resolve) => {
-        onText?.("雾");
+        onText?.("<content>雾");
         finishStream = () => {
-          onText?.("来了");
-          resolve({ text: "雾来了" });
+          onText?.("来了</content>");
+          resolve({ text: "<content>雾来了</content>" });
         };
       }),
   );
@@ -104,7 +104,7 @@ test("adds user and assistant messages and displays streamed text", async () => 
   });
   await waitFor(() =>
     expect(chats.updateMessage).toHaveBeenCalledWith("chat-1", "assistant-1", {
-      content: "雾来了",
+      content: "<content>雾来了</content>",
     }),
   );
   expect(chats.addMessage).toHaveBeenNthCalledWith(1, "chat-1", {
