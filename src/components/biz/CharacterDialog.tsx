@@ -6,7 +6,9 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { exportToJson, importFromJson } from "@/lib/export";
+import { fromCharaCardV2, toCharaCardV2 } from "@/lib/charaCardV2";
+import { downloadBlob, exportToJson, importFromJson, safeFilename } from "@/lib/export";
+import { fileToDataUrl, readCharaCardFromPng, writeCharaCardToPng } from "@/lib/pngMetadata";
 import { cn } from "@/lib/utils";
 import {
   createCharacter,
@@ -215,16 +217,28 @@ export function CharacterDialog({
     onChanged?.();
   }
 
-  function handleExport() {
+  function handleExportJson() {
     const character = characters.find((c) => c.id === selectedId);
     if (!character) return;
 
-    exportToJson(character, `${character.name}.json`);
+    exportToJson(toCharaCardV2(character), safeFilename(character.name, ".json"));
+  }
+
+  async function handleExportPng() {
+    const character = characters.find((c) => c.id === selectedId);
+    if (!character) return;
+
+    try {
+      const png = await writeCharaCardToPng(toCharaCardV2(character, { includeAvatar: false }), character.avatar);
+      downloadBlob(png, safeFilename(character.name, ".png"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "导出失败");
+    }
   }
 
   async function handleImport(file: File) {
     try {
-      const data = await importFromJson<Partial<CharacterCard>>(file);
+      const data = await importCharacter(file);
       await createCharacter(data);
       await loadCharacters();
       onChanged?.();
@@ -232,6 +246,15 @@ export function CharacterDialog({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "导入失败");
     }
+  }
+
+  async function importCharacter(file: File): Promise<Partial<CharacterCard>> {
+    if (isPngFile(file)) {
+      const raw = await readCharaCardFromPng(file);
+      return { ...fromCharaCardV2(raw, file.name), avatar: await fileToDataUrl(file) };
+    }
+
+    return fromCharaCardV2(await importFromJson<unknown>(file), file.name);
   }
 
   const showList = characters.length > 0 || creating || selectedId;
@@ -249,8 +272,11 @@ export function CharacterDialog({
           <DialogFooter>
             {selectedId ? (
               <>
-                <Button type="button" variant="outline" onClick={handleExport}>
-                  导出
+                <Button type="button" variant="outline" onClick={handleExportJson}>
+                  导出 JSON
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void handleExportPng()}>
+                  导出 PNG
                 </Button>
                 <Button
                   type="button"
@@ -301,7 +327,7 @@ export function CharacterDialog({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json"
+              accept=".json,.png,application/json,image/png"
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -462,7 +488,7 @@ export function CharacterDialog({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json"
+            accept=".json,.png,application/json,image/png"
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -623,11 +649,15 @@ function entriesFromForm(entries: LorebookEntryForm[]): LorebookEntry[] {
         .filter(Boolean);
       const content = entry.content.trim();
 
-      if (keys.length === 0 || !content) {
+      if (!content) {
         return null;
       }
 
       return { keys, content, enabled: entry.enabled };
     })
     .filter((entry): entry is LorebookEntry => entry !== null);
+}
+
+function isPngFile(file: File): boolean {
+  return file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
 }

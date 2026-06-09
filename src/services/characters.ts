@@ -51,6 +51,8 @@ function normalizeCharacter(input: CharacterInput): CharacterCard {
     tags: textArray(input.tags),
     creator: text(input.creator),
     character_version: text(input.character_version),
+    avatar: text(input.avatar),
+    extensions: record(input.extensions),
     createdAt: text(input.createdAt),
     updatedAt: text(input.updatedAt),
   };
@@ -58,6 +60,10 @@ function normalizeCharacter(input: CharacterInput): CharacterCard {
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
 }
 
 function textArray(value: unknown): string[] {

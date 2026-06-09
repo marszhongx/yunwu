@@ -66,6 +66,8 @@ export type CharacterCard = {
   tags: string[];
   creator: string;
   character_version: string;
+  avatar?: string;
+  extensions?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
 };
