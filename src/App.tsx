@@ -108,12 +108,14 @@ export default function App() {
 
   return (
     <>
-      <div className="flex h-screen bg-background text-foreground">
-        <aside className="hidden w-72 shrink-0 flex-col border-r border-border/70 bg-card/50 p-4 lg:flex">
-          <h1 className="mb-4 text-lg font-semibold">
-            云雾聊天室
+      <div className="flex h-screen overflow-hidden bg-background/80 text-foreground">
+        <aside className="hidden w-80 shrink-0 flex-col border-r border-white/10 bg-card/65 p-5 shadow-2xl shadow-black/10 backdrop-blur-xl lg:flex">
+          <h1 className="mb-5 text-xl font-semibold tracking-tight">
+            <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+              云雾聊天室
+            </span>
             {activeProviderName ? (
-              <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+              <span className="ml-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 align-middle text-xs font-medium text-primary shadow-sm shadow-primary/10">
                 {activeProviderName}
               </span>
             ) : null}
@@ -123,7 +125,7 @@ export default function App() {
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-2 border-b border-border/70 px-3 py-2 lg:hidden">
+          <header className="flex items-center gap-2 border-b border-white/10 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-xl lg:hidden">
             <Button
               size="icon"
               variant="ghost"
@@ -133,9 +135,9 @@ export default function App() {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <span className="text-sm font-semibold">云雾聊天室</span>
+            <span className="text-sm font-semibold tracking-tight">云雾聊天室</span>
             {activeProviderName ? (
-              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 {activeProviderName}
               </span>
             ) : null}
@@ -149,7 +151,7 @@ export default function App() {
             />
           </main>
         </div>
-        <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-border/70 bg-card/50 p-1.5 lg:p-2">
+        <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-white/10 bg-card/65 p-1.5 shadow-2xl shadow-black/10 backdrop-blur-xl lg:p-2">
           <Button
             size="icon"
             variant="ghost"
@@ -212,12 +214,17 @@ export default function App() {
           </Button>
         </nav>
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="w-72 p-4 lg:hidden">
+          <SheetContent
+            side="left"
+            className="w-80 border-white/10 bg-card/95 p-5 backdrop-blur-xl lg:hidden"
+          >
             <SheetTitle className="sr-only">侧栏</SheetTitle>
-            <h1 className="mb-4 text-lg font-semibold">
-              云雾聊天室
+            <h1 className="mb-5 text-xl font-semibold tracking-tight">
+              <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+                云雾聊天室
+              </span>
               {activeProviderName ? (
-                <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                <span className="ml-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 align-middle text-xs font-medium text-primary">
                   {activeProviderName}
                 </span>
               ) : null}

@@ -158,10 +158,20 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
   if (!chat) {
     return (
-      <div className="flex h-full w-full min-h-[50vh] flex-col items-center justify-center px-6 text-center">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">还没有对话</h2>
+      <div className="flex h-full min-h-[50vh] w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-card/45 px-6 text-center shadow-2xl shadow-black/10 backdrop-blur-xl">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-lg shadow-primary/10">
+          <ScrollText className="h-7 w-7" />
+        </div>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">还没有对话</h2>
         <p className="mt-2 text-sm text-muted-foreground">先创建一个对话，再继续角色扮演。</p>
-        <Button type="button" className="mt-6" onClick={onCreateChat}>
+        <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+          角色状态、剧情摘要和世界书会在左侧同步展示。
+        </p>
+        <Button
+          type="button"
+          className="mt-6 rounded-full px-5 shadow-lg shadow-primary/20"
+          onClick={onCreateChat}
+        >
           新建对话
         </Button>
       </div>
@@ -170,8 +180,8 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
   return (
     <section className="flex h-full min-h-[60vh] w-full flex-col gap-4">
-      <ScrollArea className="min-h-0 flex-1 rounded-lg border border-border/70 bg-card/40 p-4">
-        <div className="space-y-4 pr-4">
+      <ScrollArea className="min-h-0 flex-1 rounded-3xl border border-white/10 bg-card/45 p-3 shadow-2xl shadow-black/10 backdrop-blur-xl sm:p-4">
+        <div className="space-y-5 pr-3 sm:pr-4">
           {messages.map((message, index) => (
             <MessageBubble
               key={message.id}
@@ -212,20 +222,21 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
-      <div className="flex items-end gap-2 rounded-lg border border-border/70 bg-card p-3 shadow-sm">
+      <div className="flex items-end gap-2 rounded-3xl border border-white/10 bg-card/80 p-2.5 shadow-xl shadow-black/10 backdrop-blur-xl sm:p-3">
         <Textarea
           value={draft}
           placeholder="输入行动，Ctrl/⌘ + Enter 发送"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isStreaming || isSending}
-          className="min-h-0 flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+          className="min-h-0 flex-1 resize-none border-0 bg-transparent px-3 shadow-none focus-visible:ring-0"
           rows={1}
         />
         <Button
           type="button"
           onClick={() => void sendMessage()}
           disabled={!draft.trim() || isStreaming || isSending}
+          className="rounded-full px-5 shadow-lg shadow-primary/20"
         >
           发送
         </Button>
@@ -256,7 +267,7 @@ function LoadingBubble({ label }: { label: string }) {
   return (
     <div className="group flex justify-start">
       <div className="max-w-[82%]">
-        <div className="whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-border/70 bg-card px-4 py-3 text-sm leading-7 text-card-foreground shadow-sm">
+        <div className="whitespace-pre-wrap rounded-3xl rounded-bl-md border border-white/10 bg-card/80 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-black/5 backdrop-blur">
           <LoadingDots label={label} />
         </div>
       </div>
@@ -305,7 +316,7 @@ function MessageBubble({
   if (isImage) {
     return (
       <div className="group flex justify-start">
-        <div className="max-w-[82%]">
+        <div className="max-w-[88%] sm:max-w-[82%]">
           {onDelete && (
             <div className="mb-1 flex gap-1 justify-start opacity-0 transition-opacity group-hover:opacity-100">
               <button
@@ -316,20 +327,24 @@ function MessageBubble({
                   a.download = `image-${message.id}.png`;
                   a.click();
                 }}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <Download className="h-3 w-3" />
               </button>
               <button
                 type="button"
                 onClick={onDelete}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-destructive-foreground"
               >
                 <X className="h-3 w-3" />
               </button>
             </div>
           )}
-          <img src={text} alt="生成的图片" className="max-w-full rounded-2xl shadow-sm" />
+          <img
+            src={text}
+            alt="生成的图片"
+            className="max-w-full rounded-3xl border border-white/10 shadow-xl shadow-black/10"
+          />
         </div>
       </div>
     );
@@ -343,7 +358,7 @@ function MessageBubble({
 
   return (
     <div className={cn("group flex", isUser ? "justify-end" : "justify-start")}>
-      <div className="max-w-[82%]">
+      <div className="max-w-[88%] sm:max-w-[82%]">
         {onDelete && (
           <div
             className={cn(
@@ -356,7 +371,7 @@ function MessageBubble({
                 type="button"
                 onClick={onGenerateImage}
                 disabled={generatingImage}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
               >
                 {generatingImage ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -368,14 +383,14 @@ function MessageBubble({
             <button
               type="button"
               onClick={() => navigator.clipboard.writeText(bodyText)}
-              className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Copy className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={onDelete}
-              className="flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-destructive-foreground"
             >
               <X className="h-3 w-3" />
             </button>
@@ -383,10 +398,10 @@ function MessageBubble({
         )}
         <div
           className={cn(
-            "whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm",
+            "whitespace-pre-wrap rounded-3xl px-4 py-3 text-sm leading-7 shadow-lg shadow-black/5",
             isUser
-              ? "rounded-br-sm bg-primary text-primary-foreground"
-              : "rounded-bl-sm border border-border/70 bg-card text-card-foreground",
+              ? "rounded-br-md bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/15"
+              : "rounded-bl-md border border-white/10 bg-card/85 text-card-foreground backdrop-blur",
           )}
         >
           {loading ? (
@@ -415,7 +430,7 @@ function MessageBubble({
               <button
                 key={choice}
                 type="button"
-                className="max-w-full rounded-lg border border-border/70 bg-background px-3 py-1.5 text-left text-sm leading-7 text-foreground transition-colors hover:bg-accent"
+                className="max-w-full rounded-2xl border border-white/10 bg-card/70 px-3.5 py-2 text-left text-sm leading-7 text-foreground shadow-sm backdrop-blur transition-colors hover:border-primary/30 hover:bg-accent"
                 onClick={() => onChoice(choice)}
               >
                 {choice}

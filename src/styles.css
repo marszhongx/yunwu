@@ -28,54 +28,64 @@
 @variant dark (&:where(.dark *));
 
 :root {
-  --background: 222.2 84% 4.9%;
+  --background: 224 53% 7%;
   --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
+  --card: 224 42% 10%;
   --card-foreground: 210 40% 98%;
   --popover: 222.2 84% 4.9%;
   --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
+  --primary: 263 86% 73%;
+  --primary-foreground: 260 45% 11%;
+  --secondary: 222 33% 16%;
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
+  --muted: 222 33% 16%;
+  --muted-foreground: 218 18% 70%;
+  --accent: 255 43% 22%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
-  --radius: 0.75rem;
+  --border: 222 29% 20%;
+  --input: 222 29% 20%;
+  --ring: 263 86% 73%;
+  --radius: 1rem;
 }
 
 .light {
-  --background: 0 0% 100%;
+  --background: 220 60% 98%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
+  --primary: 257 76% 58%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
+  --secondary: 222 58% 95%;
   --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
+  --muted: 222 58% 95%;
+  --muted-foreground: 222 18% 43%;
+  --accent: 252 82% 96%;
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --border: 220 35% 89%;
+  --input: 220 35% 89%;
+  --ring: 257 76% 58%;
 }
 
 body {
   margin: 0;
-  background: hsl(var(--background));
+  background:
+    radial-gradient(circle at top left, hsl(var(--primary) / 0.18), transparent 34rem),
+    radial-gradient(circle at bottom right, hsl(196 86% 64% / 0.12), transparent 32rem),
+    hsl(var(--background));
   color: hsl(var(--foreground));
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+}
+
+* {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
 }
 
 @keyframes typing-dots {
