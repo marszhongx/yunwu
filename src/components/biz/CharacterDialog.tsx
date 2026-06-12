@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { Loader2, Plus, Sparkles, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { getActiveProvider } from "@/services/settings";
 import type { CharacterCard, LorebookEntry } from "@/types";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
 import { SaveButton } from "@/components/biz/SaveButton";
+import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type CharacterDialogProps = {
   open: boolean;
@@ -112,6 +113,13 @@ export function CharacterDialog({
   function startCreate() {
     setSelectedId(null);
     setCreating(true);
+    setForm(emptyForm);
+    setGenerationDescription("");
+  }
+
+  function backToList() {
+    setSelectedId(null);
+    setCreating(false);
     setForm(emptyForm);
     setGenerationDescription("");
   }
@@ -257,16 +265,16 @@ export function CharacterDialog({
     return fromCharaCardV2(await importFromJson<unknown>(file), file.name);
   }
 
-  const showList = characters.length > 0 || creating || selectedId;
   const isEditing = creating || selectedId !== null;
+  const dialogTitle = creating ? "新建角色" : selectedId ? "修改角色" : "角色管理";
 
   return (
     <ConfigDialogLayout
       open={open}
       onOpenChange={onOpenChange}
-      title="角色管理"
-      description="创建、编辑或删除角色卡。"
-      rightScroll={isEditing}
+      title={dialogTitle}
+      titleAction={isEditing ? <StepBackButton onClick={backToList} /> : null}
+      rightScroll
       rightFooter={
         isEditing ? (
           <DialogFooter>
@@ -301,43 +309,6 @@ export function CharacterDialog({
             </Button>
             <SaveButton onSave={() => void saveCharacter()} disabled={isGenerating} />
           </DialogFooter>
-        ) : null
-      }
-      left={
-        showList ? (
-          <div className="space-y-2">
-            {characters.map((character) => (
-              <CharacterListButton
-                key={character.id}
-                active={selectedId === character.id}
-                label={character.name}
-                onClick={() => editCharacter(character)}
-              />
-            ))}
-            <CharacterListButton active={creating} dashed label="新建角色" onClick={startCreate} />
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2 px-3 py-2 font-normal"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="size-4" />
-              导入角色
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,.png,application/json,image/png"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
-                  void handleImport(file);
-                  event.target.value = "";
-                }
-              }}
-            />
-          </div>
         ) : null
       }
     >
@@ -467,45 +438,94 @@ export function CharacterDialog({
           />
         </>
       ) : (
-        <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
-          <h3 className="text-base font-medium">
-            {characters.length === 0 ? "还没有角色" : "选择一个角色"}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {characters.length === 0
-              ? "先创建一个角色卡，再用它开启对话。"
-              : "从左侧选择角色进行编辑，或创建一个新角色。"}
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button type="button" onClick={startCreate}>
-              新建角色
-            </Button>
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="mr-2 size-4" />
-              导入角色
-            </Button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,.png,application/json,image/png"
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                void handleImport(file);
-                event.target.value = "";
-              }
-            }}
-          />
-        </div>
+        <CharacterList
+          characters={characters}
+          fileInputRef={fileInputRef}
+          onEdit={editCharacter}
+          onCreate={startCreate}
+          onImport={handleImport}
+        />
       )}
     </ConfigDialogLayout>
   );
 }
 
+type CharacterListProps = {
+  characters: CharacterCard[];
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  onEdit: (character: CharacterCard) => void;
+  onCreate: () => void;
+  onImport: (file: File) => Promise<void>;
+};
+
+function CharacterList({
+  characters,
+  fileInputRef,
+  onEdit,
+  onCreate,
+  onImport,
+}: CharacterListProps) {
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".json,.png,application/json,image/png"
+      className="hidden"
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          void onImport(file);
+          event.target.value = "";
+        }
+      }}
+    />
+  );
+
+  if (characters.length === 0) {
+    return (
+      <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+        <h3 className="text-base font-medium">还没有角色</h3>
+        <p className="mt-2 text-sm text-muted-foreground">先创建一个角色卡，再用它开启对话。</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <Button type="button" onClick={onCreate}>
+            新建角色
+          </Button>
+          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="mr-2 size-4" />
+            导入角色
+          </Button>
+        </div>
+        {fileInput}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {characters.map((character) => (
+        <CharacterListButton
+          key={character.id}
+          label={character.name}
+          onClick={() => onEdit(character)}
+        />
+      ))}
+      <CharacterListButton dashed label="新建角色" onClick={onCreate} />
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full gap-2 px-3 py-2 font-normal"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Upload className="size-4" />
+        导入角色
+      </Button>
+      {fileInput}
+    </div>
+  );
+}
+
 type CharacterListButtonProps = {
-  active: boolean;
+  active?: boolean;
   dashed?: boolean;
   label: string;
   onClick: () => void;

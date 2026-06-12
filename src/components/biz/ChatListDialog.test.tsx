@@ -39,12 +39,11 @@ test("loads chats, characters, and lorebooks when opened and creates a chat", as
 
   fireEvent.click(screen.getByRole("button", { name: "新建对话" }));
 
-  expect(screen.getByRole("button", { name: "编辑 新建对话" })).toHaveAttribute(
-    "aria-current",
-    "true",
-  );
+  expect(screen.getByRole("heading", { name: "新建对话" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "返回列表" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "编辑 新建对话" })).not.toBeInTheDocument();
   expect(screen.getByLabelText("选择角色")).toBeInTheDocument();
-  fireEvent.click(screen.getAllByRole("button", { name: "新建对话" })[0]);
+  fireEvent.click(screen.getByRole("button", { name: "新建对话" }));
 
   await waitFor(() =>
     expect(chats.createChat).toHaveBeenCalledWith({
@@ -61,8 +60,8 @@ test("shows a selection empty state when chats exist but none is selected", asyn
   vi.mocked(characters.listCharacters).mockResolvedValue([]);
   render(<ChatListDialog open onOpenChange={() => {}} onSelectChat={() => {}} />);
 
-  expect(await screen.findByText("选择一个对话")).toBeInTheDocument();
-  expect(screen.getByText("从左侧选择对话进行管理，或创建一个新对话。")).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: "编辑 旅途" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "编辑 新建对话" })).toBeInTheDocument();
   expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
 });
 
@@ -89,13 +88,16 @@ test("renames and deletes existing chats", async () => {
   render(<ChatListDialog open onOpenChange={() => {}} onSelectChat={() => {}} />);
 
   fireEvent.click(await screen.findByRole("button", { name: "编辑 旧标题" }));
+  expect(screen.getByRole("heading", { name: "修改对话" })).toBeInTheDocument();
   const titleInput = screen.getByLabelText("标题");
   fireEvent.change(titleInput, { target: { value: "新标题" } });
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(chats.renameChat).toHaveBeenCalledWith("chat-1", "新标题"));
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   expect(await screen.findByRole("button", { name: "编辑 新标题" })).toBeInTheDocument();
 
+  fireEvent.click(screen.getByRole("button", { name: "编辑 新标题" }));
   fireEvent.click(screen.getByRole("button", { name: "删除" }));
 
   await waitFor(() => expect(chats.deleteChat).toHaveBeenCalledWith("chat-1"));
@@ -148,8 +150,9 @@ test("shows the persisted trimmed title after rename", async () => {
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(chats.renameChat).toHaveBeenCalledWith("chat-1", "新标题"));
-  expect(await screen.findByRole("button", { name: "编辑 新标题" })).toBeInTheDocument();
   expect(screen.getByLabelText("标题")).toHaveValue("新标题");
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
+  expect(await screen.findByRole("button", { name: "编辑 新标题" })).toBeInTheDocument();
 });
 
 test("opens an existing chat", async () => {

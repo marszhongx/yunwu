@@ -56,10 +56,9 @@ test("shows an empty state before creating the first character", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: "新建角色" }));
 
-  expect(screen.getByRole("button", { name: "编辑 新建角色" })).toHaveAttribute(
-    "aria-current",
-    "true",
-  );
+  expect(screen.getByRole("heading", { name: "新建角色" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "返回列表" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "编辑 新建角色" })).not.toBeInTheDocument();
   expect(screen.getByLabelText("名称")).toHaveValue("");
 });
 
@@ -85,8 +84,8 @@ test("shows a selection empty state when characters exist but none is selected",
 
   render(<CharacterDialog open onOpenChange={() => {}} />);
 
-  expect(await screen.findByText("选择一个角色")).toBeInTheDocument();
-  expect(screen.getByText("从左侧选择角色进行编辑，或创建一个新角色。")).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: "编辑 云雀" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "编辑 新建角色" })).toBeInTheDocument();
   expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
 });
 
@@ -219,7 +218,9 @@ test("resets character generation description when starting or clearing creation
   fireEvent.change(screen.getByRole("textbox", { name: "AI 生成角色描述" }), {
     target: { value: "荒原信使" },
   });
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   fireEvent.click(screen.getByRole("button", { name: "编辑 云雀" }));
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   fireEvent.click(screen.getByRole("button", { name: "编辑 新建角色" }));
   expect(screen.getByRole("textbox", { name: "AI 生成角色描述" })).toHaveValue("");
 });
@@ -248,9 +249,11 @@ test("shows AI generation only while creating a character", async () => {
 
   fireEvent.click(await screen.findByRole("button", { name: "编辑 云雀" }));
 
+  expect(screen.getByRole("heading", { name: "修改角色" })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "云雀" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "编辑 云雀" })).toHaveAttribute("aria-current", "true");
-  expect(screen.getByRole("button", { name: "编辑 新建角色" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "返回列表" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "编辑 云雀" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "编辑 新建角色" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "删除" })).toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "AI 生成角色描述" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "立即生成" })).not.toBeInTheDocument();
@@ -394,6 +397,7 @@ test("creates, edits, and deletes characters without avatar inputs", async () =>
   );
   expect(onChanged).toHaveBeenCalledTimes(1);
 
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   fireEvent.click(await screen.findByRole("button", { name: "编辑 云雀" }));
   fireEvent.change(screen.getByLabelText("描述"), { target: { value: "远行者" } });
   fireEvent.click(screen.getByRole("button", { name: "保存" }));

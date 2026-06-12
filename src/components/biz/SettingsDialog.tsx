@@ -24,6 +24,7 @@ import {
 import { useAppState } from "@/store/appState";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
 import { SaveButton } from "@/components/biz/SaveButton";
+import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -72,6 +73,12 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
   function startCreate() {
     setSelectedId(null);
     setCreating(true);
+    setForm(emptyForm);
+  }
+
+  function backToList() {
+    setSelectedId(null);
+    setCreating(false);
     setForm(emptyForm);
   }
 
@@ -126,18 +133,18 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     onChanged?.();
   }
 
-  const showList = settings.providers.length > 0 || creating || selectedId;
   const apiPreview = openAIChatCompletionsUrl(form.baseUrl);
 
   const isEditing = creating || selectedId !== null;
+  const dialogTitle = creating ? "新建 Provider" : selectedId ? "修改 Provider" : "Provider 设置";
 
   return (
     <ConfigDialogLayout
       open={open}
       onOpenChange={onOpenChange}
-      title="Provider 设置"
-      description="管理本地 AI Provider 配置。"
-      rightScroll={isEditing}
+      title={dialogTitle}
+      titleAction={isEditing ? <StepBackButton onClick={backToList} /> : null}
+      rightScroll
       rightFooter={
         isEditing ? (
           <DialogFooter className="flex-wrap gap-2 sm:space-x-0">
@@ -158,111 +165,122 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
           </DialogFooter>
         ) : null
       }
-      left={
-        showList ? (
-          <div className="w-full min-w-0 space-y-2">
-            {settings.providers.map((provider) => (
-              <ProviderListButton
-                key={provider.id}
-                active={selectedId === provider.id}
-                current={provider.id === settings.activeProviderId}
-                label={provider.name}
-                onClick={() => editProvider(provider)}
-              />
-            ))}
-            <ProviderListButton
-              active={creating}
-              dashed
-              label="新建 Provider"
-              onClick={startCreate}
-            />
-          </div>
-        ) : null
-      }
     >
       {isEditing ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
-          <div>
-            <Label htmlFor="provider-type">类型</Label>
-            <Select value={form.type} onValueChange={updateProviderType}>
-              <SelectTrigger id="provider-type" aria-label="类型">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ProviderType.GEMINI}>Gemini</SelectItem>
-                <SelectItem value={ProviderType.CLAUDE}>Claude</SelectItem>
-                <SelectItem value={ProviderType.OPENAI}>OpenAI 兼容</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Field
-            label="API Key"
-            type="password"
-            value={form.apiKey}
-            onChange={(value) => updateField("apiKey", value)}
-          />
-          <Field
-            label="模型"
-            value={form.model}
-            onChange={(value) => updateField("model", value)}
-          />
-          <div className="space-y-2 md:col-span-2">
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
+            <div>
+              <Label htmlFor="provider-type">类型</Label>
+              <Select value={form.type} onValueChange={updateProviderType}>
+                <SelectTrigger id="provider-type" aria-label="类型">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ProviderType.GEMINI}>Gemini</SelectItem>
+                  <SelectItem value={ProviderType.CLAUDE}>Claude</SelectItem>
+                  <SelectItem value={ProviderType.OPENAI}>OpenAI 兼容</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Field
-              label="API 地址"
-              placeholder="https://api.example.com/v1"
-              value={form.baseUrl}
-              onChange={(value) => updateField("baseUrl", value)}
+              label="API Key"
+              type="password"
+              value={form.apiKey}
+              onChange={(value) => updateField("apiKey", value)}
             />
-            {form.type === ProviderType.OPENAI ? (
-              <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
-            ) : null}
+            <Field
+              label="模型"
+              value={form.model}
+              onChange={(value) => updateField("model", value)}
+            />
+            <div className="space-y-2 md:col-span-2">
+              <Field
+                label="API 地址"
+                placeholder="https://api.example.com/v1"
+                value={form.baseUrl}
+                onChange={(value) => updateField("baseUrl", value)}
+              />
+              {form.type === ProviderType.OPENAI ? (
+                <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+              ) : null}
+            </div>
+            <div className="md:col-span-2">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                <span className="mr-1.5 inline-block w-4 text-center text-sm leading-none">
+                  {showAdvanced ? "▼" : "▶"}
+                </span>
+                高级设置
+              </button>
+              {showAdvanced ? (
+                <div className="grid gap-4 pt-3 md:grid-cols-2">
+                  <Field
+                    label="最大输出 Token"
+                    type="number"
+                    placeholder="不填则使用模型默认值"
+                    value={form.maxTokens}
+                    onChange={(value) => updateField("maxTokens", value)}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
-          <div className="md:col-span-2">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              <span className="mr-1.5 inline-block w-4 text-center text-sm leading-none">
-                {showAdvanced ? "▼" : "▶"}
-              </span>
-              高级设置
-            </button>
-            {showAdvanced ? (
-              <div className="grid gap-4 pt-3 md:grid-cols-2">
-                <Field
-                  label="最大输出 Token"
-                  type="number"
-                  placeholder="不填则使用模型默认值"
-                  value={form.maxTokens}
-                  onChange={(value) => updateField("maxTokens", value)}
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
+        </>
       ) : (
-        <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
-          <h3 className="text-base font-medium">
-            {settings.providers.length === 0 ? "还没有 Provider" : "选择一个 Provider"}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {settings.providers.length === 0
-              ? "先创建一个 Provider，再开始调用 AI 模型。"
-              : "从左侧选择 Provider 进行编辑，或创建一个新 Provider。"}
-          </p>
-          <Button type="button" className="mt-4" onClick={startCreate}>
-            新建 Provider
-          </Button>
-        </div>
+        <ProviderList
+          providers={settings.providers}
+          activeProviderId={settings.activeProviderId}
+          onEdit={editProvider}
+          onCreate={startCreate}
+        />
       )}
     </ConfigDialogLayout>
   );
 }
 
+type ProviderListProps = {
+  providers: ProviderSettings[];
+  activeProviderId: string;
+  onEdit: (provider: ProviderSettings) => void;
+  onCreate: () => void;
+};
+
+function ProviderList({ providers, activeProviderId, onEdit, onCreate }: ProviderListProps) {
+  if (providers.length === 0) {
+    return (
+      <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+        <h3 className="text-base font-medium">还没有 Provider</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          先创建一个 Provider，再开始调用 AI 模型。
+        </p>
+        <Button type="button" className="mt-4" onClick={onCreate}>
+          新建 Provider
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-w-0 space-y-2">
+      {providers.map((provider) => (
+        <ProviderListButton
+          key={provider.id}
+          current={provider.id === activeProviderId}
+          label={provider.name}
+          onClick={() => onEdit(provider)}
+        />
+      ))}
+      <ProviderListButton dashed label="新建 Provider" onClick={onCreate} />
+    </div>
+  );
+}
+
 type ProviderListButtonProps = {
-  active: boolean;
+  active?: boolean;
   current?: boolean;
   dashed?: boolean;
   label: string;

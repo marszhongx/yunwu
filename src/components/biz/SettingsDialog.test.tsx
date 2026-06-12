@@ -76,10 +76,9 @@ test("shows an empty state before creating the first provider", () => {
 
   fireEvent.click(screen.getByRole("button", { name: "新建 Provider" }));
 
-  expect(screen.getByRole("button", { name: "编辑 新建 Provider" })).toHaveAttribute(
-    "aria-current",
-    "true",
-  );
+  expect(screen.getByRole("heading", { name: "新建 Provider" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "返回列表" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "编辑 新建 Provider" })).not.toBeInTheDocument();
   expect(screen.getByLabelText("名称")).toHaveValue("");
   expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("OpenAI 兼容");
   expect(screen.getByText("预览：https://api.openai.com/v1/chat/completions")).toBeInTheDocument();
@@ -101,12 +100,14 @@ test("creates, edits, activates, and deletes providers without image provider fi
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "编辑 Gemini 主线路" })).toBeInTheDocument(),
+    expect(onChanged).toHaveBeenCalledTimes(1),
   );
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
+  expect(screen.getByRole("button", { name: "编辑 Gemini 主线路" })).toBeInTheDocument();
   expect(screen.getByText("当前")).toBeInTheDocument();
-  expect(onChanged).toHaveBeenCalledTimes(1);
 
   fireEvent.click(screen.getByRole("button", { name: "编辑 Gemini 主线路" }));
+  expect(screen.getByRole("heading", { name: "修改 Provider" })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "Gemini 主线路" })).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("名称"), { target: { value: "OpenAI 兼容" } });
   fireEvent.change(screen.getByLabelText("API 地址"), {
@@ -119,9 +120,8 @@ test("creates, edits, activates, and deletes providers without image provider fi
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "编辑 OpenAI 兼容" })).toBeInTheDocument(),
+    expect(onChanged).toHaveBeenCalledTimes(2),
   );
-  expect(onChanged).toHaveBeenCalledTimes(2);
 
   fireEvent.click(screen.getByRole("button", { name: "激活" }));
   await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(3));
@@ -169,5 +169,5 @@ test("reloads providers from localStorage when dialog opens", () => {
 
   expect(screen.getByRole("button", { name: "编辑 Claude" })).toBeInTheDocument();
   expect(screen.getByText("当前")).toBeInTheDocument();
-  expect(screen.getByText("选择一个 Provider")).toBeInTheDocument();
+  expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
 });

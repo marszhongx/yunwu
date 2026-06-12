@@ -13,7 +13,8 @@ type ConfigDialogLayoutProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description?: string;
+  titleAction?: React.ReactNode;
   left?: React.ReactNode;
   rightScroll?: boolean;
   rightFooter?: React.ReactNode;
@@ -25,6 +26,7 @@ export function ConfigDialogLayout({
   onOpenChange,
   title,
   description,
+  titleAction,
   left,
   rightScroll = true,
   rightFooter,
@@ -34,10 +36,16 @@ export function ConfigDialogLayout({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(90vh,_48rem)] max-w-full flex-col overflow-hidden sm:max-w-3xl">
+      <DialogContent
+        {...(description ? {} : { "aria-describedby": undefined })}
+        className="flex h-[min(90vh,_48rem)] max-w-full flex-col overflow-hidden sm:max-w-3xl"
+      >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <div className="flex items-center gap-2 pr-8">
+            {titleAction}
+            <DialogTitle>{title}</DialogTitle>
+          </div>
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         <div
           className={cn(

@@ -28,6 +28,7 @@ import {
 import { useAppState } from "@/store/appState";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
 import { SaveButton } from "@/components/biz/SaveButton";
+import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type ImageProviderDialogProps = {
   open: boolean;
@@ -60,21 +61,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   useEffect(() => {
     if (open) {
       reload();
-      const current = useAppState.getState().settings;
-      const target =
-        current.imageProviders.find((p) => p.id === current.activeImageProviderId) ??
-        current.imageProviders[0];
-      if (target) {
-        setSelectedId(target.id);
-        setCreating(false);
-        setForm({
-          name: target.name,
-          type: target.type,
-          apiKey: target.apiKey,
-          baseUrl: target.baseUrl,
-          model: target.model,
-        });
-      }
+      setSelectedId(null);
+      setCreating(false);
+      setForm(emptyForm);
     }
   }, [open, reload]);
 
@@ -95,6 +84,12 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   function startCreate() {
     setSelectedId(null);
     setCreating(true);
+    setForm(emptyForm);
+  }
+
+  function backToList() {
+    setSelectedId(null);
+    setCreating(false);
     setForm(emptyForm);
   }
 
@@ -145,7 +140,6 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     reload();
   }
 
-  const showList = settings.imageProviders.length > 0 || creating || selectedId;
   const apiPreview =
     form.type === ImageProviderType.DALL_E_3
       ? openAIImagesGenerationsUrl(form.baseUrl)
@@ -155,14 +149,19 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           ? openAIResponsesUrl(form.baseUrl)
           : "";
   const isEditing = creating || selectedId !== null;
+  const dialogTitle = creating
+    ? "新建图片 Provider"
+    : selectedId
+      ? "修改图片 Provider"
+      : "图片生成设置";
 
   return (
     <ConfigDialogLayout
       open={open}
       onOpenChange={onOpenChange}
-      title="图片生成设置"
-      description="管理图片生成 Provider 配置。"
-      rightScroll={isEditing}
+      title={dialogTitle}
+      titleAction={isEditing ? <StepBackButton onClick={backToList} /> : null}
+      rightScroll
       rightFooter={
         isEditing ? (
           <DialogFooter className="flex-wrap gap-2 sm:space-x-0">
@@ -183,89 +182,105 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           </DialogFooter>
         ) : null
       }
-      left={
-        showList ? (
-          <div className="w-full min-w-0 space-y-2">
-            {settings.imageProviders.map((provider) => (
-              <ImageProviderListButton
-                key={provider.id}
-                active={selectedId === provider.id}
-                current={provider.id === settings.activeImageProviderId}
-                label={provider.name}
-                onClick={() => editProvider(provider)}
-              />
-            ))}
-            <ImageProviderListButton
-              active={creating}
-              dashed
-              label="新建图片 Provider"
-              onClick={startCreate}
-            />
-          </div>
-        ) : null
-      }
     >
       {isEditing ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
-          <div>
-            <Label htmlFor="image-provider-type">类型</Label>
-            <Select value={form.type} onValueChange={updateProviderType}>
-              <SelectTrigger id="image-provider-type" aria-label="类型">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ImageProviderType.DALL_E_3}>DALL-E / Images API</SelectItem>
-                <SelectItem value={ImageProviderType.OPENAI}>Chat Completions</SelectItem>
-                <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>Responses API</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Field
-            label="API Key"
-            type="password"
-            value={form.apiKey}
-            onChange={(value) => updateField("apiKey", value)}
-          />
-          <Field
-            label="模型"
-            placeholder={
-              form.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "gpt-4o"
-            }
-            value={form.model}
-            onChange={(value) => updateField("model", value)}
-          />
-          <div className="space-y-2 md:col-span-2">
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
+            <div>
+              <Label htmlFor="image-provider-type">类型</Label>
+              <Select value={form.type} onValueChange={updateProviderType}>
+                <SelectTrigger id="image-provider-type" aria-label="类型">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ImageProviderType.DALL_E_3}>DALL-E / Images API</SelectItem>
+                  <SelectItem value={ImageProviderType.OPENAI}>Chat Completions</SelectItem>
+                  <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>Responses API</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Field
-              label="API 地址"
-              placeholder="https://api.openai.com/v1"
-              value={form.baseUrl}
-              onChange={(value) => updateField("baseUrl", value)}
+              label="API Key"
+              type="password"
+              value={form.apiKey}
+              onChange={(value) => updateField("apiKey", value)}
             />
-            <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+            <Field
+              label="模型"
+              placeholder={
+                form.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "gpt-4o"
+              }
+              value={form.model}
+              onChange={(value) => updateField("model", value)}
+            />
+            <div className="space-y-2 md:col-span-2">
+              <Field
+                label="API 地址"
+                placeholder="https://api.openai.com/v1"
+                value={form.baseUrl}
+                onChange={(value) => updateField("baseUrl", value)}
+              />
+              <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
-        <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
-          <h3 className="text-base font-medium">
-            {settings.imageProviders.length === 0 ? "还没有图片 Provider" : "选择一个图片 Provider"}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {settings.imageProviders.length === 0
-              ? "先创建一个图片 Provider，再开始生成图片。"
-              : "从左侧选择图片 Provider 进行编辑，或创建一个新图片 Provider。"}
-          </p>
-          <Button type="button" className="mt-4" onClick={startCreate}>
-            新建图片 Provider
-          </Button>
-        </div>
+        <ImageProviderList
+          providers={settings.imageProviders}
+          activeImageProviderId={settings.activeImageProviderId}
+          onEdit={editProvider}
+          onCreate={startCreate}
+        />
       )}
     </ConfigDialogLayout>
   );
 }
 
+type ImageProviderListProps = {
+  providers: ImageProviderSettings[];
+  activeImageProviderId: string;
+  onEdit: (provider: ImageProviderSettings) => void;
+  onCreate: () => void;
+};
+
+function ImageProviderList({
+  providers,
+  activeImageProviderId,
+  onEdit,
+  onCreate,
+}: ImageProviderListProps) {
+  if (providers.length === 0) {
+    return (
+      <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+        <h3 className="text-base font-medium">还没有图片 Provider</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          先创建一个图片 Provider，再开始生成图片。
+        </p>
+        <Button type="button" className="mt-4" onClick={onCreate}>
+          新建图片 Provider
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-w-0 space-y-2">
+      {providers.map((provider) => (
+        <ImageProviderListButton
+          key={provider.id}
+          current={provider.id === activeImageProviderId}
+          label={provider.name}
+          onClick={() => onEdit(provider)}
+        />
+      ))}
+      <ImageProviderListButton dashed label="新建图片 Provider" onClick={onCreate} />
+    </div>
+  );
+}
+
 type ImageProviderListButtonProps = {
-  active: boolean;
+  active?: boolean;
   current?: boolean;
   dashed?: boolean;
   label: string;

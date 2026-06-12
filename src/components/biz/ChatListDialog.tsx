@@ -17,6 +17,7 @@ import { createChat, deleteChat, listChats, renameChat } from "@/services/chats"
 import type { CharacterCard, Chat } from "@/types";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
 import { SaveButton } from "@/components/biz/SaveButton";
+import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type ChatListDialogProps = {
   open: boolean;
@@ -66,6 +67,12 @@ export function ChatListDialog({
   function startCreate() {
     setSelectedId(null);
     setCreating(true);
+    setTitle("");
+  }
+
+  function backToList() {
+    setSelectedId(null);
+    setCreating(false);
     setTitle("");
   }
 
@@ -128,16 +135,16 @@ export function ChatListDialog({
     onOpenChange(false);
   }
 
-  const showList = chats.length > 0 || creating || selectedId;
   const isEditing = creating || selectedId !== null;
+  const dialogTitle = creating ? "新建对话" : selectedId ? "修改对话" : "对话记录";
 
   return (
     <ConfigDialogLayout
       open={open}
       onOpenChange={onOpenChange}
-      title="对话记录"
-      description="创建新对话，或打开、重命名、删除已有对话。"
-      rightScroll={isEditing}
+      title={dialogTitle}
+      titleAction={isEditing ? <StepBackButton onClick={backToList} /> : null}
+      rightScroll
       rightFooter={
         isEditing ? (
           <DialogFooter>
@@ -159,22 +166,6 @@ export function ChatListDialog({
               <SaveButton onSave={() => void saveSelectedChat()} />
             )}
           </DialogFooter>
-        ) : null
-      }
-      left={
-        showList ? (
-          <div className="space-y-2">
-            {chats.map((chat) => (
-              <ChatListButton
-                key={chat.id}
-                active={selectedId === chat.id}
-                current={chat.id === currentChatId}
-                label={chat.title}
-                onClick={() => editChat(chat)}
-              />
-            ))}
-            <ChatListButton active={creating} dashed label="新建对话" onClick={startCreate} />
-          </div>
         ) : null
       }
     >
@@ -221,26 +212,54 @@ export function ChatListDialog({
           </div>
         </>
       ) : (
-        <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
-          <h3 className="text-base font-medium">
-            {chats.length === 0 ? "还没有对话" : "选择一个对话"}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {chats.length === 0
-              ? "先创建一个对话，再继续角色扮演。"
-              : "从左侧选择对话进行管理，或创建一个新对话。"}
-          </p>
-          <Button type="button" className="mt-4" onClick={startCreate}>
-            新建对话
-          </Button>
-        </div>
+        <ChatList
+          chats={chats}
+          currentChatId={currentChatId}
+          onEdit={editChat}
+          onCreate={startCreate}
+        />
       )}
     </ConfigDialogLayout>
   );
 }
 
+type ChatListProps = {
+  chats: Chat[];
+  currentChatId: string;
+  onEdit: (chat: Chat) => void;
+  onCreate: () => void;
+};
+
+function ChatList({ chats, currentChatId, onEdit, onCreate }: ChatListProps) {
+  if (chats.length === 0) {
+    return (
+      <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+        <h3 className="text-base font-medium">还没有对话</h3>
+        <p className="mt-2 text-sm text-muted-foreground">先创建一个对话，再继续角色扮演。</p>
+        <Button type="button" className="mt-4" onClick={onCreate}>
+          新建对话
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {chats.map((chat) => (
+        <ChatListButton
+          key={chat.id}
+          current={chat.id === currentChatId}
+          label={chat.title}
+          onClick={() => onEdit(chat)}
+        />
+      ))}
+      <ChatListButton dashed label="新建对话" onClick={onCreate} />
+    </div>
+  );
+}
+
 type ChatListButtonProps = {
-  active: boolean;
+  active?: boolean;
   current?: boolean;
   dashed?: boolean;
   label: string;

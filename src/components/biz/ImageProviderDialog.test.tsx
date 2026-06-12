@@ -49,6 +49,7 @@ describe("ImageProviderDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
 
+    expect(screen.getByRole("heading", { name: "新建图片 Provider" })).toBeInTheDocument();
     expect(screen.getByLabelText("名称")).toBeInTheDocument();
     expect(screen.getByLabelText("API Key")).toBeInTheDocument();
     expect(screen.getByLabelText("模型")).toBeInTheDocument();
@@ -102,6 +103,8 @@ describe("ImageProviderDialog", () => {
     rerender(<ImageProviderDialog open={false} onOpenChange={() => {}} />);
     rerender(<ImageProviderDialog open onOpenChange={() => {}} />);
 
+    fireEvent.click(screen.getByRole("button", { name: "编辑 My Responses" }));
+    expect(screen.getByRole("heading", { name: "修改图片 Provider" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("Responses API");
   });
 });
