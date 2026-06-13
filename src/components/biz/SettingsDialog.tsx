@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,6 @@ import {
 } from "@/services/settings";
 import { useAppState } from "@/store/appState";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
-import { SaveButton } from "@/components/biz/SaveButton";
 import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type SettingsDialogProps = {
@@ -99,38 +99,54 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     });
   }
 
-  function saveProvider() {
+  async function saveProvider() {
     if (!creating && !selectedId) return;
 
-    if (selectedId) {
-      updateProvider(selectedId, form);
-    } else {
-      const provider = addProvider(form);
-      setSelectedId(provider.id);
+    try {
+      if (selectedId) {
+        await updateProvider(selectedId, form);
+        toast.success("Provider 已保存");
+      } else {
+        const provider = await addProvider(form);
+        setSelectedId(provider.id);
+        toast.success("Provider 已新增");
+      }
+
+      setCreating(false);
+      reload();
+      onChanged?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Provider 保存失败");
     }
-
-    setCreating(false);
-    reload();
-    onChanged?.();
   }
 
-  function activateSelectedProvider() {
+  async function activateSelectedProvider() {
     if (!selectedId) return;
 
-    setActiveProvider(selectedId);
-    reload();
-    onChanged?.();
+    try {
+      await setActiveProvider(selectedId);
+      reload();
+      onChanged?.();
+      toast.success("Provider 已激活");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Provider 激活失败");
+    }
   }
 
-  function removeSelectedProvider() {
+  async function removeSelectedProvider() {
     if (!selectedId) return;
 
-    deleteProvider(selectedId);
-    setSelectedId(null);
-    setCreating(false);
-    setForm(emptyForm);
-    reload();
-    onChanged?.();
+    try {
+      await deleteProvider(selectedId);
+      setSelectedId(null);
+      setCreating(false);
+      setForm(emptyForm);
+      reload();
+      onChanged?.();
+      toast.success("Provider 已删除");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Provider 删除失败");
+    }
   }
 
   const apiPreview = openAIChatCompletionsUrl(form.baseUrl);
@@ -150,10 +166,14 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
           <DialogFooter className="flex-wrap gap-2 sm:space-x-0">
             {selectedId ? (
               <>
-                <Button type="button" variant="destructive" onClick={removeSelectedProvider}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => void removeSelectedProvider()}
+                >
                   删除
                 </Button>
-                <Button type="button" variant="outline" onClick={activateSelectedProvider}>
+                <Button type="button" variant="outline" onClick={() => void activateSelectedProvider()}>
                   激活
                 </Button>
               </>
@@ -161,7 +181,9 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
             <Button type="button" variant="outline" onClick={clearForm}>
               清空
             </Button>
-            <SaveButton onSave={saveProvider} />
+            <Button type="button" onClick={() => void saveProvider()}>
+              保存
+            </Button>
           </DialogFooter>
         ) : null
       }

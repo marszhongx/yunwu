@@ -37,8 +37,8 @@ describe("settings service", () => {
     });
   });
 
-  test("adds and activates first provider", () => {
-    const provider = addProvider({
+  test("adds and activates first provider", async () => {
+    const provider = await addProvider({
       type: ProviderType.GEMINI,
       apiKey: "key",
       model: "gemini-1.5-pro",
@@ -62,10 +62,10 @@ describe("settings service", () => {
     });
   });
 
-  test("updates provider and getActiveProvider reflects update", () => {
-    const provider = addProvider({ type: ProviderType.GEMINI, model: "old-model" });
+  test("updates provider and getActiveProvider reflects update", async () => {
+    const provider = await addProvider({ type: ProviderType.GEMINI, model: "old-model" });
 
-    const updated = updateProvider(provider.id, {
+    const updated = await updateProvider(provider.id, {
       id: "ignored-id",
       name: "Updated",
       type: ProviderType.OPENAI,
@@ -81,33 +81,33 @@ describe("settings service", () => {
       model: "new-model",
     });
     expect(getActiveProvider()).toEqual(updated);
-    expect(updateProvider("missing", { name: "Missing" })).toBeNull();
+    await expect(updateProvider("missing", { name: "Missing" })).resolves.toBeNull();
   });
 
-  test("deleting active provider clears active id and removes it", () => {
-    const provider = addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
+  test("deleting active provider clears active id and removes it", async () => {
+    const provider = await addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
 
-    const settings = deleteProvider(provider.id);
+    const settings = await deleteProvider(provider.id);
 
     expect(settings.activeProviderId).toBe("");
     expect(settings.providers).toEqual([]);
     expect(getActiveProvider()).toBeNull();
   });
 
-  test("sets active provider and theme", () => {
-    const first = addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
-    const second = addProvider({ type: ProviderType.CLAUDE, model: "claude-3" });
+  test("sets active provider and theme", async () => {
+    const first = await addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
+    const second = await addProvider({ type: ProviderType.CLAUDE, model: "claude-3" });
 
-    expect(setActiveProvider(second.id).activeProviderId).toBe(second.id);
-    expect(setActiveProvider("missing").activeProviderId).toBe(second.id);
-    expect(saveTheme("light").theme).toBe("light");
-    expect(saveTheme("dark").theme).toBe("dark");
+    expect((await setActiveProvider(second.id)).activeProviderId).toBe(second.id);
+    expect((await setActiveProvider("missing")).activeProviderId).toBe(second.id);
+    expect((await saveTheme("light")).theme).toBe("light");
+    expect((await saveTheme("dark")).theme).toBe("dark");
     expect(getActiveProvider()).toEqual(second);
     expect(first.id).not.toBe(second.id);
   });
 
-  test("saves custom system prompts", () => {
-    expect(saveSystemPrompts(["第一条", "第二条"]).systemPrompts).toEqual(["第一条", "第二条"]);
+  test("saves custom system prompts", async () => {
+    expect((await saveSystemPrompts(["第一条", "第二条"])).systemPrompts).toEqual(["第一条", "第二条"]);
     expect(getSettings().systemPrompts).toEqual(["第一条", "第二条"]);
   });
 
@@ -176,8 +176,8 @@ describe("settings service", () => {
     expect(getActiveProvider()).toBeNull();
   });
 
-  test("adds and activates first image provider", () => {
-    const provider = addImageProvider({
+  test("adds and activates first image provider", async () => {
+    const provider = await addImageProvider({
       apiKey: "img-key",
       model: ImageProviderType.DALL_E_3,
     });
@@ -195,10 +195,10 @@ describe("settings service", () => {
     expect(getActiveImageProvider()).toEqual(provider);
   });
 
-  test("updates image provider", () => {
-    const provider = addImageProvider({ apiKey: "old-key", model: "dall-e-3" });
+  test("updates image provider", async () => {
+    const provider = await addImageProvider({ apiKey: "old-key", model: "dall-e-3" });
 
-    const updated = updateImageProvider(provider.id, {
+    const updated = await updateImageProvider(provider.id, {
       name: "My DALL-E",
       apiKey: "new-key",
     });
@@ -209,25 +209,25 @@ describe("settings service", () => {
       apiKey: "new-key",
     });
     expect(getActiveImageProvider()).toEqual(updated);
-    expect(updateImageProvider("missing", { name: "X" })).toBeNull();
+    await expect(updateImageProvider("missing", { name: "X" })).resolves.toBeNull();
   });
 
-  test("deleting active image provider clears active id", () => {
-    const provider = addImageProvider({ apiKey: "key", model: "dall-e-3" });
+  test("deleting active image provider clears active id", async () => {
+    const provider = await addImageProvider({ apiKey: "key", model: "dall-e-3" });
 
-    const settings = deleteImageProvider(provider.id);
+    const settings = await deleteImageProvider(provider.id);
 
     expect(settings.activeImageProviderId).toBe("");
     expect(settings.imageProviders).toEqual([]);
     expect(getActiveImageProvider()).toBeNull();
   });
 
-  test("sets active image provider", () => {
-    addImageProvider({ apiKey: "k1", model: "dall-e-2" });
-    const second = addImageProvider({ apiKey: "k2", model: "dall-e-3" });
+  test("sets active image provider", async () => {
+    await addImageProvider({ apiKey: "k1", model: "dall-e-2" });
+    const second = await addImageProvider({ apiKey: "k2", model: "dall-e-3" });
 
-    expect(setActiveImageProvider(second.id).activeImageProviderId).toBe(second.id);
-    expect(setActiveImageProvider("missing").activeImageProviderId).toBe(second.id);
+    expect((await setActiveImageProvider(second.id)).activeImageProviderId).toBe(second.id);
+    expect((await setActiveImageProvider("missing")).activeImageProviderId).toBe(second.id);
     expect(getActiveImageProvider()).toEqual(second);
   });
 });

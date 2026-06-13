@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,6 @@ import {
 } from "@/services/settings";
 import { useAppState } from "@/store/appState";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
-import { SaveButton } from "@/components/biz/SaveButton";
 import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type ImageProviderDialogProps = {
@@ -109,35 +109,51 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
     });
   }
 
-  function saveProvider() {
+  async function saveProvider() {
     if (!creating && !selectedId) return;
 
-    if (selectedId) {
-      updateImageProvider(selectedId, form);
-    } else {
-      const provider = addImageProvider(form);
-      setSelectedId(provider.id);
+    try {
+      if (selectedId) {
+        await updateImageProvider(selectedId, form);
+        toast.success("图片 Provider 已保存");
+      } else {
+        const provider = await addImageProvider(form);
+        setSelectedId(provider.id);
+        toast.success("图片 Provider 已新增");
+      }
+
+      setCreating(false);
+      reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "图片 Provider 保存失败");
     }
-
-    setCreating(false);
-    reload();
   }
 
-  function activateSelectedProvider() {
+  async function activateSelectedProvider() {
     if (!selectedId) return;
 
-    setActiveImageProvider(selectedId);
-    reload();
+    try {
+      await setActiveImageProvider(selectedId);
+      reload();
+      toast.success("图片 Provider 已激活");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "图片 Provider 激活失败");
+    }
   }
 
-  function removeSelectedProvider() {
+  async function removeSelectedProvider() {
     if (!selectedId) return;
 
-    deleteImageProvider(selectedId);
-    setSelectedId(null);
-    setCreating(false);
-    setForm(emptyForm);
-    reload();
+    try {
+      await deleteImageProvider(selectedId);
+      setSelectedId(null);
+      setCreating(false);
+      setForm(emptyForm);
+      reload();
+      toast.success("图片 Provider 已删除");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "图片 Provider 删除失败");
+    }
   }
 
   const apiPreview =
@@ -167,10 +183,14 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
           <DialogFooter className="flex-wrap gap-2 sm:space-x-0">
             {selectedId ? (
               <>
-                <Button type="button" variant="destructive" onClick={removeSelectedProvider}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => void removeSelectedProvider()}
+                >
                   删除
                 </Button>
-                <Button type="button" variant="outline" onClick={activateSelectedProvider}>
+                <Button type="button" variant="outline" onClick={() => void activateSelectedProvider()}>
                   激活
                 </Button>
               </>
@@ -178,7 +198,9 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
             <Button type="button" variant="outline" onClick={clearForm}>
               清空
             </Button>
-            <SaveButton onSave={saveProvider} />
+            <Button type="button" onClick={() => void saveProvider()}>
+              保存
+            </Button>
           </DialogFooter>
         ) : null
       }

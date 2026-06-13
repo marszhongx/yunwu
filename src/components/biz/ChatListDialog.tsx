@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,6 @@ import { listCharacters } from "@/services/characters";
 import { createChat, deleteChat, listChats, renameChat } from "@/services/chats";
 import type { CharacterCard, Chat } from "@/types";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
-import { SaveButton } from "@/components/biz/SaveButton";
 import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type ChatListDialogProps = {
@@ -91,9 +91,14 @@ export function ChatListDialog({
       chatTitle = characters.find((c) => c.id === charId)?.name ?? "";
     }
 
-    const chat = await createChat({ charId, title: chatTitle });
-    onSelectChat(chat.id);
-    onOpenChange(false);
+    try {
+      const chat = await createChat({ charId, title: chatTitle });
+      onSelectChat(chat.id);
+      onOpenChange(false);
+      toast.success("对话已新增");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "对话新增失败");
+    }
   }
 
   async function saveSelectedChat() {
@@ -110,22 +115,33 @@ export function ChatListDialog({
       return;
     }
 
-    const renamed = await renameChat(chat.id, trimmed);
-    setTitle(renamed?.title ?? trimmed);
-    await reload();
-    if (chat.id === currentChatId) onCurrentChatChanged?.();
+    try {
+      const renamed = await renameChat(chat.id, trimmed);
+      setTitle(renamed?.title ?? trimmed);
+      await reload();
+      if (chat.id === currentChatId) onCurrentChatChanged?.();
+      toast.success("对话已保存");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "对话保存失败");
+    }
   }
 
   async function removeSelectedChat() {
     if (!selectedId) return;
 
     const removedId = selectedId;
-    await deleteChat(removedId);
-    setSelectedId(null);
-    setCreating(false);
-    setTitle("");
-    await reload();
-    if (removedId === currentChatId) onCurrentChatDeleted?.();
+
+    try {
+      await deleteChat(removedId);
+      setSelectedId(null);
+      setCreating(false);
+      setTitle("");
+      await reload();
+      if (removedId === currentChatId) onCurrentChatDeleted?.();
+      toast.success("对话已删除");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "对话删除失败");
+    }
   }
 
   function openSelectedChat() {
@@ -163,7 +179,9 @@ export function ChatListDialog({
                 新建对话
               </Button>
             ) : (
-              <SaveButton onSave={() => void saveSelectedChat()} />
+              <Button type="button" onClick={() => void saveSelectedChat()}>
+                保存
+              </Button>
             )}
           </DialogFooter>
         ) : null

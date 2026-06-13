@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,6 @@ import { DEFAULT_SETTINGS } from "@/constants";
 import { saveSystemPrompts } from "@/services/settings";
 import { useAppState } from "@/store/appState";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
-import { SaveButton } from "@/components/biz/SaveButton";
 
 type SystemPromptDialogProps = {
   open: boolean;
@@ -38,24 +38,36 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
 
   function addPrompt() {
     setSystemPrompts((current) => [...current, ""]);
+    toast.success("提示词已新增");
   }
 
   function removePrompt(index: number) {
     setSystemPrompts((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    toast.success("提示词已删除");
   }
 
-  function savePrompts() {
-    const settings = saveSystemPrompts(systemPrompts);
-    setSystemPrompts(settings.systemPrompts);
-    reload();
-    onChanged?.();
+  async function savePrompts() {
+    try {
+      const settings = await saveSystemPrompts(systemPrompts);
+      setSystemPrompts(settings.systemPrompts);
+      reload();
+      onChanged?.();
+      toast.success("提示词已保存");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "提示词保存失败");
+    }
   }
 
-  function resetPrompts() {
-    const settings = saveSystemPrompts(DEFAULT_SETTINGS.systemPrompts);
-    setSystemPrompts(settings.systemPrompts);
-    reload();
-    onChanged?.();
+  async function resetPrompts() {
+    try {
+      const settings = await saveSystemPrompts(DEFAULT_SETTINGS.systemPrompts);
+      setSystemPrompts(settings.systemPrompts);
+      reload();
+      onChanged?.();
+      toast.success("提示词已恢复默认");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "提示词恢复默认失败");
+    }
   }
 
   return (
@@ -69,10 +81,12 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           <Button type="button" variant="outline" onClick={addPrompt}>
             新增提示词
           </Button>
-          <Button type="button" variant="outline" onClick={resetPrompts}>
+          <Button type="button" variant="outline" onClick={() => void resetPrompts()}>
             恢复默认
           </Button>
-          <SaveButton label="保存提示词" onSave={savePrompts} />
+          <Button type="button" onClick={() => void savePrompts()}>
+            保存提示词
+          </Button>
         </DialogFooter>
       }
     >

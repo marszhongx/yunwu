@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "@/constants";
 import { SystemPromptDialog } from "@/components/biz/SystemPromptDialog";
@@ -8,7 +8,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-test("saves, adds, deletes, and resets system prompts", () => {
+test("saves, adds, deletes, and resets system prompts", async () => {
   const onChanged = vi.fn();
 
   render(<SystemPromptDialog open onOpenChange={() => {}} onChanged={onChanged} />);
@@ -27,17 +27,17 @@ test("saves, adds, deletes, and resets system prompts", () => {
   fireEvent.click(screen.getAllByRole("button", { name: "删除" })[1]);
   fireEvent.click(screen.getByRole("button", { name: "保存提示词" }));
 
+  await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   let settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
   expect(settings.systemPrompts).toEqual(["自定义第一条", "新增第三条"]);
-  expect(onChanged).toHaveBeenCalledTimes(1);
 
   fireEvent.click(screen.getByRole("button", { name: "恢复默认" }));
 
+  await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(2));
   settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
   expect(settings.systemPrompts).toEqual(DEFAULT_SETTINGS.systemPrompts);
   expect(screen.getByLabelText("内置系统提示词 1")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[0]);
   expect(screen.getByLabelText("内置系统提示词 2")).toHaveValue(DEFAULT_SETTINGS.systemPrompts[1]);
-  expect(onChanged).toHaveBeenCalledTimes(2);
 });
 
 test("reloads system prompts from localStorage when dialog opens", () => {

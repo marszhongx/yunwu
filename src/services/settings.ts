@@ -127,16 +127,16 @@ export function getSettings(): AppSettings {
   }
 }
 
-export function saveSettings(settings: unknown): AppSettings {
+export async function saveSettings(settings: unknown): Promise<AppSettings> {
   const normalized = normalizeSettings(settings);
   writeSettings(normalized);
   return normalized;
 }
 
-export function addProvider(input: ProviderInput): ProviderSettings {
+export async function addProvider(input: ProviderInput): Promise<ProviderSettings> {
   const settings = getSettings();
   const provider = normalizeProvider({ ...input, id: uuid() });
-  const nextSettings = saveSettings({
+  const nextSettings = await saveSettings({
     ...settings,
     activeProviderId: settings.activeProviderId || provider.id,
     providers: [...settings.providers, provider],
@@ -145,7 +145,10 @@ export function addProvider(input: ProviderInput): ProviderSettings {
   return nextSettings.providers[nextSettings.providers.length - 1] ?? provider;
 }
 
-export function updateProvider(id: string, patch: ProviderInput): ProviderSettings | null {
+export async function updateProvider(
+  id: string,
+  patch: ProviderInput,
+): Promise<ProviderSettings | null> {
   const settings = getSettings();
   const providerIndex = settings.providers.findIndex((provider) => provider.id === id);
 
@@ -159,30 +162,30 @@ export function updateProvider(id: string, patch: ProviderInput): ProviderSettin
     ...patch,
     id,
   });
-  saveSettings({ ...settings, providers });
+  await saveSettings({ ...settings, providers });
 
   return providers[providerIndex];
 }
 
-export function deleteProvider(id: string): AppSettings {
+export async function deleteProvider(id: string): Promise<AppSettings> {
   const settings = getSettings();
   const providers = settings.providers.filter((provider) => provider.id !== id);
 
-  return saveSettings({
+  return await saveSettings({
     ...settings,
     activeProviderId: settings.activeProviderId === id ? "" : settings.activeProviderId,
     providers,
   });
 }
 
-export function setActiveProvider(id: string): AppSettings {
+export async function setActiveProvider(id: string): Promise<AppSettings> {
   const settings = getSettings();
 
   if (!settings.providers.some((provider) => provider.id === id)) {
     return settings;
   }
 
-  return saveSettings({ ...settings, activeProviderId: id });
+  return await saveSettings({ ...settings, activeProviderId: id });
 }
 
 export function getActiveProvider(): ProviderSettings | null {
@@ -195,20 +198,22 @@ export function getActiveProvider(): ProviderSettings | null {
   return settings.providers.find((provider) => provider.id === settings.activeProviderId) ?? null;
 }
 
-export function saveTheme(theme: unknown): AppSettings {
-  return saveSettings({ ...getSettings(), theme: normalizeTheme(theme) });
+export async function saveTheme(theme: unknown): Promise<AppSettings> {
+  return await saveSettings({ ...getSettings(), theme: normalizeTheme(theme) });
 }
 
-export function saveSystemPrompts(systemPrompts: unknown): AppSettings {
-  return saveSettings({ ...getSettings(), systemPrompts });
+export async function saveSystemPrompts(systemPrompts: unknown): Promise<AppSettings> {
+  return await saveSettings({ ...getSettings(), systemPrompts });
 }
 
 type ImageProviderInput = Partial<Record<keyof ImageProviderSettings, unknown>>;
 
-export function addImageProvider(input: ImageProviderInput): ImageProviderSettings {
+export async function addImageProvider(
+  input: ImageProviderInput,
+): Promise<ImageProviderSettings> {
   const settings = getSettings();
   const provider = normalizeImageProvider({ ...input, id: uuid() });
-  const nextSettings = saveSettings({
+  const nextSettings = await saveSettings({
     ...settings,
     activeImageProviderId: settings.activeImageProviderId || provider.id,
     imageProviders: [...settings.imageProviders, provider],
@@ -217,10 +222,10 @@ export function addImageProvider(input: ImageProviderInput): ImageProviderSettin
   return nextSettings.imageProviders[nextSettings.imageProviders.length - 1] ?? provider;
 }
 
-export function updateImageProvider(
+export async function updateImageProvider(
   id: string,
   patch: ImageProviderInput,
-): ImageProviderSettings | null {
+): Promise<ImageProviderSettings | null> {
   const settings = getSettings();
   const index = settings.imageProviders.findIndex((p) => p.id === id);
 
@@ -228,16 +233,16 @@ export function updateImageProvider(
 
   const imageProviders = [...settings.imageProviders];
   imageProviders[index] = normalizeImageProvider({ ...imageProviders[index], ...patch, id });
-  saveSettings({ ...settings, imageProviders });
+  await saveSettings({ ...settings, imageProviders });
 
   return imageProviders[index];
 }
 
-export function deleteImageProvider(id: string): AppSettings {
+export async function deleteImageProvider(id: string): Promise<AppSettings> {
   const settings = getSettings();
   const imageProviders = settings.imageProviders.filter((p) => p.id !== id);
 
-  return saveSettings({
+  return await saveSettings({
     ...settings,
     activeImageProviderId:
       settings.activeImageProviderId === id ? "" : settings.activeImageProviderId,
@@ -245,14 +250,14 @@ export function deleteImageProvider(id: string): AppSettings {
   });
 }
 
-export function setActiveImageProvider(id: string): AppSettings {
+export async function setActiveImageProvider(id: string): Promise<AppSettings> {
   const settings = getSettings();
 
   if (!settings.imageProviders.some((p) => p.id === id)) {
     return settings;
   }
 
-  return saveSettings({ ...settings, activeImageProviderId: id });
+  return await saveSettings({ ...settings, activeImageProviderId: id });
 }
 
 export function getActiveImageProvider(): ImageProviderSettings | null {

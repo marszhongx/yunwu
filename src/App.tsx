@@ -99,8 +99,8 @@ export default function App() {
     clearCurrentChat();
   }
 
-  function toggleTheme() {
-    saveTheme(theme === "dark" ? "light" : "dark");
+  async function toggleTheme() {
+    await saveTheme(theme === "dark" ? "light" : "dark");
     useAppState.getState().reload();
   }
 
@@ -205,7 +205,7 @@ export default function App() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={toggleTheme}
+            onClick={() => void toggleTheme()}
             title="切换主题"
             aria-label="切换主题"
             className="h-9 w-9 lg:h-10 lg:w-10"
