@@ -103,6 +103,7 @@ test("updates the main title when the selected chat is renamed from the records 
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(chats.renameChat).toHaveBeenCalledWith("chat-1", "新标题"));
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   expect(await screen.findByRole("button", { name: "编辑 新标题" })).toBeInTheDocument();
 });
 

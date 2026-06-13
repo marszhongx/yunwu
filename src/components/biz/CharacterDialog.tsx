@@ -20,7 +20,6 @@ import { generateCharacterCard } from "@/services/aiGeneration";
 import { getActiveProvider } from "@/services/settings";
 import type { CharacterCard, LorebookEntry } from "@/types";
 import { ConfigDialogLayout } from "@/components/biz/ConfigDialogLayout";
-import { SaveButton } from "@/components/biz/SaveButton";
 import { StepBackButton } from "@/components/biz/StepBackButton";
 
 type CharacterDialogProps = {
@@ -82,6 +81,10 @@ export function CharacterDialog({
 
   useEffect(() => {
     if (open) {
+      setSelectedId(null);
+      setCreating(false);
+      setForm(emptyForm);
+      setGenerationDescription("");
       void loadCharacters();
     }
   }, [loadCharacters, open]);
@@ -199,30 +202,41 @@ export function CharacterDialog({
       entries: entriesFromForm(form.entries),
     };
 
-    if (selectedId) {
-      const character = await updateCharacter(selectedId, characterInput);
-      if (character) {
+    try {
+      if (selectedId) {
+        const character = await updateCharacter(selectedId, characterInput);
+        if (character) {
+          editCharacter(character);
+        }
+        toast.success("角色已保存");
+      } else {
+        const character = await createCharacter(characterInput);
         editCharacter(character);
+        toast.success("角色已新增");
       }
-    } else {
-      const character = await createCharacter(characterInput);
-      editCharacter(character);
-    }
 
-    setCreating(false);
-    await loadCharacters();
-    onChanged?.();
+      setCreating(false);
+      await loadCharacters();
+      onChanged?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "角色保存失败");
+    }
   }
 
   async function removeSelectedCharacter() {
     if (!selectedId) return;
 
-    await deleteCharacter(selectedId);
-    setSelectedId(null);
-    setCreating(false);
-    setForm(emptyForm);
-    await loadCharacters();
-    onChanged?.();
+    try {
+      await deleteCharacter(selectedId);
+      setSelectedId(null);
+      setCreating(false);
+      setForm(emptyForm);
+      await loadCharacters();
+      onChanged?.();
+      toast.success("角色已删除");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "角色删除失败");
+    }
   }
 
   function handleExportJson() {
@@ -307,7 +321,9 @@ export function CharacterDialog({
             <Button type="button" variant="outline" onClick={clearForm} disabled={isGenerating}>
               清空
             </Button>
-            <SaveButton onSave={() => void saveCharacter()} disabled={isGenerating} />
+            <Button type="button" onClick={() => void saveCharacter()} disabled={isGenerating}>
+              保存
+            </Button>
           </DialogFooter>
         ) : null
       }
@@ -502,6 +518,7 @@ function CharacterList({
 
   return (
     <div className="space-y-2">
+      <h3 className="text-base font-medium">选择一个角色</h3>
       {characters.map((character) => (
         <CharacterListButton
           key={character.id}

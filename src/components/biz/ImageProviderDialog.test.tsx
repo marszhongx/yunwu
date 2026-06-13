@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ImageProviderDialog } from "@/components/biz/ImageProviderDialog";
 import { ImageProviderType } from "@/constants";
@@ -66,7 +66,7 @@ describe("ImageProviderDialog", () => {
     ).toBeInTheDocument();
   });
 
-  test("preserves selected image provider type after save and reopen", () => {
+  test("preserves selected image provider type after save and reopen", async () => {
     const savedProvider: ImageProviderSettings = {
       id: "img-1",
       name: "My Responses",
@@ -76,7 +76,7 @@ describe("ImageProviderDialog", () => {
       model: "gpt-4o",
     };
 
-    vi.mocked(settings.addImageProvider).mockImplementation(() => {
+    vi.mocked(settings.addImageProvider).mockImplementation(async () => {
       mockState = {
         settings: { imageProviders: [savedProvider], activeImageProviderId: "img-1" },
         reload: vi.fn(),
@@ -97,7 +97,7 @@ describe("ImageProviderDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(settings.addImageProvider).toHaveBeenCalled();
+    await waitFor(() => expect(settings.addImageProvider).toHaveBeenCalled());
 
     // Simulate dialog close and reopen
     rerender(<ImageProviderDialog open={false} onOpenChange={() => {}} />);
