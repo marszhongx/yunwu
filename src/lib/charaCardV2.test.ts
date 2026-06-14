@@ -192,6 +192,75 @@ describe("chara card v2", () => {
     expect(() => fromCharaCardV2({ hello: "world" }, "fallback.json")).toThrow("不支持的角色卡格式");
     expect(() => fromCharaCardV2({ name: "直接 data 对象" }, "fallback.json")).toThrow("不支持的角色卡格式");
   });
+
+  test("imports Chara Card V3 data", () => {
+    const result = fromCharaCardV2({
+      spec: "chara_card_v3",
+      spec_version: "3.0",
+      name: "V3角色",
+      description: "V3格式角色",
+      personality: "活泼",
+      scenario: "现代都市",
+      first_mes: "嗨！",
+      mes_example: "",
+      creatorcomment: "V3备注",
+      avatar: "",
+      talkativeness: "0.5",
+      fav: false,
+      tags: ["测试"],
+      create_date: "2026-01-01T00:00:00.000Z",
+      data: {
+        name: "V3角色",
+        description: "V3格式角色",
+        personality: "活泼",
+        scenario: "现代都市",
+        first_mes: "嗨！",
+        mes_example: "",
+        creator_notes: "V3内部备注",
+        system_prompt: "",
+        post_history_instructions: "",
+        alternate_greetings: ["又见面了"],
+        group_only_greetings: ["选项A", "选项B"],
+        tags: ["测试"],
+        creator: "test",
+        character_version: "2.0",
+        extensions: { talkativeness: "0.5" },
+        character_book: {
+          entries: [{ keys: ["都市"], content: "都市传说。" }],
+        },
+      },
+    });
+
+    expect(result).toMatchObject({
+      name: "V3角色",
+      description: "V3格式角色",
+      personality: "活泼",
+      scenario: "现代都市",
+      first_mes: "嗨！",
+      alternate_greetings: ["又见面了"],
+      opening_user_choices: ["选项A", "选项B"],
+      creator_notes: "V3内部备注",
+      tags: ["测试"],
+      creator: "test",
+      character_version: "2.0",
+      entries: [{ keys: ["都市"], content: "都市传说。", enabled: true }],
+    });
+  });
+
+  test("imports V3 with minimal data", () => {
+    const result = fromCharaCardV2({
+      spec: "chara_card_v3",
+      spec_version: "3.0",
+      data: {
+        name: "V3简化",
+        description: "仅使用data字段",
+        first_mes: "你好",
+      },
+    });
+
+    expect(result.name).toBe("V3简化");
+    expect(result.description).toBe("仅使用data字段");
+  });
 });
 
 function character(): CharacterCard {

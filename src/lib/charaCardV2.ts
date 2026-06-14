@@ -86,17 +86,29 @@ export function toCharaCardV2(character: CharacterCard, options: ExportOptions =
 }
 
 export function fromCharaCardV2(input: unknown, fallbackName = ""): CharacterInput {
-  if (!isRecord(input) || input.spec !== "chara_card_v2" || !isRecord(input.data)) {
+  if (!isRecord(input)) {
     throw new Error("不支持的角色卡格式");
   }
 
-  const source = input.data;
+  const spec = input.spec;
+  const isV2 = spec === "chara_card_v2" && isRecord(input.data);
+  const isV3 = spec === "chara_card_v3" && isRecord(input.data);
+
+  if (!isV2 && !isV3) {
+    throw new Error("不支持的角色卡格式");
+  }
+
+  const source = input.data as Record<string, unknown>;
   const entries = readEntries(source);
   const name = text(source.name) || filenameWithoutExtension(fallbackName);
 
   if (!name || (!text(source.name) && !hasCharacterContent(source, entries))) {
     throw new Error("不支持的角色卡格式");
   }
+
+  const openingUserChoices = isV3
+    ? textArray(source.group_only_greetings)
+    : textArray(source.opening_user_choices);
 
   return {
     name,
@@ -106,7 +118,7 @@ export function fromCharaCardV2(input: unknown, fallbackName = ""): CharacterInp
     scenario: text(source.scenario),
     mes_example: text(source.mes_example),
     alternate_greetings: textArray(source.alternate_greetings),
-    opening_user_choices: textArray(source.opening_user_choices),
+    opening_user_choices: openingUserChoices,
     entries,
     creator_notes: text(source.creator_notes),
     tags: textArray(source.tags),
