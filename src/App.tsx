@@ -109,9 +109,9 @@ export default function App() {
   return (
     <>
       <div className="flex h-screen overflow-hidden bg-background/80 text-foreground">
-        <aside className="hidden w-80 shrink-0 flex-col border-r border-white/10 bg-card/65 p-5 shadow-2xl shadow-black/10 backdrop-blur-xl lg:flex">
+        <aside className="hidden w-80 shrink-0 flex-col border-r border-border/70 bg-card/65 p-5 shadow-2xl shadow-primary/5 backdrop-blur-xl lg:flex">
           <h1 className="mb-5 text-xl font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary/80 to-accent-foreground bg-clip-text text-transparent">
               云雾聊天室
             </span>
             {activeProviderName ? (
@@ -125,7 +125,7 @@ export default function App() {
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-2 border-b border-white/10 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-xl lg:hidden">
+          <header className="flex items-center gap-2 border-b border-border/70 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-xl lg:hidden">
             <Button
               size="icon"
               variant="ghost"
@@ -151,7 +151,7 @@ export default function App() {
             />
           </main>
         </div>
-        <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-white/10 bg-card/65 p-1.5 shadow-2xl shadow-black/10 backdrop-blur-xl lg:p-2">
+        <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-border/70 bg-card/65 p-1.5 shadow-2xl shadow-primary/5 backdrop-blur-xl lg:p-2">
           <Button
             size="icon"
             variant="ghost"
@@ -216,11 +216,11 @@ export default function App() {
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent
             side="left"
-            className="w-80 border-white/10 bg-card/95 p-5 backdrop-blur-xl lg:hidden"
+            className="w-80 border-border/70 bg-card/95 p-5 backdrop-blur-xl lg:hidden"
           >
             <SheetTitle className="sr-only">侧栏</SheetTitle>
             <h1 className="mb-5 text-xl font-semibold tracking-tight">
-              <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-primary/80 to-accent-foreground bg-clip-text text-transparent">
                 云雾聊天室
               </span>
               {activeProviderName ? (
