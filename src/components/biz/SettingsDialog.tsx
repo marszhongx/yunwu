@@ -274,7 +274,7 @@ type ProviderListProps = {
 function ProviderList({ providers, activeProviderId, onEdit, onCreate }: ProviderListProps) {
   if (providers.length === 0) {
     return (
-      <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
         <h3 className="text-base font-medium">还没有 Provider</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           先创建一个 Provider，再开始调用 AI 模型。

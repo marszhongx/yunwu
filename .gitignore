@@ -3,6 +3,7 @@ dist
 .claude/
 .env
 .worktrees/
+.omo
 docs/plans/
 docs/superpowers/
 examples/

@@ -90,7 +90,7 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
         </DialogFooter>
       }
     >
-      <div className="space-y-4">
+      <div className="flex min-h-full flex-col space-y-4">
         {systemPrompts.map((prompt, index) => {
           const promptId = `system-prompt-${index}`;
 
@@ -117,7 +117,7 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           );
         })}
         {systemPrompts.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
+          <div className="flex min-h-full flex-1 items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
             暂无系统提示词，保存时会恢复默认值，也可以先新增一条。
           </div>
         ) : null}
