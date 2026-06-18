@@ -60,8 +60,8 @@ export function ConfigDialogLayout({
           ) : null}
           {rightScroll ? (
             <section className="flex min-h-0 flex-col space-y-4">
-              <ScrollArea className="min-h-0 flex-1 pr-3">
-                <div className="space-y-4">{children}</div>
+              <ScrollArea className="config-dialog-scroll min-h-0 flex-1 pr-3">
+                <div className="flex min-h-full flex-1 flex-col space-y-4">{children}</div>
               </ScrollArea>
               {rightFooter}
             </section>

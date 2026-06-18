@@ -23,6 +23,11 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", ui-serif, Georgia, serif;
+  --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", ui-monospace, monospace;
+
 }
 
 @variant dark (&:where(.dark *));
@@ -74,8 +79,17 @@
   --ambient: 294 52% 72%;
 }
 
+/* ---- Global reset & base ---- */
+
+*,
+*::before,
+*::after {
+  border-color: hsl(var(--border));
+}
+
 body {
   margin: 0;
+  font-family: var(--font-sans);
   background:
     radial-gradient(circle at top left, hsl(var(--primary) / 0.18), transparent 34rem),
     radial-gradient(circle at bottom right, hsl(var(--ambient) / 0.16), transparent 32rem),
@@ -84,11 +98,65 @@ body {
   font-feature-settings:
     "rlig" 1,
     "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
-* {
-  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
 }
+
+/* ---- Scrollbar ---- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* ---- Typography ---- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+h1 {
+  font-family: var(--font-sans);
+  letter-spacing: 0.04em;
+}
+
+/* ---- Link ---- */
+
+a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+/* ---- Loading dots ---- */
 
 @keyframes typing-dots {
   0%,
@@ -113,4 +181,33 @@ body {
 .typing-dots::after {
   content: ".";
   animation: typing-dots 1.4s infinite;
+}
+
+/* ---- Transition defaults for interactive elements ---- */
+
+button, a, input, textarea, select {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ---- Sonner toast overrides ---- */
+
+[data-sonner-toaster] {
+  font-family: var(--font-sans);
+}
+
+.config-dialog-scroll [data-radix-scroll-area-viewport] > div {
+  display: flex !important;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
