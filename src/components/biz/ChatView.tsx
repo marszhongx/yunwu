@@ -255,11 +255,11 @@ function getLastNonImageMessageIndex(messages: ChatMessage[]) {
 
 function LoadingDots({ label }: { label: string }) {
   return (
-    <span aria-label={label} className="flex h-7 items-center gap-1">
+    <output aria-label={label} className="flex h-7 items-center gap-1">
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:-0.2s]" />
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:-0.1s]" />
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/70" />
-    </span>
+    </output>
   );
 }
 
@@ -338,7 +338,7 @@ function MessageBubble({
               >
                 <X className="h-3 w-3" />
               </button>
-            </div>
+    </div>
           )}
           <img
             src={text}
