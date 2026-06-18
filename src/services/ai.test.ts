@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
-import { streamAssistantText, requestAssistantText, generateImage } from "@/services/ai";
+import {
+  streamAssistantText,
+  streamAssistantTextRequest,
+  requestAssistantText,
+  generateImage,
+} from "@/services/ai";
 
 type FetchMock = ReturnType<typeof vi.fn>;
 
@@ -186,6 +191,28 @@ describe("streamAssistantText", () => {
     await expect(
       streamAssistantText({ provider: provider(), messages: [{ role: "user", content: "hello" }] }),
     ).rejects.toThrow("Provider 请求失败：401 bad key");
+  });
+
+  test("returns a cancellable request handle for stopping streaming", async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const request = streamAssistantTextRequest({
+      provider: provider(),
+      messages: [{ role: "user", content: "hello" }],
+    });
+    request.abort();
+
+    await expect(request.promise).rejects.toThrow(DOMException);
   });
 
   test("throws clear provider response error for malformed SSE JSON", async () => {

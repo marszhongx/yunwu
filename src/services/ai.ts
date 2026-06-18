@@ -24,6 +24,12 @@ type StreamAssistantTextInput = {
   onText?: (text: string) => void;
 };
 
+type StreamAssistantTextRequest = {
+  promise: Promise<{ text: string }>;
+  abort: () => void;
+  signal: AbortSignal;
+};
+
 type StreamRequest = {
   url: string;
   init: RequestInit;
@@ -452,36 +458,56 @@ export async function streamAssistantText({
   messages,
   onText,
 }: StreamAssistantTextInput): Promise<{ text: string }> {
+  return streamAssistantTextRequest({ provider: inputProvider, messages, onText }).promise;
+}
+
+export function streamAssistantTextRequest({
+  provider: inputProvider,
+  messages,
+  onText,
+}: StreamAssistantTextInput): StreamAssistantTextRequest {
   const provider = validateProvider(inputProvider);
   const request = createRequest(provider, messages);
   const abortController = new AbortController();
-  const timeoutId = globalThis.setTimeout(() => abortController.abort(), STREAM_TIMEOUT);
+  let timedOut = false;
+  const timeoutId = globalThis.setTimeout(() => {
+    timedOut = true;
+    abortController.abort();
+  }, STREAM_TIMEOUT);
 
-  try {
-    const response = await fetch(request.url, {
-      ...request.init,
-      signal: abortController.signal,
-    });
+  const promise = (async () => {
+    try {
+      const response = await fetch(request.url, {
+        ...request.init,
+        signal: abortController.signal,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(`Provider 请求失败：${response.status} ${errorText}`.trim());
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(`Provider 请求失败：${response.status} ${errorText}`.trim());
+      }
+
+      if (response.body === null) {
+        throw new Error("Provider 未返回流式响应");
+      }
+
+      return { text: await readStream(response.body, request.extractText, onText) };
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError" && timedOut) {
+        throw new Error("Provider 请求超时");
+      }
+
+      throw error;
+    } finally {
+      globalThis.clearTimeout(timeoutId);
     }
+  })();
 
-    if (response.body === null) {
-      throw new Error("Provider 未返回流式响应");
-    }
-
-    return { text: await readStream(response.body, request.extractText, onText) };
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Provider 请求超时");
-    }
-
-    throw error;
-  } finally {
-    globalThis.clearTimeout(timeoutId);
-  }
+  return {
+    promise,
+    abort: () => abortController.abort(),
+    signal: abortController.signal,
+  };
 }
 
 export async function requestAssistantText({
