@@ -16,6 +16,7 @@ vi.mock("@/services/chats", () => ({
 
 vi.mock("@/services/ai", () => ({
   streamAssistantText: vi.fn(),
+  streamAssistantTextRequest: vi.fn(),
   generateImage: vi.fn(),
 }));
 
@@ -55,6 +56,16 @@ beforeEach(() => {
   });
 });
 
+function streamRequest(promise: Promise<{ text: string }>) {
+  const abortController = new AbortController();
+
+  return {
+    promise,
+    abort: () => abortController.abort(),
+    signal: abortController.signal,
+  };
+}
+
 test("shows provider error and does not add messages when no provider is active", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(null);
 
@@ -67,7 +78,7 @@ test("shows provider error and does not add messages when no provider is active"
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith("请先配置并激活 Provider"));
   expect(chats.addMessage).not.toHaveBeenCalled();
-  expect(ai.streamAssistantText).not.toHaveBeenCalled();
+  expect(ai.streamAssistantTextRequest).not.toHaveBeenCalled();
 });
 
 test("adds user and assistant messages and displays streamed text", async () => {
@@ -81,8 +92,8 @@ test("adds user and assistant messages and displays streamed text", async () => 
     message({ id: "assistant-1", role: "assistant", content: "<content>雾来了</content>" }),
   );
   let finishStream: (() => void) | undefined;
-  vi.mocked(ai.streamAssistantText).mockImplementation(
-    ({ onText }) =>
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) =>
+    streamRequest(
       new Promise((resolve) => {
         onText?.("<content>雾");
         finishStream = () => {
@@ -90,6 +101,7 @@ test("adds user and assistant messages and displays streamed text", async () => 
           resolve({ text: "<content>雾来了</content>" });
         };
       }),
+    ),
   );
 
   render(<ChatView chat={chat()} character={character()} onChanged={onChanged} />);
@@ -116,7 +128,7 @@ test("adds user and assistant messages and displays streamed text", async () => 
     role: "assistant",
     content: "",
   });
-  expect(ai.streamAssistantText).toHaveBeenCalledWith(
+  expect(ai.streamAssistantTextRequest).toHaveBeenCalledWith(
     expect.objectContaining({
       provider,
       messages: expect.any(Array),
@@ -131,7 +143,9 @@ test("shows a visual loading indicator instead of loading text", async () => {
   vi.mocked(chats.addMessage)
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
     .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
-  vi.mocked(ai.streamAssistantText).mockImplementation(() => new Promise(() => {}));
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(() =>
+    streamRequest(new Promise(() => {})),
+  );
 
   render(<ChatView chat={chat()} character={null} />);
 
@@ -142,6 +156,50 @@ test("shows a visual loading indicator instead of loading text", async () => {
 
   expect(await screen.findByLabelText("回复生成中")).toBeInTheDocument();
   expect(screen.queryByText("生成中")).not.toBeInTheDocument();
+});
+
+test("stops active generation and saves streamed partial text", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
+  vi.mocked(chats.updateMessage).mockResolvedValue(
+    message({ id: "assistant-1", role: "assistant", content: "<content>雾" }),
+  );
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
+    const abortController = new AbortController();
+    return {
+      ...streamRequest(
+        new Promise((_resolve, reject) => {
+          onText?.("<content>雾");
+          abortController.signal.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+      ),
+      abort: () => abortController.abort(),
+      signal: abortController.signal,
+    };
+  });
+
+  render(<ChatView chat={chat()} character={null} />);
+
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "走进雾中" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  expect(await screen.findByText("雾")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "停止" }));
+
+  await waitFor(() =>
+    expect(chats.updateMessage).toHaveBeenCalledWith("chat-1", "assistant-1", {
+      content: "<content>雾",
+    }),
+  );
+  expect(toast.error).toHaveBeenCalledWith("已停止生成");
 });
 
 test("passes custom system prompts into AI request", async () => {
@@ -160,7 +218,7 @@ test("passes custom system prompts into AI request", async () => {
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
-  vi.mocked(ai.streamAssistantText).mockResolvedValue({ text: "雾来了" });
+  vi.mocked(ai.streamAssistantTextRequest).mockReturnValue(streamRequest(Promise.resolve({ text: "雾来了" })));
 
   render(<ChatView chat={chat()} character={null} />);
 
@@ -169,8 +227,8 @@ test("passes custom system prompts into AI request", async () => {
   });
   fireEvent.click(screen.getByRole("button", { name: "发送" }));
 
-  await waitFor(() => expect(ai.streamAssistantText).toHaveBeenCalled());
-  expect(vi.mocked(ai.streamAssistantText).mock.calls[0]?.[0].messages.slice(0, 2)).toEqual([
+  await waitFor(() => expect(ai.streamAssistantTextRequest).toHaveBeenCalled());
+  expect(vi.mocked(ai.streamAssistantTextRequest).mock.calls[0]?.[0].messages.slice(0, 2)).toEqual([
     { role: "system", content: "自定义第一条" },
     { role: "system", content: "自定义第二条" },
   ]);
@@ -281,9 +339,9 @@ test("keeps assistant choices enabled when image messages follow", async () => {
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-2", content: "新的回应" }),
   );
-  vi.mocked(ai.streamAssistantText).mockImplementation(async ({ onText }) => {
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
     onText?.("新的回应");
-    return { text: "新的回应" };
+    return streamRequest(Promise.resolve({ text: "新的回应" }));
   });
 
   render(
@@ -325,12 +383,13 @@ test("does not duplicate pending messages when parent reloads persisted placehol
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
   let finishStream: (() => void) | undefined;
-  vi.mocked(ai.streamAssistantText).mockImplementation(
-    ({ onText }) =>
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) =>
+    streamRequest(
       new Promise((resolve) => {
         onText?.("雾");
         finishStream = () => resolve({ text: "雾" });
       }),
+    ),
   );
 
   const initialChat = chat();
@@ -378,7 +437,8 @@ test("keeps duplicate send attempts visible while a send is in flight", async ()
   fireEvent.click(sendButton);
   fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
 
-  await waitFor(() => expect(sendButton).toBeDisabled());
+  await waitFor(() => expect(screen.getByRole("button", { name: "停止" })).toBeEnabled());
+  expect(input).toBeDisabled();
   expect(chats.addMessage).toHaveBeenCalledTimes(1);
   expect(toast.error).toHaveBeenCalledWith("上一条回复生成中");
 });
@@ -391,11 +451,12 @@ test("does not leak pending streaming state when switching chats mid-stream", as
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
-  vi.mocked(ai.streamAssistantText).mockImplementation(
-    ({ onText }) =>
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) =>
+    streamRequest(
       new Promise(() => {
         onText?.("雾");
       }),
+    ),
   );
 
   const { rerender } = render(<ChatView chat={chat()} character={null} />);
@@ -411,7 +472,7 @@ test("does not leak pending streaming state when switching chats mid-stream", as
   );
 
   expect(screen.queryByText("走进雾中")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "发送" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "停止" })).toBeEnabled();
 });
 
 test("writes failure message and surfaces toast when stream rejects", async () => {
@@ -426,7 +487,9 @@ test("writes failure message and surfaces toast when stream rejects", async () =
       content: "请求失败：网络断开",
     }),
   );
-  vi.mocked(ai.streamAssistantText).mockRejectedValue(new Error("网络断开"));
+  vi.mocked(ai.streamAssistantTextRequest).mockReturnValue(
+    streamRequest(Promise.reject(new Error("网络断开"))),
+  );
 
   render(<ChatView chat={chat()} character={null} />);
 
@@ -459,9 +522,9 @@ test("shows opening user choices before the first user message and sends the sel
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", content: "新的回应" }),
   );
-  vi.mocked(ai.streamAssistantText).mockImplementation(async ({ onText }) => {
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
     onText?.("新的回应");
-    return { text: "新的回应" };
+    return streamRequest(Promise.resolve({ text: "新的回应" }));
   });
 
   render(

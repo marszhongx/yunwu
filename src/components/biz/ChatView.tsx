@@ -5,9 +5,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { buildMessages, parseMessage } from "@/lib/messages";
 import { matchLorebook } from "@/lib/lorebooks";
-import { Copy, Download, Heart, Image as ImageIcon, Loader2, ScrollText, X } from "lucide-react";
+import { Copy, Download, Heart, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateImage, streamAssistantText } from "@/services/ai";
+import { generateImage, streamAssistantTextRequest } from "@/services/ai";
 import { addMessage, deleteMessage, updateMessage } from "@/services/chats";
 import { getActiveProvider, getSettings } from "@/services/settings";
 import { useAppState } from "@/store/appState";
@@ -32,6 +32,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   const [isSending, setIsSending] = useState(false);
   const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
   const sendInFlightRef = useRef(false);
+  const generationAbortRef = useRef<(() => void) | null>(null);
   const activeChatId = chat?.id ?? "";
   const isStreaming = streamingId !== "" && streamingChatId === activeChatId;
   const activePendingMessages = pendingChatId === activeChatId ? pendingMessages : [];
@@ -78,7 +79,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
           systemPrompts: getSettings().systemPrompts,
         });
 
-        await streamAssistantText({
+        const request = streamAssistantTextRequest({
           provider,
           messages,
           onText: (text) => {
@@ -86,9 +87,17 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
             setStreamingText(fullText);
           },
         });
+        generationAbortRef.current = request.abort;
+        await request.promise;
         await updateMessage(chatId, assistantMessage.id, { content: fullText });
       } catch (error) {
         const message = error instanceof Error ? error.message : "请求失败";
+        if (error instanceof DOMException && error.name === "AbortError") {
+          await updateMessage(chatId, assistantMessage.id, { content: fullText });
+          toast.error("已停止生成");
+          return;
+        }
+
         await updateMessage(chatId, assistantMessage.id, { content: `请求失败：${message}` });
         toast.error(message);
       } finally {
@@ -100,9 +109,14 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
         onChanged?.();
       }
     } finally {
+      generationAbortRef.current = null;
       sendInFlightRef.current = false;
       setIsSending(false);
     }
+  }
+
+  function stopGeneration() {
+    generationAbortRef.current?.();
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -234,11 +248,19 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
         />
         <Button
           type="button"
-          onClick={() => void sendMessage()}
-          disabled={!draft.trim() || isStreaming || isSending}
+          onClick={isStreaming || isSending ? stopGeneration : () => void sendMessage()}
+          disabled={isStreaming || isSending ? false : !draft.trim()}
+          variant={isStreaming || isSending ? "outline" : "default"}
           className="rounded-full px-5 shadow-lg shadow-primary/20"
         >
-          发送
+          {isStreaming || isSending ? (
+            <>
+              <Square className="h-3.5 w-3.5 fill-current" />
+              停止
+            </>
+          ) : (
+            "发送"
+          )}
         </Button>
       </div>
     </section>
