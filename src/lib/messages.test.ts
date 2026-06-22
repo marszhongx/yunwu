@@ -152,6 +152,10 @@ describe("messages domain", () => {
     expect(parseContent("<content>正文内容</content><summary>摘要</summary>")).toBe("正文内容");
   });
 
+  it("parseContent extracts escaped content XML tag", () => {
+    expect(parseContent("__LT__content__GT__正文内容__LT__/content__GT__")).toBe("正文内容");
+  });
+
   it("parseContent extracts streaming content before the content tag is closed", () => {
     expect(parseContent("<content>正文内容")).toBe("正文内容");
   });
@@ -173,6 +177,17 @@ describe("messages domain", () => {
     expect(parsed.summary).toBe("摘要");
     expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual([]);
+  });
+
+  it("parseMessage extracts escaped response XML tags", () => {
+    const parsed = parseMessage(
+      "__LT__content__GT__正文__LT__/content__GT____LT__summary__GT__摘要__LT__/summary__GT____LT__status__GT__状态__LT__/status__GT____LT__choices__GT__\nA: 前进\nB: 等待\n__LT__/choices__GT__",
+    );
+
+    expect(parsed.body).toBe("正文");
+    expect(parsed.summary).toBe("摘要");
+    expect(parsed.status).toBe("状态");
+    expect(parsed.choices).toEqual(["A: 前进", "B: 等待"]);
   });
 
   it("parseMessage keeps completed tags and current unclosed summary tag", () => {

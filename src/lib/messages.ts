@@ -120,8 +120,9 @@ export function parseStatus(content: string): string | null {
 }
 
 export function parseContent(content: string): string {
-  const parsed = parseXmlResponse(content);
-  return resolveBody(content, parsed[ResponseTag.CONTENT][0]);
+  const normalized = normalizeResponseTagDelimiters(content);
+  const parsed = parseXmlResponse(normalized);
+  return resolveBody(normalized, parsed[ResponseTag.CONTENT][0]);
 }
 
 export type ParsedMessage = {
@@ -132,9 +133,10 @@ export type ParsedMessage = {
 };
 
 export function parseMessage(content: string): ParsedMessage {
-  const parsed = parseXmlResponse(content);
+  const normalized = normalizeResponseTagDelimiters(content);
+  const parsed = parseXmlResponse(normalized);
   return {
-    body: resolveBody(content, parsed[ResponseTag.CONTENT][0]),
+    body: resolveBody(normalized, parsed[ResponseTag.CONTENT][0]),
     choices: resolveChoices(parsed[ResponseTag.CHOICES][0] ?? ""),
     summary: parsed[ResponseTag.SUMMARY][0] ?? null,
     status: parsed[ResponseTag.STATUS][0] ?? null,
@@ -142,8 +144,9 @@ export function parseMessage(content: string): ParsedMessage {
 }
 
 function compressContent(content: string): string {
-  const parsed = parseXmlResponse(content);
-  return parsed[ResponseTag.SUMMARY][0] ?? resolveBody(content, parsed[ResponseTag.CONTENT][0]);
+  const normalized = normalizeResponseTagDelimiters(content);
+  const parsed = parseXmlResponse(normalized);
+  return parsed[ResponseTag.SUMMARY][0] ?? resolveBody(normalized, parsed[ResponseTag.CONTENT][0]);
 }
 
 function resolveBody(content: string, parsedContent: string | undefined): string {
@@ -181,7 +184,11 @@ function minKnownIndex(a: number, b: number): number {
 }
 
 function parseTag(content: string, tag: ResponseTag): string | null {
-  return parseXmlResponse(content)[tag][0] ?? null;
+  return parseXmlResponse(normalizeResponseTagDelimiters(content))[tag][0] ?? null;
+}
+
+function normalizeResponseTagDelimiters(content: string): string {
+  return content.replaceAll("__LT__", "<").replaceAll("__GT__", ">");
 }
 
 function parseXmlResponse(content: string) {
