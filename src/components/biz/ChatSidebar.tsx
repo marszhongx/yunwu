@@ -22,7 +22,7 @@ export function ChatSidebar({ chat, character }: ChatSidebarProps) {
         empty="暂无状态"
         content={chat?.latestStatus}
       />
-      <Card className="bg-card/70 shadow-sm shadow-primary/5 backdrop-blur transition-colors hover:border-primary/30">
+<Card className="bg-card/50 shadow-sm shadow-primary/5 backdrop-blur-xl transition-all duration-200 hover:border-primary/20 hover:shadow-md hover:shadow-primary/8">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="flex items-center gap-1.5 text-sm">
             <ScrollText className="h-3.5 w-3.5 text-primary" />
@@ -70,7 +70,7 @@ function InfoCard({ title, icon, empty, content }: InfoCardProps) {
   const text = content?.trim() ? content : empty;
 
   return (
-    <Card className="bg-card/70 shadow-sm shadow-primary/5 backdrop-blur transition-colors hover:border-primary/30">
+    <Card className="bg-card/50 shadow-sm shadow-primary/5 backdrop-blur-xl transition-all duration-200 hover:border-primary/20 hover:shadow-md hover:shadow-primary/8">
       <CardHeader className="p-4 pb-2">
         <CardTitle className="flex items-center gap-1.5 text-sm">
           <span className="text-primary">{icon}</span>

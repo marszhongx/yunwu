@@ -251,7 +251,7 @@ type ChatListProps = {
 function ChatList({ chats, currentChatId, onEdit, onCreate }: ChatListProps) {
   if (chats.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
         <h3 className="text-base font-medium">还没有对话</h3>
         <p className="mt-2 text-sm text-muted-foreground">先创建一个对话，再继续角色扮演。</p>
         <Button type="button" className="mt-4" onClick={onCreate}>
@@ -295,10 +295,10 @@ function ChatListButton({
     <button
       type="button"
       className={cn(
-        "block w-full rounded-md border border-border/70 px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
+        "block w-full rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
         dashed &&
-          "flex items-center justify-center gap-2 border-dashed border-foreground/35 text-center text-foreground hover:border-ring hover:text-accent-foreground",
-        active && "border-ring bg-accent text-accent-foreground",
+          "flex items-center justify-center gap-2 border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
+        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
       )}
       aria-current={active ? "true" : undefined}
       aria-label={`编辑 ${label}`}

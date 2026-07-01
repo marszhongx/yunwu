@@ -54,7 +54,7 @@ export function ConfigDialogLayout({
           )}
         >
           {hasLeft ? (
-            <section className="min-h-0 space-y-3 overflow-auto pr-4 md:border-r md:border-border/70">
+            <section className="min-h-0 space-y-3 overflow-auto pr-4 md:border-r md:border-border/40">
               {left}
             </section>
           ) : null}

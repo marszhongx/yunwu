@@ -95,7 +95,7 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           const promptId = `system-prompt-${index}`;
 
           return (
-            <section key={promptId} className="space-y-2 rounded-lg border border-border/70 p-3">
+            <section key={promptId} className="space-y-2 rounded-xl border border-border/40 bg-card/40 p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor={promptId}>内置系统提示词 {index + 1}</Label>
                 <Button
@@ -117,7 +117,7 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           );
         })}
         {systemPrompts.length === 0 ? (
-          <div className="flex min-h-full flex-1 items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
+          <div className="flex min-h-full flex-1 items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center text-sm text-muted-foreground backdrop-blur-sm">
             暂无系统提示词，保存时会恢复默认值，也可以先新增一条。
           </div>
         ) : null}

@@ -61,8 +61,7 @@ test("truncates long provider names in the provider list", () => {
   const button = screen.getByRole("button", { name: `编辑 ${longName}` });
 
   expect(button.parentElement).toHaveClass("w-full", "min-w-0");
-  expect(screen.getByText(longName)).toHaveClass("block", "min-w-0", "truncate");
-  expect(screen.getByText(longName)).toHaveStyle({ flex: "1 1 0%", maxWidth: "100%" });
+  expect(screen.getByText(longName)).toHaveClass("block", "min-w-0", "truncate", "flex-1");
 });
 
 test("shows an empty state before creating the first provider", () => {

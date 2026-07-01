@@ -274,7 +274,7 @@ type ProviderListProps = {
 function ProviderList({ providers, activeProviderId, onEdit, onCreate }: ProviderListProps) {
   if (providers.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/70 p-8 text-center">
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
         <h3 className="text-base font-medium">还没有 Provider</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           先创建一个 Provider，再开始调用 AI 模型。
@@ -320,10 +320,10 @@ function ProviderListButton({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
+        "flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
         dashed &&
-          "justify-center border-dashed border-foreground/35 text-center text-foreground hover:border-ring hover:text-accent-foreground",
-        active && "border-ring bg-accent text-accent-foreground",
+          "justify-center border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
+        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
       )}
       aria-current={active ? "true" : undefined}
       aria-label={`编辑 ${label}`}
@@ -331,8 +331,10 @@ function ProviderListButton({
     >
       {dashed ? <Plus className="size-4" /> : null}
       <span
-        className="block min-w-0 truncate text-sm"
-        style={{ flex: dashed ? "0 1 auto" : "1 1 0%", maxWidth: "100%" }}
+        className={cn(
+          "block min-w-0 truncate text-sm",
+          dashed ? "flex-auto" : "flex-1",
+        )}
       >
         {label}
       </span>

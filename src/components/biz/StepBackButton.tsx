@@ -11,7 +11,7 @@ export function StepBackButton({ onClick }: StepBackButtonProps) {
       type="button"
       variant="ghost"
       size="icon"
-      className="group h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+      className="group h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-accent/50 hover:text-foreground"
       aria-label="返回列表"
       onClick={onClick}
     >
