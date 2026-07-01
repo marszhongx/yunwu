@@ -4,6 +4,7 @@ dist
 .env
 .worktrees/
 .omo
+.DS_Store
 docs/plans/
 docs/superpowers/
 examples/
