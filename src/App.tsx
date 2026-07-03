@@ -19,6 +19,7 @@ import {
   Sun,
   UserRound,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getCharacter } from "@/services/characters";
 import { createChat, getChat } from "@/services/chats";
 import { saveTheme } from "@/services/settings";
@@ -108,10 +109,10 @@ export default function App() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden bg-background/90 text-foreground">
+      <div className="flex h-[100dvh] max-w-[1600px] mx-auto overflow-hidden bg-background/90 text-foreground">
         <aside className="hidden w-80 shrink-0 flex-col border-r border-border/40 bg-card/60 p-5 shadow-2xl shadow-primary/5 backdrop-blur-2xl lg:flex">
-          <h1 className="mb-5 text-xl font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-primary via-primary/80 to-accent-foreground bg-clip-text text-transparent">
+          <h1 className="mb-5 text-2xl font-semibold tracking-tight">
+            <span className="text-foreground">
               云雾聊天室
             </span>
             {activeProviderName ? (
@@ -135,7 +136,7 @@ export default function App() {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <span className="text-sm font-semibold tracking-tight">云雾聊天室</span>
+            <span className="text-base font-semibold tracking-tight">云雾聊天室</span>
             {activeProviderName ? (
               <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 {activeProviderName}
@@ -158,7 +159,7 @@ export default function App() {
             onClick={() => setChatsOpen(true)}
             title="记录"
             aria-label="记录"
-            className="h-9 w-9 lg:h-10 lg:w-10"
+            className={cn("h-9 w-9 lg:h-10 lg:w-10", chatsOpen && "bg-accent/60 text-accent-foreground")}
           >
             <History className="h-4 w-4 lg:h-5 lg:w-5" />
           </Button>
@@ -168,7 +169,7 @@ export default function App() {
             onClick={() => setCharactersOpen(true)}
             title="角色"
             aria-label="角色"
-            className="h-9 w-9 lg:h-10 lg:w-10"
+            className={cn("h-9 w-9 lg:h-10 lg:w-10", charactersOpen && "bg-accent/60 text-accent-foreground")}
           >
             <UserRound className="h-4 w-4 lg:h-5 lg:w-5" />
           </Button>
@@ -178,7 +179,7 @@ export default function App() {
             onClick={() => setSystemPromptOpen(true)}
             title="提示词"
             aria-label="提示词"
-            className="h-9 w-9 lg:h-10 lg:w-10"
+            className={cn("h-9 w-9 lg:h-10 lg:w-10", systemPromptOpen && "bg-accent/60 text-accent-foreground")}
           >
             <MessageSquareText className="h-4 w-4 lg:h-5 lg:w-5" />
           </Button>
@@ -188,7 +189,7 @@ export default function App() {
             onClick={() => setSettingsOpen(true)}
             title="设置"
             aria-label="设置"
-            className="h-9 w-9 lg:h-10 lg:w-10"
+            className={cn("h-9 w-9 lg:h-10 lg:w-10", settingsOpen && "bg-accent/60 text-accent-foreground")}
           >
             <Settings className="h-4 w-4 lg:h-5 lg:w-5" />
           </Button>
@@ -198,7 +199,7 @@ export default function App() {
             onClick={() => setImageProviderOpen(true)}
             title="图片生成"
             aria-label="图片生成"
-            className="h-9 w-9 lg:h-10 lg:w-10"
+            className={cn("h-9 w-9 lg:h-10 lg:w-10", imageProviderOpen && "bg-accent/60 text-accent-foreground")}
           >
             <Image className="h-4 w-4 lg:h-5 lg:w-5" />
           </Button>
@@ -219,8 +220,8 @@ export default function App() {
             className="w-80 border-border/40 bg-card/90 p-5 backdrop-blur-2xl lg:hidden"
           >
             <SheetTitle className="sr-only">侧栏</SheetTitle>
-            <h1 className="mb-5 text-xl font-semibold tracking-tight">
-              <span className="bg-gradient-to-r from-primary via-primary/80 to-accent-foreground bg-clip-text text-transparent">
+            <h1 className="mb-5 text-2xl font-semibold tracking-tight">
+              <span className="text-foreground">
                 云雾聊天室
               </span>
               {activeProviderName ? (

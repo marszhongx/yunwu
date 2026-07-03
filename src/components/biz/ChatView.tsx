@@ -166,7 +166,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (bottomRef.current && "scrollIntoView" in bottomRef.current) {
-      bottomRef.current.scrollIntoView();
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
   });
 
@@ -183,7 +183,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
         </p>
         <Button
           type="button"
-          className="mt-6 rounded-full px-6 shadow-lg shadow-primary/20"
+          className="mt-6 rounded-full px-6 shadow-md shadow-primary/15"
           onClick={onCreateChat}
         >
           新建对话
@@ -311,6 +311,40 @@ function mergeMessages(messages: ChatMessage[], pendingMessages: ChatMessage[]) 
   return merged;
 }
 
+type MessageActionButtonProps = {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: "accent" | "destructive";
+};
+
+function MessageActionButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  tone = "accent",
+}: MessageActionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200",
+        tone === "destructive"
+          ? "hover:bg-destructive hover:text-destructive-foreground"
+          : "hover:bg-accent hover:text-accent-foreground",
+        disabled && "opacity-50",
+      )}
+    >
+      {icon}
+    </button>
+  );
+}
+
 type MessageBubbleProps = {
   message: ChatMessage;
   text: string;
@@ -337,29 +371,26 @@ function MessageBubble({
 
   if (isImage) {
     return (
-      <div className="group flex justify-start">
+      <div className="group flex animate-fade-in-up justify-start">
         <div className="max-w-[88%] sm:max-w-[82%]">
           {onDelete && (
             <div className="mb-1 flex gap-1 justify-start opacity-0 transition-opacity group-hover:opacity-100">
-              <button
-                type="button"
+              <MessageActionButton
+                icon={<Download className="h-3 w-3" />}
+                label="下载图片"
                 onClick={() => {
                   const a = document.createElement("a");
                   a.href = text;
                   a.download = `image-${message.id}.png`;
                   a.click();
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:bg-accent hover:text-accent-foreground"
-              >
-                <Download className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
+              />
+              <MessageActionButton
+                icon={<X className="h-3 w-3" />}
+                label="删除"
+                tone="destructive"
                 onClick={onDelete}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
+              />
             </div>
           )}
           <img
@@ -379,7 +410,7 @@ function MessageBubble({
   const status = parsed?.status ?? null;
 
   return (
-    <div className={cn("group flex", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("group flex animate-fade-in-up", isUser ? "justify-end" : "justify-start")}>
       <div className="max-w-[88%] sm:max-w-[82%]">
         {onDelete && (
           <div
@@ -389,40 +420,37 @@ function MessageBubble({
             )}
           >
             {onGenerateImage && (
-              <button
-                type="button"
+              <MessageActionButton
+                icon={
+                  generatingImage ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-3 w-3" />
+                  )
+                }
+                label="生成图片"
                 onClick={onGenerateImage}
                 disabled={generatingImage}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
-              >
-                {generatingImage ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <ImageIcon className="h-3 w-3" />
-                )}
-              </button>
+              />
             )}
-            <button
-              type="button"
+            <MessageActionButton
+              icon={<Copy className="h-3 w-3" />}
+              label="复制"
               onClick={() => navigator.clipboard.writeText(bodyText)}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:bg-accent hover:text-accent-foreground"
-            >
-              <Copy className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
+            />
+            <MessageActionButton
+              icon={<X className="h-3 w-3" />}
+              label="删除"
+              tone="destructive"
               onClick={onDelete}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            />
           </div>
         )}
         <div
           className={cn(
             "whitespace-pre-wrap rounded-3xl px-4 py-3 text-sm leading-7 shadow-lg shadow-primary/5",
             isUser
-              ? "rounded-br-md bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-md shadow-primary/15"
+              ? "rounded-br-md bg-primary text-primary-foreground shadow-md shadow-primary/15"
               : "rounded-bl-md border border-border/40 bg-card/75 text-card-foreground backdrop-blur-xl",
           )}
         >
