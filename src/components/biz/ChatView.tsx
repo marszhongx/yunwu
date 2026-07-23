@@ -3,9 +3,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { MessageRenderer } from "@/components/biz/MessageRenderer";
 import { buildMessages, parseMessage } from "@/lib/messages";
 import { matchLorebook } from "@/lib/lorebooks";
-import { Copy, Download, Heart, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
+import { Copy, Download, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateImage, streamAssistantTextRequest } from "@/services/ai";
 import { addMessage, deleteMessage, updateMessage } from "@/services/chats";
@@ -207,10 +208,11 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
               }
               loading={message.id === streamingId && streamingText === ""}
               onChoice={
-                !isStreaming && !isSending && index === lastNonImageIndex
+                message.role === "assistant" && index === lastNonImageIndex
                   ? (choice) => void sendMessage(choice)
                   : undefined
               }
+              choicesDisabled={isStreaming || isSending}
               extraChoices={
                 showOpeningChoices && index === lastNonImageIndex
                   ? character?.opening_user_choices
@@ -351,6 +353,7 @@ type MessageBubbleProps = {
   loading?: boolean;
   extraChoices?: string[];
   onChoice?: (choice: string) => void;
+  choicesDisabled?: boolean;
   onDelete?: () => void;
   onGenerateImage?: () => void;
   generatingImage?: boolean;
@@ -362,6 +365,7 @@ function MessageBubble({
   loading = false,
   extraChoices = [],
   onChoice,
+  choicesDisabled = false,
   onDelete,
   onGenerateImage,
   generatingImage = false,
@@ -405,9 +409,6 @@ function MessageBubble({
 
   const parsed = isUser ? null : parseMessage(text);
   const bodyText = loading ? "" : isUser ? text : (parsed?.body ?? "");
-  const choices = isUser ? [] : [...(parsed?.choices ?? []), ...extraChoices];
-  const summary = parsed?.summary ?? null;
-  const status = parsed?.status ?? null;
 
   return (
     <div className={cn("group flex animate-fade-in-up", isUser ? "justify-end" : "justify-start")}>
@@ -446,48 +447,22 @@ function MessageBubble({
             />
           </div>
         )}
-        <div
-          className={cn(
-            "whitespace-pre-wrap rounded-3xl px-4 py-3 text-sm leading-7 shadow-lg shadow-primary/5",
-            isUser
-              ? "rounded-br-md bg-primary text-primary-foreground shadow-md shadow-primary/15"
-              : "rounded-bl-md border border-border/40 bg-card/75 text-card-foreground backdrop-blur-xl",
-          )}
-        >
-          {loading ? (
+        {loading ? (
+          <div className="rounded-3xl rounded-bl-md border border-border/40 bg-card/75 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-primary/5 backdrop-blur-xl">
             <LoadingDots label="回复生成中" />
-          ) : (
-            <>
-              {bodyText || (message.id ? " " : "")}
-              {summary && (
-                <span className="mt-2 flex gap-1 text-xs leading-6 text-muted-foreground">
-                  <ScrollText className="mt-[6px] h-3 w-3 shrink-0" />
-                  <span>{summary}</span>
-                </span>
-              )}
-              {status && (
-                <span className="mt-1 flex gap-1 text-xs leading-6 text-muted-foreground">
-                  <Heart className="mt-[6px] h-3 w-3 shrink-0" />
-                  <span>{status}</span>
-                </span>
-              )}
-            </>
-          )}
-        </div>
-        {choices.length > 0 && onChoice ? (
-          <div className="mt-2 flex flex-col gap-2">
-            {choices.map((choice) => (
-              <button
-                key={choice}
-                type="button"
-                className="max-w-full rounded-2xl border border-border/40 bg-card/60 px-3.5 py-2 text-left text-sm leading-7 text-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-primary/30 hover:bg-accent/80 hover:shadow-md"
-                onClick={() => onChoice(choice)}
-              >
-                {choice}
-              </button>
-            ))}
           </div>
-        ) : null}
+        ) : isUser ? (
+          <div className="whitespace-pre-wrap rounded-3xl rounded-br-md bg-primary px-4 py-3 text-sm leading-7 text-primary-foreground shadow-md shadow-primary/15">
+            {bodyText || (message.id ? " " : "")}
+          </div>
+        ) : (
+          <MessageRenderer
+            content={text}
+            extraChoices={extraChoices}
+            onChoice={onChoice}
+            choicesDisabled={choicesDisabled}
+          />
+        )}
       </div>
     </div>
   );

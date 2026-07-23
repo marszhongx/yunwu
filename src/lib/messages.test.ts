@@ -290,6 +290,24 @@ describe("messages domain", () => {
     expect(resolveChoices("A: 走近\nB: 等待\nC: 逃跑")).toEqual(["A: 走近", "B: 等待", "C: 逃跑"]);
   });
 
+  it("resolveChoices preserves plain-text prefixes", () => {
+    expect(resolveChoices("- 向左走\n- 向右走")).toEqual(["- 向左走", "- 向右走"]);
+    expect(resolveChoices("A: 向左走\nB: 向右走")).toEqual(["A: 向左走", "B: 向右走"]);
+  });
+
+  it("parseMessage keeps plain text inside response tags", () => {
+    expect(
+      parseMessage(
+        "<content>这是 **正文**</content><summary>- 摘要一</summary><choices>- 前进\n- 等待</choices>",
+      ),
+    ).toEqual({
+      body: "这是 **正文**",
+      summary: "- 摘要一",
+      status: null,
+      choices: ["- 前进", "- 等待"],
+    });
+  });
+
   it("resolveChoices returns empty array for empty string", () => {
     expect(resolveChoices("")).toEqual([]);
   });

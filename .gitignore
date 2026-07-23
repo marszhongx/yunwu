@@ -3,6 +3,7 @@ dist
 .claude/
 .env
 .worktrees/
+.codebase-memory/
 .omo
 .DS_Store
 docs/plans/

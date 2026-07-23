@@ -138,6 +138,26 @@ test("adds user and assistant messages and displays streamed text", async () => 
   expect(onChanged).toHaveBeenCalledTimes(2);
 });
 
+test("streams partial choices as disabled buttons", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "继续" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", role: "assistant", content: "" }));
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
+    onText?.("<content>雾中传来声音</content><choices>\n- 向");
+    return streamRequest(new Promise(() => {}));
+  });
+
+  render(<ChatView chat={chat()} character={null} />);
+
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "继续" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+
+  expect(await screen.findByRole("button", { name: "- 向" })).toBeDisabled();
+});
+
 test("shows a visual loading indicator instead of loading text", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
@@ -218,7 +238,9 @@ test("passes custom system prompts into AI request", async () => {
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
-  vi.mocked(ai.streamAssistantTextRequest).mockReturnValue(streamRequest(Promise.resolve({ text: "雾来了" })));
+  vi.mocked(ai.streamAssistantTextRequest).mockReturnValue(
+    streamRequest(Promise.resolve({ text: "雾来了" })),
+  );
 
   render(<ChatView chat={chat()} character={null} />);
 
@@ -280,6 +302,68 @@ test("hides XML tags from message body when content tag is missing", () => {
   expect(screen.getByText(/状态/)).toBeInTheDocument();
   expect(screen.queryByText(/<summary>|<status>|<choices>/)).not.toBeInTheDocument();
   expect(screen.getByText("A: 向左走")).toBeInTheDocument();
+});
+
+test("renders assistant response tags as plain text", () => {
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({
+            id: "assistant-1",
+            role: "assistant",
+            content: "<content>这是 **重点**</content><summary>- 摘要项</summary>",
+          }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  expect(screen.getByText("这是 **重点**")).toBeInTheDocument();
+  expect(screen.queryByText("重点", { selector: "strong" })).not.toBeInTheDocument();
+  expect(screen.getByText("- 摘要项")).toBeInTheDocument();
+});
+
+test("keeps user messages as plain text", () => {
+  render(
+    <ChatView
+      chat={chat({
+        messages: [message({ id: "user-1", role: "user", content: "**不是粗体**" })],
+      })}
+      character={null}
+    />,
+  );
+
+  expect(screen.getByText("**不是粗体**")).toBeInTheDocument();
+  expect(screen.queryByText("不是粗体", { selector: "strong" })).not.toBeInTheDocument();
+});
+
+test("copies only assistant body source text", () => {
+  const writeText = vi.fn();
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({
+            id: "assistant-1",
+            role: "assistant",
+            content:
+              "<content>这是 **正文**</content><summary>摘要</summary><status>状态</status><choices>- 前进</choices>",
+          }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "复制" }));
+  expect(writeText).toHaveBeenCalledWith("这是 **正文**");
 });
 
 test("shows a visual image loading bubble while generating an image", async () => {

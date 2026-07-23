@@ -1,5 +1,9 @@
 import { DEFAULT_SYSTEM_PROMPTS, ResponseTag } from "@/constants";
-import { xml2json } from "@/lib/xml";
+import {
+  findMessageMarkupContent,
+  normalizeMessageMarkup,
+  parseMessageMarkup,
+} from "@/lib/messageMarkup";
 import type { CharacterCard, ChatMessage } from "@/types";
 
 type PromptMessage = {
@@ -120,9 +124,9 @@ export function parseStatus(content: string): string | null {
 }
 
 export function parseContent(content: string): string {
-  const normalized = normalizeResponseTagDelimiters(content);
-  const parsed = parseXmlResponse(normalized);
-  return resolveBody(normalized, parsed[ResponseTag.CONTENT][0]);
+  const normalized = normalizeMessageMarkup(content);
+  const nodes = parseMessageMarkup(normalized);
+  return resolveBody(normalized, findMessageMarkupContent(nodes, ResponseTag.CONTENT));
 }
 
 export type ParsedMessage = {
@@ -133,20 +137,23 @@ export type ParsedMessage = {
 };
 
 export function parseMessage(content: string): ParsedMessage {
-  const normalized = normalizeResponseTagDelimiters(content);
-  const parsed = parseXmlResponse(normalized);
+  const normalized = normalizeMessageMarkup(content);
+  const nodes = parseMessageMarkup(normalized);
   return {
-    body: resolveBody(normalized, parsed[ResponseTag.CONTENT][0]),
-    choices: resolveChoices(parsed[ResponseTag.CHOICES][0] ?? ""),
-    summary: parsed[ResponseTag.SUMMARY][0] ?? null,
-    status: parsed[ResponseTag.STATUS][0] ?? null,
+    body: resolveBody(normalized, findMessageMarkupContent(nodes, ResponseTag.CONTENT)),
+    choices: resolveChoices(findMessageMarkupContent(nodes, ResponseTag.CHOICES) ?? ""),
+    summary: findMessageMarkupContent(nodes, ResponseTag.SUMMARY) ?? null,
+    status: findMessageMarkupContent(nodes, ResponseTag.STATUS) ?? null,
   };
 }
 
 function compressContent(content: string): string {
-  const normalized = normalizeResponseTagDelimiters(content);
-  const parsed = parseXmlResponse(normalized);
-  return parsed[ResponseTag.SUMMARY][0] ?? resolveBody(normalized, parsed[ResponseTag.CONTENT][0]);
+  const normalized = normalizeMessageMarkup(content);
+  const nodes = parseMessageMarkup(normalized);
+  return (
+    findMessageMarkupContent(nodes, ResponseTag.SUMMARY) ??
+    resolveBody(normalized, findMessageMarkupContent(nodes, ResponseTag.CONTENT))
+  );
 }
 
 function resolveBody(content: string, parsedContent: string | undefined): string {
@@ -184,15 +191,7 @@ function minKnownIndex(a: number, b: number): number {
 }
 
 function parseTag(content: string, tag: ResponseTag): string | null {
-  return parseXmlResponse(normalizeResponseTagDelimiters(content))[tag][0] ?? null;
-}
-
-function normalizeResponseTagDelimiters(content: string): string {
-  return content.replaceAll("__LT__", "<").replaceAll("__GT__", ">");
-}
-
-function parseXmlResponse(content: string) {
-  return xml2json(content, RESPONSE_TAGS);
+  return findMessageMarkupContent(parseMessageMarkup(content), tag) ?? null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
