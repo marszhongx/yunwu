@@ -78,7 +78,6 @@ export type Chat = {
   charId: string;
   summaries: string[];
   latestSummary: string;
-  latestStatus: string;
   createdAt: string;
   updatedAt: string;
 };

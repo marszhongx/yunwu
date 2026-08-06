@@ -1,5 +1,5 @@
 import { uuid } from "@/lib/ids";
-import { parseStatus, parseSummary } from "@/lib/messages";
+import { parseSummary } from "@/lib/messages";
 import type { Chat, ChatMessage, MessageRole } from "@/types";
 import {
   deleteMessagesByChatId,
@@ -15,7 +15,7 @@ type ChatWithMessages = Chat & { messages: StoredMessage[] };
 type ChatInput = { charId: string; title?: string };
 type MessageInput = Partial<Record<keyof ChatMessage, unknown>>;
 type StoredMessage = ChatMessage & { id: string; chatId: string; createdAt: string };
-type DerivedChatState = Pick<Chat, "summaries" | "latestSummary" | "latestStatus">;
+type DerivedChatState = Pick<Chat, "summaries" | "latestSummary">;
 
 let lastTimestamp = 0;
 
@@ -40,7 +40,6 @@ export async function createChat({ charId, title }: ChatInput): Promise<ChatWith
     charId,
     summaries: [],
     latestSummary: "",
-    latestStatus: "",
     createdAt: now,
     updatedAt: now,
   };
@@ -115,22 +114,17 @@ async function recomputeChatState(chatId: string): Promise<void> {
 
 function deriveStateFromMessages(messages: StoredMessage[]): DerivedChatState {
   const summaries: string[] = [];
-  let latestStatus = "";
 
   for (const message of messages) {
     if (message.role !== "assistant") continue;
 
     const summary = parseSummary(message.content);
     if (summary !== null) summaries.push(summary);
-
-    const status = parseStatus(message.content);
-    if (status !== null) latestStatus = status;
   }
 
   return {
     summaries,
     latestSummary: summaries.length > 0 ? summaries[summaries.length - 1] : "",
-    latestStatus,
   };
 }
 

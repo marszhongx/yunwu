@@ -58,7 +58,7 @@ describe("IndexedDB data services", () => {
     });
     const assistantMessage = await addMessage(chat.id, {
       role: "assistant",
-      content: "见到了你 <summary>met</summary> <status>身体：健康</status>",
+      content: "见到了你 <summary>met</summary>",
     });
 
     expect(imageMessage.role).toBe("image");
@@ -88,23 +88,22 @@ describe("IndexedDB data services", () => {
     expect(await getChat(chat.id)).toBeNull();
   });
 
-  test("addMessage collects summaries into array and tracks latest status", async () => {
+  test("addMessage collects summaries into array and tracks latest summary", async () => {
     const character = await createCharacter({ name: "云雾" });
     const chat = await createChat({ charId: character.id });
 
     await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>first</summary> <status>旧</status>",
+      content: "<summary>first</summary>",
     });
     await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>second</summary> 没有状态标签",
+      content: "<summary>second</summary>",
     });
 
     const updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual(["first", "second"]);
     expect(updated?.latestSummary).toBe("second");
-    expect(updated?.latestStatus).toBe("旧");
   });
 
   test("summaries reflect current messages without preserveExisting", async () => {
@@ -113,17 +112,16 @@ describe("IndexedDB data services", () => {
 
     await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>old</summary> <status>旧</status>",
+      content: "<summary>old</summary>",
     });
     await addMessage(chat.id, {
       role: "assistant",
-      content: "没有摘要和状态标签",
+      content: "没有摘要标签",
     });
 
     const updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual(["old"]);
     expect(updated?.latestSummary).toBe("old");
-    expect(updated?.latestStatus).toBe("旧");
   });
 
   test("deleteMessage removes summary from array and recomputes", async () => {
@@ -131,11 +129,11 @@ describe("IndexedDB data services", () => {
     const chat = await createChat({ charId: character.id });
     const first = await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>old</summary> <status>旧</status>",
+      content: "<summary>old</summary>",
     });
     const second = await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>new</summary> <status>新</status>",
+      content: "<summary>new</summary>",
     });
 
     expect((await getChat(chat.id))?.summaries).toEqual(["old", "new"]);
@@ -145,16 +143,15 @@ describe("IndexedDB data services", () => {
     let updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual(["old"]);
     expect(updated?.latestSummary).toBe("old");
-    expect(updated?.latestStatus).toBe("旧");
     expect(updated?.messages.map((message) => message.id)).toEqual([first.id]);
 
     const third = await addMessage(chat.id, {
       role: "assistant",
-      content: "没有摘要和状态标签",
+      content: "没有摘要标签",
     });
     const fourth = await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>newest</summary> <status>最新</status>",
+      content: "<summary>newest</summary>",
     });
 
     await deleteMessage(chat.id, fourth.id);
@@ -162,7 +159,6 @@ describe("IndexedDB data services", () => {
     updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual(["old"]);
     expect(updated?.latestSummary).toBe("old");
-    expect(updated?.latestStatus).toBe("旧");
     expect(updated?.messages.map((message) => message.id)).toEqual([first.id, third.id]);
 
     await deleteMessage(chat.id, third.id);
@@ -171,7 +167,6 @@ describe("IndexedDB data services", () => {
     updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual([]);
     expect(updated?.latestSummary).toBe("");
-    expect(updated?.latestStatus).toBe("");
     expect(updated?.messages).toEqual([]);
   });
 
@@ -180,14 +175,13 @@ describe("IndexedDB data services", () => {
     const chat = await createChat({ charId: character.id });
     const message = await addMessage(chat.id, {
       role: "assistant",
-      content: "<summary>old</summary> <status>旧</status>",
+      content: "<summary>old</summary>",
     });
 
-    await updateMessage(chat.id, message.id, { content: "没有摘要和状态标签" });
+    await updateMessage(chat.id, message.id, { content: "没有摘要标签" });
 
     const updated = await getChat(chat.id);
     expect(updated?.summaries).toEqual([]);
     expect(updated?.latestSummary).toBe("");
-    expect(updated?.latestStatus).toBe("");
   });
 });

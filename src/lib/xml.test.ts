@@ -15,41 +15,41 @@ describe("xml2json", () => {
   });
 
   it("keeps text in any known unclosed tag at the end", () => {
-    expect(xml2json("<summary>摘要", ["summary", "status", "choices"])).toEqual({
+    expect(xml2json("<summary>摘要", ["summary", "content", "choices"])).toEqual({
       summary: ["摘要"],
-      status: [],
+      content: [],
       choices: [],
     });
-    expect(xml2json("<status>状态", ["summary", "status", "choices"])).toEqual({
+    expect(xml2json("<content>正文", ["summary", "content", "choices"])).toEqual({
       summary: [],
-      status: ["状态"],
+      content: ["正文"],
       choices: [],
     });
-    expect(xml2json("<choices>\nA: 前进", ["summary", "status", "choices"])).toEqual({
+    expect(xml2json("<choices>\nA: 前进", ["summary", "content", "choices"])).toEqual({
       summary: [],
-      status: [],
+      content: [],
       choices: ["A: 前进"],
     });
   });
 
   it("keeps completed tags before an unclosed tag at the end", () => {
     expect(
-      xml2json("<content>正文</content><summary>摘要", ["content", "summary", "status"]),
+      xml2json("<content>正文</content><summary>摘要", ["content", "summary", "choices"]),
     ).toEqual({
       content: ["正文"],
       summary: ["摘要"],
-      status: [],
+      choices: [],
     });
     expect(
-      xml2json("<content>正文</content><summary>摘要</summary><status>状态", [
+      xml2json("<content>正文</content><summary>摘要</summary><choices>A: 前进", [
         "content",
         "summary",
-        "status",
+        "choices",
       ]),
     ).toEqual({
       content: ["正文"],
       summary: ["摘要"],
-      status: ["状态"],
+      choices: ["A: 前进"],
     });
   });
 
@@ -61,11 +61,15 @@ describe("xml2json", () => {
 
   it("stops an unclosed tag before the next known opening tag", () => {
     expect(
-      xml2json("<content>正文<summary>摘要<status>状态</status>", ["content", "summary", "status"]),
+      xml2json("<content>正文<summary>摘要<choices>A: 前进</choices>", [
+        "content",
+        "summary",
+        "choices",
+      ]),
     ).toEqual({
       content: ["正文"],
       summary: ["摘要"],
-      status: ["状态"],
+      choices: ["A: 前进"],
     });
   });
 

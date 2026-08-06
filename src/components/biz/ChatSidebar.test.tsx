@@ -7,7 +7,6 @@ test("renders selected chat, character, and enabled lorebook entries", () => {
   render(
     <ChatSidebar
       chat={chat({
-        latestStatus: "体力良好",
         summaries: ["抵达山脚", "进入村庄"],
         latestSummary: "进入村庄",
       })}
@@ -22,8 +21,6 @@ test("renders selected chat, character, and enabled lorebook entries", () => {
     />,
   );
 
-  expect(screen.getByText("角色状态")).toBeInTheDocument();
-  expect(screen.getByText("体力良好")).toBeInTheDocument();
   const items = screen.getAllByRole("listitem");
   expect(items).toHaveLength(2);
   expect(items[0]).toHaveTextContent("抵达山脚");
@@ -40,7 +37,6 @@ test("falls back to latestSummary when summaries array is empty", () => {
 test("renders empty sidebar states", () => {
   render(<ChatSidebar chat={null} character={null} />);
 
-  expect(screen.getByText("暂无状态")).toBeInTheDocument();
   expect(screen.getByText("暂无摘要")).toBeInTheDocument();
   expect(screen.getByText("未选择角色")).toBeInTheDocument();
   expect(screen.getByText("暂无条目")).toBeInTheDocument();
@@ -53,7 +49,6 @@ function chat(overrides: Partial<Chat> = {}): Chat {
     charId: "char-1",
     summaries: [],
     latestSummary: "",
-    latestStatus: "",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

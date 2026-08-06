@@ -4,11 +4,11 @@ import { parseMessageMarkup } from "@/lib/messageMarkup";
 describe("parseMessageMarkup", () => {
   it("keeps top-level tags in source order", () => {
     expect(
-      parseMessageMarkup("<content>正文</content><summary>摘要</summary><status>状态</status>"),
+      parseMessageMarkup("<content>正文</content><summary>摘要</summary><choices>A: 走</choices>"),
     ).toEqual([
       { type: "element", name: "content", content: "正文" },
       { type: "element", name: "summary", content: "摘要" },
-      { type: "element", name: "status", content: "状态" },
+      { type: "element", name: "choices", content: "A: 走" },
     ]);
   });
 
@@ -19,22 +19,19 @@ describe("parseMessageMarkup", () => {
   });
 
   it("keeps leading body and streamed unclosed known tags", () => {
-    expect(parseMessageMarkup("正文<summary>摘要</summary><status>状")).toEqual([
+    expect(parseMessageMarkup("正文<summary>摘要</summary><choices>A: 走")).toEqual([
       { type: "element", name: "content", content: "正文" },
       { type: "element", name: "summary", content: "摘要" },
-      { type: "element", name: "status", content: "状" },
+      { type: "element", name: "choices", content: "A: 走" },
     ]);
   });
 
   it("stops an unclosed tag before the next opening tag", () => {
     expect(
-      parseMessageMarkup(
-        "<content>正文<summary>摘要<status>状态</status><choices>- 前进</choices>",
-      ),
+      parseMessageMarkup("<content>正文<summary>摘要</summary><choices>- 前进</choices>"),
     ).toEqual([
       { type: "element", name: "content", content: "正文" },
       { type: "element", name: "summary", content: "摘要" },
-      { type: "element", name: "status", content: "状态" },
       { type: "element", name: "choices", content: "- 前进" },
     ]);
   });

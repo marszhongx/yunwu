@@ -256,7 +256,7 @@ test("passes custom system prompts into AI request", async () => {
   ]);
 });
 
-test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles", () => {
+test("hides CHOICES tag but shows SUMMARY content in message bubbles", () => {
   render(
     <ChatView
       chat={chat({
@@ -265,7 +265,7 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
             id: "assistant-1",
             role: "assistant",
             content:
-              "<content>正文</content>\n<summary>摘要</summary>\n<status>状态</status>\n<choices>\nA: 向左走\nB: 向右走\nC: 原地等待\nD: 呼叫同伴\n</choices>",
+              "<content>正文</content>\n<summary>摘要</summary>\n<choices>\nA: 向左走\nB: 向右走\nC: 原地等待\nD: 呼叫同伴\n</choices>",
           }),
         ],
       })}
@@ -275,8 +275,7 @@ test("hides CHOICES tag but shows SUMMARY and STATUS content in message bubbles"
 
   expect(screen.getByText(/正文/)).toBeInTheDocument();
   expect(screen.getByText(/摘要/)).toBeInTheDocument();
-  expect(screen.getByText(/状态/)).toBeInTheDocument();
-  expect(screen.queryByText(/SUMMARY|STATUS|CHOICES/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/SUMMARY|CHOICES/)).not.toBeInTheDocument();
   expect(screen.getByText("A: 向左走")).toBeInTheDocument();
 });
 
@@ -289,7 +288,7 @@ test("hides XML tags from message body when content tag is missing", () => {
             id: "assistant-1",
             role: "assistant",
             content:
-              "正文\n\n<summary>摘要</summary>\n\n<status>状态</status>\n\n<choices>\nA: 向左走\nB: 向右走\n</choices>",
+              "正文\n\n<summary>摘要</summary>\n\n<choices>\nA: 向左走\nB: 向右走\n</choices>",
           }),
         ],
       })}
@@ -299,8 +298,7 @@ test("hides XML tags from message body when content tag is missing", () => {
 
   expect(screen.getByText(/^正文$/)).toBeInTheDocument();
   expect(screen.getByText(/摘要/)).toBeInTheDocument();
-  expect(screen.getByText(/状态/)).toBeInTheDocument();
-  expect(screen.queryByText(/<summary>|<status>|<choices>/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/<summary>|<choices>/)).not.toBeInTheDocument();
   expect(screen.getByText("A: 向左走")).toBeInTheDocument();
 });
 
@@ -354,7 +352,7 @@ test("copies only assistant body source text", () => {
             id: "assistant-1",
             role: "assistant",
             content:
-              "<content>这是 **正文**</content><summary>摘要</summary><status>状态</status><choices>- 前进</choices>",
+              "<content>这是 **正文**</content><summary>摘要</summary><choices>- 前进</choices>",
           }),
         ],
       })}
@@ -641,7 +639,6 @@ function chat(
     charId: "char-1",
     summaries: [],
     latestSummary: "",
-    latestStatus: "",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     messages: [],

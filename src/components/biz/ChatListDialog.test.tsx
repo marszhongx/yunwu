@@ -199,7 +199,6 @@ function chat(overrides: Partial<Awaited<ReturnType<typeof chats.listChats>>[num
     charId: "char-1",
     summaries: [],
     latestSummary: "",
-    latestStatus: "",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

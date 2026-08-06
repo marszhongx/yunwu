@@ -119,10 +119,6 @@ export function parseSummary(content: string): string | null {
   return parseTag(content, ResponseTag.SUMMARY);
 }
 
-export function parseStatus(content: string): string | null {
-  return parseTag(content, ResponseTag.STATUS);
-}
-
 export function parseContent(content: string): string {
   const normalized = normalizeMessageMarkup(content);
   const nodes = parseMessageMarkup(normalized);
@@ -133,7 +129,6 @@ export type ParsedMessage = {
   body: string;
   choices: string[];
   summary: string | null;
-  status: string | null;
 };
 
 export function parseMessage(content: string): ParsedMessage {
@@ -143,7 +138,6 @@ export function parseMessage(content: string): ParsedMessage {
     body: resolveBody(normalized, findMessageMarkupContent(nodes, ResponseTag.CONTENT)),
     choices: resolveChoices(findMessageMarkupContent(nodes, ResponseTag.CHOICES) ?? ""),
     summary: findMessageMarkupContent(nodes, ResponseTag.SUMMARY) ?? null,
-    status: findMessageMarkupContent(nodes, ResponseTag.STATUS) ?? null,
   };
 }
 

@@ -4,7 +4,7 @@ export type MessageMarkupNode = {
   content: string;
 };
 
-const KNOWN_STREAMING_TAGS = ["content", "summary", "status", "choices"] as const;
+const KNOWN_STREAMING_TAGS = ["content", "summary", "choices"] as const;
 
 export function normalizeMessageMarkup(source: string): string {
   return source.split("__LT__").join("<").split("__GT__").join(">");

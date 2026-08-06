@@ -52,7 +52,6 @@ test("selects a chat from the records dialog and shows its chat view and sidebar
     chat({
       id: "chat-1",
       title: "山间旅途",
-      latestStatus: "状态文字",
       latestSummary: "摘要文字",
     }) as Awaited<ReturnType<typeof chats.getChat>>,
   );
@@ -74,7 +73,6 @@ test("selects a chat from the records dialog and shows its chat view and sidebar
 
   await waitFor(() => expect(chats.getChat).toHaveBeenCalledWith("chat-1"));
   expect(await screen.findByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送")).toBeInTheDocument();
-  expect(screen.getByText("状态文字")).toBeInTheDocument();
   expect(screen.getByText("摘要文字")).toBeInTheDocument();
   expect(screen.getByText(/云雀/)).toBeInTheDocument();
 });
@@ -109,12 +107,12 @@ test("updates the main title when the selected chat is renamed from the records 
 
 test("clears the selected chat when it is deleted from the records dialog", async () => {
   vi.mocked(chats.listChats)
-    .mockResolvedValueOnce([chat({ id: "chat-1", title: "待删对话", latestStatus: "旧状态" })])
-    .mockResolvedValueOnce([chat({ id: "chat-1", title: "待删对话", latestStatus: "旧状态" })])
+    .mockResolvedValueOnce([chat({ id: "chat-1", title: "待删对话", latestSummary: "旧摘要" })])
+    .mockResolvedValueOnce([chat({ id: "chat-1", title: "待删对话", latestSummary: "旧摘要" })])
     .mockResolvedValueOnce([]);
   vi.mocked(characters.listCharacters).mockResolvedValue([character({ name: "云雀" })]);
   vi.mocked(chats.getChat).mockResolvedValue(
-    chat({ id: "chat-1", title: "待删对话", latestStatus: "旧状态" }),
+    chat({ id: "chat-1", title: "待删对话", latestSummary: "旧摘要" }),
   );
   vi.mocked(characters.getCharacter).mockResolvedValue(character({ name: "云雀" }));
   vi.mocked(chats.deleteChat).mockResolvedValue();
@@ -123,7 +121,7 @@ test("clears the selected chat when it is deleted from the records dialog", asyn
 
   await openChatFromDialog("待删对话");
   expect(await screen.findByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送")).toBeInTheDocument();
-  expect(screen.getByText("旧状态")).toBeInTheDocument();
+  expect(screen.getByText("旧摘要")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "记录" }));
   fireEvent.click(await screen.findByRole("button", { name: "编辑 待删对话" }));
@@ -132,7 +130,7 @@ test("clears the selected chat when it is deleted from the records dialog", asyn
   await waitFor(() => expect(chats.deleteChat).toHaveBeenCalledWith("chat-1"));
   expect(await screen.findByRole("heading", { name: "还没有对话" })).toBeInTheDocument();
   expect(screen.queryByText("待删对话")).not.toBeInTheDocument();
-  expect(screen.queryByText("旧状态")).not.toBeInTheDocument();
+  expect(screen.queryByText("旧摘要")).not.toBeInTheDocument();
 });
 
 test("reopens character dialog with a fresh initial state", async () => {
@@ -164,7 +162,6 @@ function chat(overrides: Partial<Awaited<ReturnType<typeof chats.listChats>>[num
     charId: "char-1",
     summaries: [],
     latestSummary: "",
-    latestStatus: "",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     messages: [],

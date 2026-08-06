@@ -3,18 +3,11 @@ import { expect, test, vi } from "vitest";
 import { MessageRenderer } from "@/components/biz/MessageRenderer";
 
 test("renders built-in regions as plain text", () => {
-  render(
-    <MessageRenderer
-      content={
-        "<content>正文 **重点**</content><summary>- 摘要</summary><status>心情：平静</status>"
-      }
-    />,
-  );
+  render(<MessageRenderer content="<content>正文 **重点**</content><summary>- 摘要</summary>" />);
 
   expect(screen.getByText("正文 **重点**")).toBeInTheDocument();
   expect(screen.queryByText("重点", { selector: "strong" })).not.toBeInTheDocument();
   expect(screen.getByText("- 摘要")).toBeInTheDocument();
-  expect(screen.getByText("心情：平静")).toBeInTheDocument();
 });
 
 test("renders unknown tags transparently", () => {

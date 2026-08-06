@@ -1,4 +1,4 @@
-import { BookOpen, Heart, ScrollText, User } from "lucide-react";
+import { BookOpen, ScrollText, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CharacterCard, Chat, LorebookEntry } from "@/types";
 
@@ -16,12 +16,6 @@ export function ChatSidebar({ chat, character }: ChatSidebarProps) {
 
   return (
     <div className="space-y-4">
-      <InfoCard
-        title="角色状态"
-        icon={<Heart className="h-3.5 w-3.5" />}
-        empty="暂无状态"
-        content={chat?.latestStatus}
-      />
       <Card className="bg-card/50 shadow-sm shadow-primary/5 backdrop-blur-xl transition-all duration-200 hover:border-primary/20 hover:shadow-md hover:shadow-primary/8">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="flex items-center gap-1.5 text-sm">

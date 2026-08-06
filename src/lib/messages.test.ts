@@ -7,7 +7,6 @@ import {
   normalizeMessages,
   parseChoices,
   parseMessage,
-  parseStatus,
   parseSummary,
   parseContent,
   resolveChoices,
@@ -26,7 +25,11 @@ describe("messages domain", () => {
 
     const messages: ChatMessage[] = [
       { id: "u1", role: "user", content: "推门进入" },
-      { id: "a1", role: "assistant", content: "门后传来风声<status>身体：无</status>" },
+      {
+        id: "a1",
+        role: "assistant",
+        content: "<content>门后传来风声</content><summary>风声</summary>",
+      },
     ];
 
     const result = buildMessages({
@@ -71,22 +74,19 @@ describe("messages domain", () => {
       {
         id: "a1",
         role: "assistant",
-        content:
-          "<content>旧正文</content><summary>主角进入大厅</summary><status>身体：无</status>",
+        content: "<content>旧正文</content><summary>主角进入大厅</summary>",
       },
       { id: "u2", role: "user", content: "查看四周" },
       {
         id: "a2",
         role: "assistant",
-        content:
-          "<content>中篇正文</content><summary>发现宝箱</summary><status>身体：疲惫</status>",
+        content: "<content>中篇正文</content><summary>发现宝箱</summary>",
       },
       { id: "u3", role: "user", content: "打开宝箱" },
       {
         id: "a3",
         role: "assistant",
-        content:
-          "<content>最新正文</content><summary>获得钥匙</summary><status>身体：良好</status>",
+        content: "<content>最新正文</content><summary>获得钥匙</summary>",
       },
     ]);
 
@@ -106,7 +106,7 @@ describe("messages domain", () => {
       {
         id: "a1",
         role: "assistant",
-        content: "<content>没有摘要的旧正文</content><status>身体：无</status>",
+        content: "<content>没有摘要的旧正文</content>",
       },
       { id: "u2", role: "user", content: "查看四周" },
       { id: "a2", role: "assistant", content: "<content>中篇正文</content>" },
@@ -141,11 +141,8 @@ describe("messages domain", () => {
     });
   });
 
-  it("parseSummary and parseStatus extract XML tags", () => {
+  it("parseSummary extracts XML tag", () => {
     expect(parseSummary("正文<summary>雾散了</summary>结尾")).toBe("雾散了");
-    expect(parseStatus("正文<status>身体：疲惫\n地点：驿站</status>结尾")).toBe(
-      "身体：疲惫\n地点：驿站",
-    );
   });
 
   it("parseContent extracts content XML tag", () => {
@@ -162,7 +159,6 @@ describe("messages domain", () => {
 
   it("parses streaming response tags before they are closed", () => {
     expect(parseSummary("<summary>摘要")).toBe("摘要");
-    expect(parseStatus("<status>状态")).toBe("状态");
     expect(parseChoices("<choices>\nA: 前进")).toEqual(["A: 前进"]);
   });
 
@@ -171,22 +167,20 @@ describe("messages domain", () => {
   });
 
   it("parseMessage keeps completed tags and current unclosed content tag", () => {
-    const parsed = parseMessage("<summary>摘要</summary><status>状态</status><content>正文");
+    const parsed = parseMessage("<summary>摘要</summary><content>正文");
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual([]);
   });
 
   it("parseMessage extracts escaped response XML tags", () => {
     const parsed = parseMessage(
-      "__LT__content__GT__正文__LT__/content__GT____LT__summary__GT__摘要__LT__/summary__GT____LT__status__GT__状态__LT__/status__GT____LT__choices__GT__\nA: 前进\nB: 等待\n__LT__/choices__GT__",
+      "__LT__content__GT__正文__LT__/content__GT____LT__summary__GT__摘要__LT__/summary__GT____LT__choices__GT__\nA: 前进\nB: 等待\n__LT__/choices__GT__",
     );
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual(["A: 前进", "B: 等待"]);
   });
 
@@ -195,55 +189,33 @@ describe("messages domain", () => {
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBeNull();
-    expect(parsed.choices).toEqual([]);
-  });
-
-  it("parseMessage keeps completed tags and current unclosed status tag", () => {
-    const parsed = parseMessage("<content>正文</content><summary>摘要</summary><status>状态");
-
-    expect(parsed.body).toBe("正文");
-    expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual([]);
   });
 
   it("parseMessage keeps completed tags and current unclosed choices tag", () => {
     const parsed = parseMessage(
-      "<content>正文</content><summary>摘要</summary><status>状态</status><choices>\nA: 前进\nB: 等",
+      "<content>正文</content><summary>摘要</summary><choices>\nA: 前进\nB: 等",
     );
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual(["A: 前进", "B: 等"]);
   });
 
   it("parseContent uses leading text before response tags when content tag is missing", () => {
-    const content =
-      "正文<choices>A: 走</choices>\n中段<summary>摘要</summary>\n末尾<status>身体：无</status>";
+    const content = "正文<choices>A: 走</choices>\n中段<summary>摘要</summary>";
 
     expect(parseContent(content)).toBe("正文");
   });
 
   it("parseMessage uses leading text as body when content tag is missing", () => {
     const parsed = parseMessage(
-      "正文\n\n<summary>摘要</summary>\n\n<status>状态</status>\n\n<choices>\nA: 前进\nB: 等待\n</choices>",
+      "正文\n\n<summary>摘要</summary>\n\n<choices>\nA: 前进\nB: 等待\n</choices>",
     );
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual(["A: 前进", "B: 等待"]);
-  });
-
-  it("parseMessage keeps leading text when following tags are partially streamed", () => {
-    const parsed = parseMessage("正文\n\n<summary>摘要</summary>\n\n<status>状");
-
-    expect(parsed.body).toBe("正文");
-    expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状");
-    expect(parsed.choices).toEqual([]);
   });
 
   it("parseMessage hides a partially streamed response tag name from leading body", () => {
@@ -251,7 +223,6 @@ describe("messages domain", () => {
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBeNull();
-    expect(parsed.status).toBeNull();
     expect(parsed.choices).toEqual([]);
   });
 
@@ -260,13 +231,10 @@ describe("messages domain", () => {
   });
 
   it("stops an unclosed XML tag before the next known response tag", () => {
-    const parsed = parseMessage(
-      "<content>正文<summary>摘要<status>状态</status><choices>\nA: 前进\n</choices>",
-    );
+    const parsed = parseMessage("<content>正文<summary>摘要<choices>\nA: 前进\n</choices>");
 
     expect(parsed.body).toBe("正文");
     expect(parsed.summary).toBe("摘要");
-    expect(parsed.status).toBe("状态");
     expect(parsed.choices).toEqual(["A: 前进"]);
   });
 
@@ -275,7 +243,6 @@ describe("messages domain", () => {
 
     expect(parsed.body).toBe("只有正文");
     expect(parsed.summary).toBeNull();
-    expect(parsed.status).toBeNull();
     expect(parsed.choices).toEqual([]);
   });
 
@@ -303,7 +270,6 @@ describe("messages domain", () => {
     ).toEqual({
       body: "这是 **正文**",
       summary: "- 摘要一",
-      status: null,
       choices: ["- 前进", "- 等待"],
     });
   });

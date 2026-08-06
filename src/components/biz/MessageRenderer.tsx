@@ -1,5 +1,5 @@
 import { Fragment, type ComponentType, type ReactNode } from "react";
-import { Heart, ScrollText } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { parseMessageMarkup, type MessageMarkupNode } from "@/lib/messageMarkup";
 import { resolveChoices } from "@/lib/messages";
 
@@ -21,7 +21,6 @@ type MessageRendererProps = {
 const defaultRegistry: MessageMarkupRegistry = {
   content: ContentRegion,
   summary: SummaryRegion,
-  status: StatusRegion,
 };
 
 export function MessageRenderer({
@@ -85,15 +84,6 @@ function SummaryRegion({ children }: MessageMarkupComponentProps) {
   return (
     <div className="mt-2 flex gap-1 text-xs leading-6 text-muted-foreground">
       <ScrollText className="mt-[6px] h-3 w-3 shrink-0" />
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
-
-function StatusRegion({ children }: MessageMarkupComponentProps) {
-  return (
-    <div className="mt-1 flex gap-1 text-xs leading-6 text-muted-foreground">
-      <Heart className="mt-[6px] h-3 w-3 shrink-0" />
       <div className="min-w-0">{children}</div>
     </div>
   );

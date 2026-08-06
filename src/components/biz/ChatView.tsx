@@ -180,7 +180,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">还没有对话</h2>
         <p className="mt-2 text-sm text-muted-foreground">先创建一个对话，再继续角色扮演。</p>
         <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-          角色状态、剧情摘要和世界书会在左侧同步展示。
+          剧情摘要和世界书会在左侧同步展示。
         </p>
         <Button
           type="button"
