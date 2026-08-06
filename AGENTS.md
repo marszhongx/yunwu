@@ -11,7 +11,7 @@
 
 ## App Shape
 
-- This is a static browser-only React app; do not add a backend requirement or move provider secrets out of browser-owned settings.
+- This is a static browser-only React app; do not add a backend requirement or move provider secrets out of browser-owned settings. The only server-side piece is the optional pass-through proxy (`api/proxy.ts`), which stores nothing and receives credentials per request from the browser.
 - `src/main.tsx` mounts `App` and Sonner; `src/App.tsx` owns top-level dialog/screen state, selected chat/character, mobile sheet state, and theme toggling.
 - Business UI is under `src/components/biz/`; low-level Radix/Tailwind wrappers are under `src/components/ui/`.
 - Use the `@/` alias for `src` imports. Do not add barrel/re-export files; import from the defining module.
@@ -28,6 +28,8 @@
 - `src/services/ai.ts` owns direct browser calls for Gemini, Claude, OpenAI-compatible chat completions/responses, and image generation endpoints.
 - Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook matching lives in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
 - Provider API keys are user-entered browser data; never commit sample real keys or assume server-side secret storage.
+- `api/proxy.ts` is a Vercel Edge Function (dumb tunnel) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). `vite.config.ts` reimplements the same forwarding as a dev middleware via undici (`EnvHttpProxyAgent` honors `HTTP(S)_PROXY`). Target hosts are whitelisted via `PROXY_ALLOWED_HOSTS` (comma-separated, `*` allows all, defaults to the three official APIs).
+- When changing `AppSettings`, update `normalizeSettings` in `src/services/settings.ts` and every exact `toEqual` settings assertion in tests.
 
 ## Tests And UI Checks
 

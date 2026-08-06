@@ -53,6 +53,7 @@ beforeEach(() => {
     systemPrompts: ["默认系统提示"],
     imageProviders: [],
     activeImageProviderId: "",
+    useProxy: false,
   });
 });
 
@@ -231,6 +232,7 @@ test("passes custom system prompts into AI request", async () => {
     systemPrompts: ["自定义第一条", "自定义第二条"],
     imageProviders: [],
     activeImageProviderId: "",
+    useProxy: false,
   });
   vi.mocked(chats.addMessage)
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
@@ -597,6 +599,7 @@ test("shows opening user choices before the first user message and sends the sel
     systemPrompts: [],
     imageProviders: [],
     activeImageProviderId: "",
+    useProxy: false,
   });
   vi.mocked(chats.addMessage)
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "观察四周" }))

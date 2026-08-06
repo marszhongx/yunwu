@@ -19,6 +19,7 @@ import { openAIChatCompletionsUrl } from "@/services/ai";
 import {
   addProvider,
   deleteProvider,
+  saveUseProxy,
   setActiveProvider,
   updateProvider,
 } from "@/services/settings";
@@ -149,6 +150,16 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     }
   }
 
+  async function toggleUseProxy(checked: boolean) {
+    try {
+      await saveUseProxy(checked);
+      reload();
+      onChanged?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "代理设置保存失败");
+    }
+  }
+
   const apiPreview = openAIChatCompletionsUrl(form.baseUrl);
 
   const isEditing = creating || selectedId !== null;
@@ -253,12 +264,29 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
           </div>
         </>
       ) : (
-        <ProviderList
-          providers={settings.providers}
-          activeProviderId={settings.activeProviderId}
-          onEdit={editProvider}
-          onCreate={startCreate}
-        />
+        <div className="w-full min-w-0">
+          <ProviderList
+            providers={settings.providers}
+            activeProviderId={settings.activeProviderId}
+            onEdit={editProvider}
+            onCreate={startCreate}
+          />
+          <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-sm backdrop-blur-sm transition-colors hover:bg-accent/60">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+              checked={settings.useProxy}
+              onChange={(event) => void toggleUseProxy(event.target.checked)}
+            />
+            <span className="min-w-0">
+              通过服务器代理转发 API 请求
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                遇到跨域（CORS）报错时开启：请求经部署站点的 /api/proxy 转发，API Key
+                仍只保存在你的浏览器；关闭时一律直连。
+              </span>
+            </span>
+          </label>
+        </div>
       )}
     </ConfigDialogLayout>
   );

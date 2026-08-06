@@ -60,4 +60,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   systemPrompts: DEFAULT_SYSTEM_PROMPTS,
   imageProviders: [],
   activeImageProviderId: "",
+  useProxy: false,
 };

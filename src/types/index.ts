@@ -26,6 +26,7 @@ export type AppSettings = {
   systemPrompts: string[];
   imageProviders: ImageProviderSettings[];
   activeImageProviderId: string;
+  useProxy: boolean;
 };
 
 export type MessageRole = "user" | "assistant" | "image";

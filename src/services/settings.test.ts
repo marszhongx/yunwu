@@ -15,6 +15,7 @@ import {
   getSettings,
   saveSystemPrompts,
   saveTheme,
+  saveUseProxy,
   setActiveImageProvider,
   setActiveProvider,
   updateImageProvider,
@@ -34,6 +35,7 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
+      useProxy: false,
     });
   });
 
@@ -59,6 +61,7 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
+      useProxy: false,
     });
   });
 
@@ -82,6 +85,15 @@ describe("settings service", () => {
     });
     expect(getActiveProvider()).toEqual(updated);
     await expect(updateProvider("missing", { name: "Missing" })).resolves.toBeNull();
+  });
+
+  test("saves and normalizes useProxy flag", async () => {
+    expect((await saveUseProxy(true)).useProxy).toBe(true);
+    expect(getSettings().useProxy).toBe(true);
+    expect((await saveUseProxy(false)).useProxy).toBe(false);
+
+    localStorage.setItem("yunwu.settings.v1", JSON.stringify({ useProxy: "yes" }));
+    expect(getSettings().useProxy).toBe(false);
   });
 
   test("deleting active provider clears active id and removes it", async () => {
@@ -120,6 +132,7 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
+      useProxy: false,
     });
   });
 

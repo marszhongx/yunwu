@@ -41,6 +41,7 @@ beforeEach(() => {
     systemPrompts: ["默认系统提示"],
     imageProviders: [],
     activeImageProviderId: "",
+    useProxy: false,
   });
   vi.mocked(settings.getActiveProvider).mockReturnValue(null);
 });

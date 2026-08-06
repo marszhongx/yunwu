@@ -106,6 +106,7 @@ function normalizeSettings(value: unknown): AppSettings {
     activeImageProviderId: hasActiveImageProvider
       ? activeImageProviderId
       : DEFAULT_SETTINGS.activeImageProviderId,
+    useProxy: input.useProxy === true,
   };
 }
 
@@ -204,6 +205,10 @@ export async function saveTheme(theme: unknown): Promise<AppSettings> {
 
 export async function saveSystemPrompts(systemPrompts: unknown): Promise<AppSettings> {
   return await saveSettings({ ...getSettings(), systemPrompts });
+}
+
+export async function saveUseProxy(useProxy: boolean): Promise<AppSettings> {
+  return await saveSettings({ ...getSettings(), useProxy });
 }
 
 type ImageProviderInput = Partial<Record<keyof ImageProviderSettings, unknown>>;
