@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 export const config = { runtime: "edge" };
 
 const FORWARD_HEADER_BLOCKLIST = new Set([
