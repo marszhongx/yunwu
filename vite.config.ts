@@ -6,31 +6,33 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { EnvHttpProxyAgent, fetch as upstreamFetch, type Dispatcher } from "undici";
 
-// Node 内置 fetch 不认 HTTP(S)_PROXY;使用 undici 自带的 fetch + EnvHttpProxyAgent,
-// 避免与 Node 内置 undici 的 Dispatcher API 版本不匹配
 const upstreamDispatcher: Dispatcher = new EnvHttpProxyAgent();
 
-// 本地开发用的 /api/proxy 中间件,行为与 api/proxy.ts(Edge Function)一致
-const FORWARD_HEADER_WHITELIST = [
-  "content-type",
-  "accept",
-  "authorization",
-  "x-api-key",
-  "anthropic-version",
-  "anthropic-beta",
-  "anthropic-dangerous-direct-browser-access",
-];
+const FORWARD_HEADER_BLOCKLIST = new Set([
+  "host",
+  "connection",
+  "content-length",
+  "cookie",
+  "x-proxy-target",
+  "forwarded",
+]);
 
-const DEFAULT_ALLOWED_HOSTS = [
-  "api.openai.com",
-  "generativelanguage.googleapis.com",
-  "api.anthropic.com",
-];
+const FORWARD_HEADER_BLOCKED_PREFIXES = ["x-forwarded-", "x-vercel-", "cf-"];
+
+function forwardHeaders(req: IncomingMessage): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (value === undefined) continue;
+    if (FORWARD_HEADER_BLOCKLIST.has(name)) continue;
+    if (FORWARD_HEADER_BLOCKED_PREFIXES.some((prefix) => name.startsWith(prefix))) continue;
+    headers[name] = Array.isArray(value) ? value.join(", ") : value;
+  }
+  return headers;
+}
 
 function allowedHosts(): string[] | "*" {
   const raw = (process.env.PROXY_ALLOWED_HOSTS ?? "").trim();
-  if (raw === "*") return "*";
-  if (raw === "") return DEFAULT_ALLOWED_HOSTS;
+  if (raw === "" || raw === "*") return "*";
   return raw
     .split(",")
     .map((item) => item.trim().toLowerCase())
@@ -72,17 +74,15 @@ async function handleDevProxy(req: IncomingMessage, res: ServerResponse): Promis
   }
 
   if (!isAllowedHost(targetUrl.hostname, allowedHosts())) {
-    respondError(res, 403, `目标域名 ${targetUrl.hostname} 不在代理白名单中`);
+    respondError(
+      res,
+      403,
+      `目标域名 ${targetUrl.hostname} 不在代理白名单中,可在 PROXY_ALLOWED_HOSTS 中追加`,
+    );
     return;
   }
 
-  const headers: Record<string, string> = {};
-  for (const name of FORWARD_HEADER_WHITELIST) {
-    const value = req.headers[name];
-    if (typeof value === "string" && value !== "") {
-      headers[name] = value;
-    }
-  }
+  const headers = forwardHeaders(req);
 
   const controller = new AbortController();
   res.once("close", () => {

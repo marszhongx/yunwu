@@ -42,7 +42,6 @@ describe("proxy service", () => {
     expect(headers.get("content-type")).toBe("application/json");
     expect(wrapped.init.body).toBe("{}");
     expect(wrapped.init.signal).toBe(controller.signal);
-    // 原始 init 不被修改
     expect(new Headers(init.headers).has("x-proxy-target")).toBe(false);
   });
 

@@ -49,6 +49,6 @@ npm run build
 
 - 遇到个别 API 中转站不支持浏览器跨域(CORS)时,可在 Provider 设置中开启“通过服务器代理转发 API 请求”:LLM 请求经 `/api/proxy` 同源转发绕开限制;关闭时一律浏览器直连。
 - 代理只做转发,不解析、不存储任何数据;API Key 仍只保存在用户自己的浏览器里。
-- 可用环境变量 `PROXY_ALLOWED_HOSTS` 配置目标域名白名单(逗号分隔,`*` 表示不限制),默认为 `api.openai.com`、`generativelanguage.googleapis.com`、`api.anthropic.com`。
+- 目标域名默认不限制;如需收敛,可用环境变量 `PROXY_ALLOWED_HOSTS` 配置白名单(逗号分隔,`*` 表示不限制)。
 
 纯静态部署(无 Serverless 能力)时应用仍完全可用,只是代理开关无效。

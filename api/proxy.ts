@@ -1,27 +1,25 @@
-// Vercel Edge Function:LLM API 转发代理(哑管道)。
-// 不解析、不存储任何请求数据;API Key 只存于用户浏览器,逐请求以 header 形式穿过。
-// 安全约束:
-// - 目标 URL 通过 x-proxy-target 请求头传递,避免 Key 出现在访问日志的 query 里
-// - 目标域名白名单,环境变量 PROXY_ALLOWED_HOSTS(逗号分隔,"*" 不限制;默认官方三家)
-// - 上行请求头走白名单,cookie / host 等不透传
-
 export const config = { runtime: "edge" };
 
-const FORWARD_HEADER_WHITELIST = [
-  "content-type",
-  "accept",
-  "authorization",
-  "x-api-key",
-  "anthropic-version",
-  "anthropic-beta",
-  "anthropic-dangerous-direct-browser-access",
-];
+const FORWARD_HEADER_BLOCKLIST = new Set([
+  "host",
+  "connection",
+  "content-length",
+  "cookie",
+  "x-proxy-target",
+  "forwarded",
+]);
 
-const DEFAULT_ALLOWED_HOSTS = [
-  "api.openai.com",
-  "generativelanguage.googleapis.com",
-  "api.anthropic.com",
-];
+const FORWARD_HEADER_BLOCKED_PREFIXES = ["x-forwarded-", "x-vercel-", "cf-"];
+
+function forwardHeaders(request: Request): Headers {
+  const headers = new Headers();
+  request.headers.forEach((value, name) => {
+    if (FORWARD_HEADER_BLOCKLIST.has(name)) return;
+    if (FORWARD_HEADER_BLOCKED_PREFIXES.some((prefix) => name.startsWith(prefix))) return;
+    headers.set(name, value);
+  });
+  return headers;
+}
 
 function jsonError(status: number, message: string): Response {
   return new Response(JSON.stringify({ error: message }), {
@@ -32,8 +30,7 @@ function jsonError(status: number, message: string): Response {
 
 function allowedHosts(): string[] | "*" {
   const raw = (process.env.PROXY_ALLOWED_HOSTS ?? "").trim();
-  if (raw === "*") return "*";
-  if (raw === "") return DEFAULT_ALLOWED_HOSTS;
+  if (raw === "" || raw === "*") return "*";
   return raw
     .split(",")
     .map((item) => item.trim().toLowerCase())
@@ -75,13 +72,7 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
 
-  const headers = new Headers();
-  for (const name of FORWARD_HEADER_WHITELIST) {
-    const value = request.headers.get(name);
-    if (value !== null) {
-      headers.set(name, value);
-    }
-  }
+  const headers = forwardHeaders(request);
 
   let upstream: Response;
   try {
@@ -92,7 +83,6 @@ export default async function handler(request: Request): Promise<Response> {
       signal: request.signal,
     });
   } catch (error) {
-    // 客户端主动断开:无需构造响应
     if (error instanceof DOMException && error.name === "AbortError") {
       return new Response(null, { status: 499 });
     }
