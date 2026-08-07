@@ -119,7 +119,7 @@ describe("streamAssistantText", () => {
 
     expect(result).toEqual({ text: "旁白" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.anthropic.com/v1/messages",
+      "https://example.com/v1/messages",
       expect.objectContaining({
         method: "POST",
         headers: {
@@ -144,6 +144,71 @@ describe("streamAssistantText", () => {
     );
   });
 
+  test("streams OpenAI Responses output_text deltas with instructions", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        streamResponse([
+          'data: {"type":"response.output_text.delta","delta":"你"}\n\n',
+          'data: {"type":"response.output_text.delta","delta":"好"}\n\n',
+          'data: {"type":"response.completed","response":{}}\n\n',
+        ]),
+      ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await streamAssistantText({
+      provider: provider({ type: ProviderType.OPENAI_RESPONSE, model: "gpt-5.1" }),
+      messages: [
+        { role: "system", content: "规则" },
+        { role: "user", content: "开始" },
+        { role: "assistant", content: "继续" },
+      ],
+    });
+
+    expect(result).toEqual({ text: "你好" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com/v1/responses",
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer api-key",
+        },
+        body: JSON.stringify({
+          model: "gpt-5.1",
+          instructions: "规则",
+          input: [
+            { role: "user", content: "开始" },
+            { role: "assistant", content: "继续" },
+          ],
+          stream: true,
+        }),
+      }),
+    );
+  });
+
+  test("falls back to the official Claude endpoint when base URL is empty", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        streamResponse([
+          'data: {"type":"content_block_delta","delta":{"text":"好"}}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+      ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await streamAssistantText({
+      provider: provider({ type: ProviderType.CLAUDE, baseUrl: " ", model: "claude-3-5-sonnet" }),
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.anthropic.com/v1/messages",
+      expect.anything(),
+    );
+  });
+
   test("sends Gemini safety settings at the request body top level", async () => {
     const fetchMock = vi
       .fn()
@@ -165,7 +230,10 @@ describe("streamAssistantText", () => {
     });
 
     expect(result).toEqual({ text: "回应" });
-    const [, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      "https://example.com/v1/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=api-key",
+    );
     const body = JSON.parse(String(init.body));
     expect(body).toMatchObject({
       contents: [
@@ -273,12 +341,47 @@ describe("requestAssistantText", () => {
     });
 
     expect(result).toEqual({ text: '{"name":"测试"}' });
-    const [, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://example.com/v1/messages");
     const body = JSON.parse(String(init.body));
     expect(body.stream).toBe(false);
     expect(body.system).toEqual([
       { type: "text", text: "输出 JSON", cache_control: { type: "ephemeral" } },
     ]);
+  });
+
+  test("requests OpenAI Responses with stream false and parses output items", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        output: [
+          { type: "reasoning" },
+          {
+            type: "message",
+            content: [{ type: "output_text", text: '{"name":"测试"}' }],
+          },
+        ],
+      }),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await requestAssistantText({
+      provider: provider({ type: ProviderType.OPENAI_RESPONSE, model: "gpt-5.1" }),
+      messages: [
+        { role: "system", content: "输出 JSON" },
+        { role: "user", content: "生成角色" },
+      ],
+    });
+
+    expect(result).toEqual({ text: '{"name":"测试"}' });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://example.com/v1/responses");
+    const body = JSON.parse(String(init.body));
+    expect(body).toEqual({
+      model: "gpt-5.1",
+      instructions: "输出 JSON",
+      input: [{ role: "user", content: "生成角色" }],
+      stream: false,
+    });
   });
 
   test("requests Gemini with json responseMimeType and no streaming URL", async () => {

@@ -142,6 +142,86 @@ test("creates, edits, activates, and deletes providers without image provider fi
   expect(onChanged).toHaveBeenCalledTimes(4);
 });
 
+test("previews the claude messages endpoint for Claude providers", () => {
+  localStorage.setItem(
+    "yunwu.settings.v1",
+    JSON.stringify({
+      activeProviderId: "provider-1",
+      providers: [
+        {
+          id: "provider-1",
+          name: "Claude",
+          type: "claude",
+          apiKey: "key",
+          baseUrl: "https://claude.example.com/v1/",
+          model: "claude-sonnet-4-5",
+        },
+      ],
+    }),
+  );
+
+  render(<SettingsDialog open onOpenChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Claude" }));
+
+  expect(
+    screen.getByText("预览：https://claude.example.com/v1/messages"),
+  ).toBeInTheDocument();
+});
+
+test("previews the gemini stream endpoint without leaking the api key", () => {
+  localStorage.setItem(
+    "yunwu.settings.v1",
+    JSON.stringify({
+      activeProviderId: "provider-1",
+      providers: [
+        {
+          id: "provider-1",
+          name: "Gemini",
+          type: "gemini",
+          apiKey: "secret-key",
+          baseUrl: "https://gemini.example.com/v1beta/",
+          model: "gemini-2.5-pro",
+        },
+      ],
+    }),
+  );
+
+  render(<SettingsDialog open onOpenChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Gemini" }));
+
+  const preview = screen.getByText(
+    "预览：https://gemini.example.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=API_KEY",
+  );
+  expect(preview).toBeInTheDocument();
+  expect(preview.textContent).not.toContain("secret-key");
+});
+
+test("previews the responses endpoint for OpenAI Responses providers", () => {
+  localStorage.setItem(
+    "yunwu.settings.v1",
+    JSON.stringify({
+      activeProviderId: "provider-1",
+      providers: [
+        {
+          id: "provider-1",
+          name: "Responses",
+          type: "openai-response",
+          apiKey: "key",
+          baseUrl: "https://responses.example.com/v1/",
+          model: "gpt-5.1",
+        },
+      ],
+    }),
+  );
+
+  render(<SettingsDialog open onOpenChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Responses" }));
+
+  expect(
+    screen.getByText("预览：https://responses.example.com/v1/responses"),
+  ).toBeInTheDocument();
+});
+
 test("reloads providers from localStorage when dialog opens", () => {
   localStorage.setItem(
     "yunwu.settings.v1",

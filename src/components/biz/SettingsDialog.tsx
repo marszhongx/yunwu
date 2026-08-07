@@ -15,7 +15,12 @@ import {
 import { ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { cn } from "@/lib/utils";
-import { openAIChatCompletionsUrl } from "@/services/ai";
+import {
+  claudeMessagesUrl,
+  geminiModelUrl,
+  openAIChatCompletionsUrl,
+  openAIResponsesUrl,
+} from "@/services/ai";
 import {
   addProvider,
   deleteProvider,
@@ -49,6 +54,17 @@ const emptyForm: ProviderForm = {
   baseUrl: "",
   model: "",
   maxTokens: "",
+};
+
+const apiPreviewBuilders: Record<
+  ProviderType,
+  (form: Pick<ProviderForm, "baseUrl" | "model">) => string
+> = {
+  [ProviderType.GEMINI]: ({ baseUrl, model }) =>
+    `${geminiModelUrl(baseUrl, model.trim() || "model", "streamGenerateContent")}?alt=sse&key=API_KEY`,
+  [ProviderType.CLAUDE]: ({ baseUrl }) => claudeMessagesUrl(baseUrl),
+  [ProviderType.OPENAI]: ({ baseUrl }) => openAIChatCompletionsUrl(baseUrl),
+  [ProviderType.OPENAI_RESPONSE]: ({ baseUrl }) => openAIResponsesUrl(baseUrl),
 };
 
 export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialogProps) {
@@ -160,7 +176,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     }
   }
 
-  const apiPreview = openAIChatCompletionsUrl(form.baseUrl);
+  const apiPreview = apiPreviewBuilders[form.type](form);
 
   const isEditing = creating || selectedId !== null;
   const dialogTitle = creating ? "新建 Provider" : selectedId ? "修改 Provider" : "Provider 设置";
@@ -213,6 +229,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                   <SelectItem value={ProviderType.GEMINI}>Gemini</SelectItem>
                   <SelectItem value={ProviderType.CLAUDE}>Claude</SelectItem>
                   <SelectItem value={ProviderType.OPENAI}>OpenAI 兼容</SelectItem>
+                  <SelectItem value={ProviderType.OPENAI_RESPONSE}>OpenAI Responses</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -234,9 +251,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                 value={form.baseUrl}
                 onChange={(value) => updateField("baseUrl", value)}
               />
-              {form.type === ProviderType.OPENAI ? (
-                <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
-              ) : null}
+              <p className="break-all text-sm text-muted-foreground">预览：{apiPreview}</p>
             </div>
             <div className="md:col-span-2">
               <button

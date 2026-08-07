@@ -3,6 +3,7 @@ import type { AppSettings } from "@/types";
 export enum ProviderType {
   GEMINI = "gemini",
   OPENAI = "openai",
+  OPENAI_RESPONSE = "openai-response",
   CLAUDE = "claude",
 }
 

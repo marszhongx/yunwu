@@ -81,6 +81,47 @@ function getOpenAIText(payload: unknown): string {
   return typeof content === "string" ? content : "";
 }
 
+function getOpenAIResponseStreamText(payload: unknown): string {
+  const type = textFromRecordPath(payload, ["type"]);
+
+  if (type !== "response.output_text.delta") {
+    return "";
+  }
+
+  const delta = textFromRecordPath(payload, ["delta"]);
+  return typeof delta === "string" ? delta : "";
+}
+
+function getOpenAIResponseText(json: unknown): string {
+  const outputText = textFromRecordPath(json, ["output_text"]);
+  if (typeof outputText === "string" && outputText !== "") {
+    return outputText;
+  }
+
+  const output = textFromRecordPath(json, ["output"]);
+  if (!Array.isArray(output)) {
+    return "";
+  }
+
+  let text = "";
+  for (const item of output) {
+    const content = textFromRecordPath(item, ["content"]);
+    if (!Array.isArray(content)) {
+      continue;
+    }
+    for (const part of content) {
+      if (textFromRecordPath(part, ["type"]) !== "output_text") {
+        continue;
+      }
+      const partText = textFromRecordPath(part, ["text"]);
+      if (typeof partText === "string") {
+        text += partText;
+      }
+    }
+  }
+  return text;
+}
+
 function getClaudeText(payload: unknown): string {
   const type = textFromRecordPath(payload, ["type"]);
 
@@ -111,6 +152,22 @@ function getGeminiText(payload: unknown): string {
 
 function normalizedOpenAIBaseUrl(baseUrl: string): string {
   return (baseUrl.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
+}
+
+function normalizedClaudeBaseUrl(baseUrl: string): string {
+  return (baseUrl.trim() || "https://api.anthropic.com/v1").replace(/\/+$/, "");
+}
+
+function normalizedGeminiBaseUrl(baseUrl: string): string {
+  return (baseUrl.trim() || "https://generativelanguage.googleapis.com/v1beta").replace(/\/+$/, "");
+}
+
+export function claudeMessagesUrl(baseUrl: string): string {
+  return `${normalizedClaudeBaseUrl(baseUrl)}/messages`;
+}
+
+export function geminiModelUrl(baseUrl: string, model: string, action: string): string {
+  return `${normalizedGeminiBaseUrl(baseUrl)}/models/${encodeURIComponent(model)}:${action}`;
 }
 
 export function openAIChatCompletionsUrl(baseUrl: string): string {
@@ -148,6 +205,54 @@ function openAIRequest(
   };
 }
 
+type ResponsesPayload = {
+  model: string;
+  instructions?: string;
+  input: { role: string; content: string }[];
+  stream: boolean;
+  max_output_tokens?: number;
+};
+
+function openAIResponsesPayload(
+  provider: ProviderLike & { apiKey: string; model: string },
+  messages: AssistantMessage[],
+  stream: boolean,
+): ResponsesPayload {
+  const instructions = messages
+    .filter((message) => message.role === "system")
+    .map((message) => message.content)
+    .join("\n\n");
+  const input = messages
+    .filter((message) => message.role !== "system")
+    .map((message) => ({ role: message.role, content: message.content }));
+
+  return {
+    model: provider.model,
+    ...(instructions ? { instructions } : {}),
+    input,
+    stream,
+    ...(provider.maxTokens ? { max_output_tokens: provider.maxTokens } : {}),
+  };
+}
+
+function openAIResponsesRequest(
+  provider: ProviderLike & { apiKey: string; model: string },
+  messages: AssistantMessage[],
+): StreamRequest {
+  return {
+    url: openAIResponsesUrl(provider.baseUrl || ""),
+    init: {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${provider.apiKey}`,
+      },
+      body: JSON.stringify(openAIResponsesPayload(provider, messages, true)),
+    },
+    extractText: getOpenAIResponseStreamText,
+  };
+}
+
 function claudeSystemBlocks(
   messages: AssistantMessage[],
 ): { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[] {
@@ -170,7 +275,7 @@ function claudeRequest(
   const userMessages = messages.filter((message) => message.role !== "system");
 
   return {
-    url: "https://api.anthropic.com/v1/messages",
+    url: claudeMessagesUrl(provider.baseUrl || ""),
     init: {
       method: "POST",
       headers: {
@@ -207,7 +312,7 @@ function geminiRequest(
     }));
 
   return {
-    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(provider.apiKey)}`,
+    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "streamGenerateContent")}?alt=sse&key=${encodeURIComponent(provider.apiKey)}`,
     init: {
       method: "POST",
       headers: {
@@ -230,6 +335,10 @@ function createRequest(
 ): StreamRequest {
   if (provider.type === ProviderType.OPENAI) {
     return openAIRequest(provider, messages);
+  }
+
+  if (provider.type === ProviderType.OPENAI_RESPONSE) {
+    return openAIResponsesRequest(provider, messages);
   }
 
   if (provider.type === ProviderType.CLAUDE) {
@@ -274,6 +383,24 @@ function openAINonStreamRequest(
   };
 }
 
+function openAIResponsesNonStreamRequest(
+  provider: ProviderLike & { apiKey: string; model: string },
+  messages: AssistantMessage[],
+): NonStreamRequest {
+  return {
+    url: openAIResponsesUrl(provider.baseUrl || ""),
+    init: {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${provider.apiKey}`,
+      },
+      body: JSON.stringify(openAIResponsesPayload(provider, messages, false)),
+    },
+    responseText: getOpenAIResponseText,
+  };
+}
+
 function claudeNonStreamRequest(
   provider: ProviderLike & { apiKey: string; model: string },
   messages: AssistantMessage[],
@@ -282,7 +409,7 @@ function claudeNonStreamRequest(
   const userMessages = messages.filter((message) => message.role !== "system");
 
   return {
-    url: "https://api.anthropic.com/v1/messages",
+    url: claudeMessagesUrl(provider.baseUrl || ""),
     init: {
       method: "POST",
       headers: {
@@ -332,7 +459,7 @@ function geminiNonStreamRequest(
     }));
 
   return {
-    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent?key=${encodeURIComponent(provider.apiKey)}`,
+    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "generateContent")}?key=${encodeURIComponent(provider.apiKey)}`,
     init: {
       method: "POST",
       headers: {
@@ -369,6 +496,10 @@ function createNonStreamRequest(
 ): NonStreamRequest {
   if (provider.type === ProviderType.OPENAI) {
     return openAINonStreamRequest(provider, messages);
+  }
+
+  if (provider.type === ProviderType.OPENAI_RESPONSE) {
+    return openAIResponsesNonStreamRequest(provider, messages);
   }
 
   if (provider.type === ProviderType.CLAUDE) {
