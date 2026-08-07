@@ -28,12 +28,12 @@
 - `src/services/ai.ts` owns direct browser calls for Gemini, Claude, OpenAI-compatible chat completions/responses, and image generation endpoints.
 - Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook matching lives in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
 - Provider API keys are user-entered browser data; never commit sample real keys or assume server-side secret storage.
-- `api/proxy.ts` is a Vercel Edge Function (dumb tunnel) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). `vite.config.ts` reimplements the same forwarding as a dev middleware via undici (`EnvHttpProxyAgent` honors `HTTP(S)_PROXY`). Target hosts default to unrestricted; `PROXY_ALLOWED_HOSTS` (comma-separated, `*` allows all) narrows them. Request headers pass through except a blocklist of cookie/host/hop-by-hop headers.
+- `api/proxy.ts` is a self-contained Vercel Edge Function (Hono + `hono/proxy` + `hono/vercel` `handle`) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). Forwarding is unconditional — any method, any target, all request headers pass through as-is (only hop-by-hop headers are handled per RFC 9110 by `hono/proxy`); no validation or allowlist exists by design. There is no dev equivalent: under `npm run dev` `/api/proxy` 404s — keep the `useProxy` setting off and use direct browser connections in dev; verify proxy flows against a Vercel (preview) deployment.
 - When changing `AppSettings`, update `normalizeSettings` in `src/services/settings.ts` and every exact `toEqual` settings assertion in tests.
 
 ## Tests And UI Checks
 
-- Tests live beside source files as `*.test.ts` / `*.test.tsx` under `src/`.
+- Tests live beside source files as `*.test.ts` / `*.test.tsx` under `src/` and `api/`.
 - Vitest uses jsdom, globals, `src/test/setup.ts`, and `fake-indexeddb/auto`; IndexedDB-dependent tests should rely on that setup instead of browser-only globals.
 - For UI behavior changes, run the relevant focused Vitest test and verify the flow in a browser via `npm run dev` when feasible.
 

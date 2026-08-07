@@ -9,3 +9,5 @@ dist
 docs/plans/
 docs/superpowers/
 examples/
+
+*.tsbuildinfo
