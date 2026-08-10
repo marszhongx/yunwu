@@ -305,8 +305,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
             <span className="min-w-0">
               通过服务器代理转发 API 请求
               <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                遇到跨域（CORS）报错时开启：请求经部署站点的 /api/proxy 转发，API Key
-                仍只保存在你的浏览器；关闭时一律直连。
+                跨域（CORS）报错时开启；关闭时直连。
               </span>
             </span>
           </label>
