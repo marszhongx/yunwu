@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -200,7 +201,11 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                 >
                   删除
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void activateSelectedProvider()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void activateSelectedProvider()}
+                >
                   激活
                 </Button>
               </>
@@ -218,7 +223,11 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
       {isEditing ? (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
+            <Field
+              label="名称"
+              value={form.name}
+              onChange={(value) => updateField("name", value)}
+            />
             <div>
               <Label htmlFor="provider-type">类型</Label>
               <Select value={form.type} onValueChange={updateProviderType}>
@@ -336,6 +345,7 @@ function ProviderList({ providers, activeProviderId, onEdit, onCreate }: Provide
           key={provider.id}
           current={provider.id === activeProviderId}
           label={provider.name}
+          description={provider.model}
           onClick={() => onEdit(provider)}
         />
       ))}
@@ -349,6 +359,7 @@ type ProviderListButtonProps = {
   current?: boolean;
   dashed?: boolean;
   label: string;
+  description?: string;
   onClick: () => void;
 };
 
@@ -357,6 +368,7 @@ function ProviderListButton({
   current = false,
   dashed = false,
   label,
+  description,
   onClick,
 }: ProviderListButtonProps) {
   return (
@@ -373,13 +385,13 @@ function ProviderListButton({
       onClick={onClick}
     >
       {dashed ? <Plus className="size-4" /> : null}
-      <span
-        className={cn(
-          "block min-w-0 truncate text-sm",
-          dashed ? "flex-auto" : "flex-1",
-        )}
-      >
-        {label}
+      <span className={cn("flex min-w-0 flex-1 flex-col gap-0.5", dashed && "flex-none")}>
+        <span className="block min-w-0 truncate text-sm">{label}</span>
+        {description ? (
+          <span className="block min-w-0 truncate text-xs text-muted-foreground">
+            {description}
+          </span>
+        ) : null}
       </span>
       {current ? <span className="shrink-0 text-xs text-muted-foreground">当前</span> : null}
     </button>
@@ -395,16 +407,21 @@ type FieldProps = {
 };
 
 function Field({ label, value, onChange, type = "text", placeholder }: FieldProps) {
+  const inputProps = {
+    id: `provider-${label}`,
+    placeholder,
+    value,
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
+  };
+
   return (
     <div className="min-w-0">
       <Label htmlFor={`provider-${label}`}>{label}</Label>
-      <Input
-        id={`provider-${label}`}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      {type === "password" ? (
+        <PasswordInput {...inputProps} />
+      ) : (
+        <Input type={type} {...inputProps} />
+      )}
     </div>
   );
 }
