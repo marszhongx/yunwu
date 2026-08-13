@@ -119,7 +119,10 @@ describe("settings service", () => {
   });
 
   test("saves custom system prompts", async () => {
-    expect((await saveSystemPrompts(["第一条", "第二条"])).systemPrompts).toEqual(["第一条", "第二条"]);
+    expect((await saveSystemPrompts(["第一条", "第二条"])).systemPrompts).toEqual([
+      "第一条",
+      "第二条",
+    ]);
     expect(getSettings().systemPrompts).toEqual(["第一条", "第二条"]);
   });
 

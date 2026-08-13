@@ -213,9 +213,7 @@ export async function saveUseProxy(useProxy: boolean): Promise<AppSettings> {
 
 type ImageProviderInput = Partial<Record<keyof ImageProviderSettings, unknown>>;
 
-export async function addImageProvider(
-  input: ImageProviderInput,
-): Promise<ImageProviderSettings> {
+export async function addImageProvider(input: ImageProviderInput): Promise<ImageProviderSettings> {
   const settings = getSettings();
   const provider = normalizeImageProvider({ ...input, id: uuid() });
   const nextSettings = await saveSettings({

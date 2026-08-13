@@ -152,7 +152,9 @@ function readEntries(source: Record<string, unknown>): LorebookEntry[] {
   const bookEntries = Array.isArray(characterBook.entries)
     ? characterBook.entries.flatMap((entry) => normalizeEntry(entry, false))
     : [];
-  const internalEntries = Array.isArray(source.entries) ? source.entries.flatMap((entry) => normalizeEntry(entry, true)) : [];
+  const internalEntries = Array.isArray(source.entries)
+    ? source.entries.flatMap((entry) => normalizeEntry(entry, true))
+    : [];
 
   return internalEntries.length > 0 ? internalEntries : bookEntries;
 }
@@ -174,20 +176,29 @@ function lorebookArray(value: unknown): LorebookEntry[] {
     if (!entry || typeof entry !== "object") return [];
     const keys = Array.isArray((entry as LorebookEntry).keys) ? (entry as LorebookEntry).keys : [];
     const content = text((entry as LorebookEntry).content);
-    return [{ keys: keys.map(String).map((key) => key.trim()).filter(Boolean), content, enabled: (entry as LorebookEntry).enabled !== false }];
+    return [
+      {
+        keys: keys
+          .map(String)
+          .map((key) => key.trim())
+          .filter(Boolean),
+        content,
+        enabled: (entry as LorebookEntry).enabled !== false,
+      },
+    ];
   });
 }
 
 function hasCharacterContent(source: Record<string, unknown>, entries: LorebookEntry[]): boolean {
   return Boolean(
     text(source.description) ||
-      text(source.first_mes) ||
-      text(source.personality) ||
-      text(source.scenario) ||
-      text(source.mes_example) ||
-      textArray(source.alternate_greetings).length > 0 ||
-      textArray(source.opening_user_choices).length > 0 ||
-      entries.length > 0,
+    text(source.first_mes) ||
+    text(source.personality) ||
+    text(source.scenario) ||
+    text(source.mes_example) ||
+    textArray(source.alternate_greetings).length > 0 ||
+    textArray(source.opening_user_choices).length > 0 ||
+    entries.length > 0,
   );
 }
 

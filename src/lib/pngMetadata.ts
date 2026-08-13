@@ -14,7 +14,8 @@ type PngChunk = {
 export async function readCharaCardFromPng(file: File): Promise<unknown> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const textChunks = parsePng(bytes).flatMap(readTextChunk);
-  const payload = findTextPayload(textChunks, CCV3_KEYWORD) ?? findTextPayload(textChunks, CHARA_KEYWORD);
+  const payload =
+    findTextPayload(textChunks, CCV3_KEYWORD) ?? findTextPayload(textChunks, CHARA_KEYWORD);
 
   if (!payload) {
     throw new Error("PNG 中未找到角色卡 metadata");
@@ -24,7 +25,9 @@ export async function readCharaCardFromPng(file: File): Promise<unknown> {
 }
 
 export async function writeCharaCardToPng(metadata: unknown, sourcePng?: string): Promise<Blob> {
-  const bytes = sourcePng ? await pngBytesFromSource(sourcePng) : base64ToBytes(TRANSPARENT_PNG_BASE64);
+  const bytes = sourcePng
+    ? await pngBytesFromSource(sourcePng)
+    : base64ToBytes(TRANSPARENT_PNG_BASE64);
   const chunks = parsePng(bytes).filter((chunk) => !isCharacterTextChunk(chunk));
   const textChunk = createTextChunk(CHARA_KEYWORD, utf8ToBase64(JSON.stringify(metadata)));
   const insertAt = chunks.findIndex((chunk) => chunk.type === CHUNK_IEND);
@@ -84,7 +87,8 @@ function serializePng(chunks: PngChunk): Uint8Array;
 function serializePng(chunks: PngChunk[]): Uint8Array;
 function serializePng(chunks: PngChunk | PngChunk[]): Uint8Array {
   const chunkList = Array.isArray(chunks) ? chunks : [chunks];
-  const totalLength = PNG_SIGNATURE.length + chunkList.reduce((sum, chunk) => sum + 12 + chunk.data.length, 0);
+  const totalLength =
+    PNG_SIGNATURE.length + chunkList.reduce((sum, chunk) => sum + 12 + chunk.data.length, 0);
   const result = new Uint8Array(totalLength);
   result.set(PNG_SIGNATURE, 0);
 
@@ -123,10 +127,12 @@ function readTextChunk(chunk: PngChunk): TextChunk[] {
   const separator = chunk.data.indexOf(0);
   if (separator < 0) return [];
 
-  return [{
-    keyword: latin1Decode(chunk.data.slice(0, separator)),
-    text: latin1Decode(chunk.data.slice(separator + 1)),
-  }];
+  return [
+    {
+      keyword: latin1Decode(chunk.data.slice(0, separator)),
+      text: latin1Decode(chunk.data.slice(separator + 1)),
+    },
+  ];
 }
 
 function findTextPayload(chunks: TextChunk[], keyword: string): string | null {
@@ -135,12 +141,17 @@ function findTextPayload(chunks: TextChunk[], keyword: string): string | null {
 
 function isCharacterTextChunk(chunk: PngChunk): boolean {
   const [textChunk] = readTextChunk(chunk);
-  return textChunk?.keyword.toLowerCase() === CHARA_KEYWORD || textChunk?.keyword.toLowerCase() === CCV3_KEYWORD;
+  return (
+    textChunk?.keyword.toLowerCase() === CHARA_KEYWORD ||
+    textChunk?.keyword.toLowerCase() === CCV3_KEYWORD
+  );
 }
 
 async function pngBytesFromSource(source: string): Promise<Uint8Array> {
   const trimmed = source.trim();
-  const bytes = trimmed.startsWith("data:") ? bytesFromDataUrl(trimmed) : bytesFromBase64Source(trimmed);
+  const bytes = trimmed.startsWith("data:")
+    ? bytesFromDataUrl(trimmed)
+    : bytesFromBase64Source(trimmed);
   return hasPngSignature(bytes) ? bytes : base64ToBytes(TRANSPARENT_PNG_BASE64);
 }
 

@@ -227,13 +227,16 @@ export function CharacterDialog({
     if (!selectedId) return;
 
     try {
-      await deleteCharacter(selectedId);
+      const result = await deleteCharacter(selectedId);
+      const chatsDeleted = result?.chatsDeleted ?? 0;
       setSelectedId(null);
       setCreating(false);
       setForm(emptyForm);
       await loadCharacters();
       onChanged?.();
-      toast.success("角色已删除");
+      toast.success(
+        chatsDeleted > 0 ? `角色已删除，连带清理 ${chatsDeleted} 个对话` : "角色已删除",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "角色删除失败");
     }
@@ -251,7 +254,10 @@ export function CharacterDialog({
     if (!character) return;
 
     try {
-      const png = await writeCharaCardToPng(toCharaCardV2(character, { includeAvatar: false }), character.avatar);
+      const png = await writeCharaCardToPng(
+        toCharaCardV2(character, { includeAvatar: false }),
+        character.avatar,
+      );
       downloadBlob(png, safeFilename(character.name, ".png"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "导出失败");

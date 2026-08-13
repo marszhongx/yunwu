@@ -13,10 +13,7 @@ export function wrapRequestForProxy(targetUrl: string, init: RequestInit): Proxi
   return { url: PROXY_PATH, init: { ...init, headers } };
 }
 
-export async function fetchWithOptionalProxy(
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
+export async function fetchWithOptionalProxy(url: string, init: RequestInit): Promise<Response> {
   if (!getSettings().useProxy) {
     return await fetch(url, init);
   }

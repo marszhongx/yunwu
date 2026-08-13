@@ -72,13 +72,23 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   }
 
   function updateProviderType(value: ImageProviderType) {
-    setForm((current) => ({
-      ...current,
-      type: value,
-      baseUrl: current.baseUrl || "https://api.openai.com/v1",
-      model:
-        current.model || (value === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : ""),
-    }));
+    setForm((current) => {
+      const previousDefault =
+        current.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "";
+      const model =
+        current.model === "" || current.model === previousDefault
+          ? value === ImageProviderType.DALL_E_3
+            ? ImageProviderType.DALL_E_3
+            : ""
+          : current.model;
+
+      return {
+        ...current,
+        type: value,
+        baseUrl: current.baseUrl || "https://api.openai.com/v1",
+        model,
+      };
+    });
   }
 
   function startCreate() {
@@ -190,7 +200,11 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
                 >
                   删除
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void activateSelectedProvider()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void activateSelectedProvider()}
+                >
                   激活
                 </Button>
               </>
@@ -208,7 +222,11 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
       {isEditing ? (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
+            <Field
+              label="名称"
+              value={form.name}
+              onChange={(value) => updateField("name", value)}
+            />
             <div>
               <Label htmlFor="image-provider-type">类型</Label>
               <Select value={form.type} onValueChange={updateProviderType}>

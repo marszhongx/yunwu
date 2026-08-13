@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageRenderer } from "@/components/biz/MessageRenderer";
 import { buildMessages, parseMessage } from "@/lib/messages";
-import { matchLorebook } from "@/lib/lorebooks";
+import { enabledEntries } from "@/lib/lorebooks";
 import { Copy, Download, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateImage, streamAssistantTextRequest } from "@/services/ai";
@@ -32,6 +32,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   const [pendingChatId, setPendingChatId] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
+  const [generatingChatId, setGeneratingChatId] = useState("");
   const sendInFlightRef = useRef(false);
   const generationAbortRef = useRef<(() => void) | null>(null);
   const activeChatId = chat?.id ?? "";
@@ -76,7 +77,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
         const messages = buildMessages({
           messages: [...(chat.messages ?? []), userMessage],
           charData: character,
-          lbEntries: matchLorebook(character?.entries || []),
+          lbEntries: enabledEntries(character?.entries || []),
           systemPrompts: getSettings().systemPrompts,
         });
 
@@ -135,6 +136,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
     }
 
     setGeneratingImageId(messageId);
+    setGeneratingChatId(chat!.id);
     try {
       const dataUrl = await generateImage({
         apiKey: provider.apiKey,
@@ -149,6 +151,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
       toast.error(error instanceof Error ? error.message : "图片生成失败");
     } finally {
       setGeneratingImageId(null);
+      setGeneratingChatId("");
     }
   }
 
@@ -231,10 +234,12 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
                     }
                   : undefined
               }
-              generatingImage={generatingImageId === message.id}
+              generatingImage={generatingImageId === message.id && generatingChatId === chat.id}
             />
           ))}
-          {generatingImageId ? <LoadingBubble label="图片生成中" /> : null}
+          {generatingImageId && generatingChatId === chat.id ? (
+            <LoadingBubble label="图片生成中" />
+          ) : null}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>

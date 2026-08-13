@@ -39,7 +39,10 @@ describe("png metadata", () => {
     ];
 
     for (const source of variants) {
-      const png = await writeCharaCardToPng({ spec: "chara_card_v2", data: { name: "变体" } }, source);
+      const png = await writeCharaCardToPng(
+        { spec: "chara_card_v2", data: { name: "变体" } },
+        source,
+      );
       await expect(readCharaCardFromPng(fileFromBlob(png, "card.png"))).resolves.toEqual({
         spec: "chara_card_v2",
         data: { name: "变体" },
@@ -65,7 +68,10 @@ describe("png metadata", () => {
       textChunk("ccv3", { spec: "chara_card_v3", data: { name: "旧 V3" } }),
     ]);
     const sourceDataUrl = `data:image/png;base64,${await blobToBase64(source)}`;
-    const png = await writeCharaCardToPng({ spec: "chara_card_v2", data: { name: "新 V2" } }, sourceDataUrl);
+    const png = await writeCharaCardToPng(
+      { spec: "chara_card_v2", data: { name: "新 V2" } },
+      sourceDataUrl,
+    );
 
     await expect(readCharaCardFromPng(fileFromBlob(png, "card.png"))).resolves.toEqual({
       spec: "chara_card_v2",
@@ -96,11 +102,22 @@ function pngWithChunks(chunks: Uint8Array[]): File {
 }
 
 function textChunk(keyword: "chara" | "ccv3", metadata: unknown): Uint8Array {
-  return chunk("tEXt", new Uint8Array([...new TextEncoder().encode(keyword), 0, ...new TextEncoder().encode(metadataPayload(metadata))]));
+  return chunk(
+    "tEXt",
+    new Uint8Array([
+      ...new TextEncoder().encode(keyword),
+      0,
+      ...new TextEncoder().encode(metadataPayload(metadata)),
+    ]),
+  );
 }
 
 function metadataPayload(metadata: unknown): string {
-  return btoa(new TextEncoder().encode(JSON.stringify(metadata)).reduce((text, byte) => text + String.fromCharCode(byte), ""));
+  return btoa(
+    new TextEncoder()
+      .encode(JSON.stringify(metadata))
+      .reduce((text, byte) => text + String.fromCharCode(byte), ""),
+  );
 }
 
 function fileFromBase64(dataUrl: string, name: string): File {
@@ -145,7 +162,13 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 function readUint32(bytes: Uint8Array, offset: number): number {
-  return (((bytes[offset] ?? 0) * 0x1000000 + ((bytes[offset + 1] ?? 0) << 16) + ((bytes[offset + 2] ?? 0) << 8) + (bytes[offset + 3] ?? 0)) >>> 0);
+  return (
+    ((bytes[offset] ?? 0) * 0x1000000 +
+      ((bytes[offset + 1] ?? 0) << 16) +
+      ((bytes[offset + 2] ?? 0) << 8) +
+      (bytes[offset + 3] ?? 0)) >>>
+    0
+  );
 }
 
 function writeUint32(bytes: Uint8Array, offset: number, value: number): void {

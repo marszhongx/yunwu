@@ -231,9 +231,8 @@ describe("streamAssistantText", () => {
 
     expect(result).toEqual({ text: "回应" });
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe(
-      "https://example.com/v1/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=api-key",
-    );
+    expect(url).toBe("https://example.com/v1/models/gemini-2.5-pro:streamGenerateContent?alt=sse");
+    expect(new Headers(init.headers).get("x-goog-api-key")).toBe("api-key");
     const body = JSON.parse(String(init.body));
     expect(body).toMatchObject({
       contents: [
@@ -281,6 +280,27 @@ describe("streamAssistantText", () => {
     request.abort();
 
     await expect(request.promise).rejects.toThrow(DOMException);
+  });
+
+  test("does not throw when the final SSE event has no trailing blank line", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          streamResponse([
+            'data: {"choices":[{"delta":{"role":"assistant"}}]}\n\n',
+            "data: [DONE]\n",
+          ]),
+        ),
+    );
+
+    const result = await streamAssistantText({
+      provider: provider(),
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    expect(result).toEqual({ text: "" });
   });
 
   test("throws clear provider response error for malformed SSE JSON", async () => {
@@ -404,6 +424,7 @@ describe("requestAssistantText", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toContain("generateContent");
     expect(url).not.toContain("streamGenerateContent");
+    expect(new Headers(init.headers).get("x-goog-api-key")).toBe("api-key");
     const body = JSON.parse(String(init.body));
     expect(body.generationConfig.responseMimeType).toBe("application/json");
   });

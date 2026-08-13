@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  fetchWithOptionalProxy,
-  PROXY_PATH,
-  wrapRequestForProxy,
-} from "@/services/proxy";
+import { fetchWithOptionalProxy, PROXY_PATH, wrapRequestForProxy } from "@/services/proxy";
 import { getSettings, saveUseProxy } from "@/services/settings";
 
 const TARGET_URL = "https://api.example.com/v1/chat/completions";

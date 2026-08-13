@@ -183,14 +183,18 @@ describe("chara card v2", () => {
   });
 
   test("rejects empty character-like data", () => {
-    expect(() => fromCharaCardV2({ spec: "chara_card_v2", data: { description: "" } }, "fallback.json")).toThrow(
-      "不支持的角色卡格式",
-    );
+    expect(() =>
+      fromCharaCardV2({ spec: "chara_card_v2", data: { description: "" } }, "fallback.json"),
+    ).toThrow("不支持的角色卡格式");
   });
 
   test("rejects unsupported data", () => {
-    expect(() => fromCharaCardV2({ hello: "world" }, "fallback.json")).toThrow("不支持的角色卡格式");
-    expect(() => fromCharaCardV2({ name: "直接 data 对象" }, "fallback.json")).toThrow("不支持的角色卡格式");
+    expect(() => fromCharaCardV2({ hello: "world" }, "fallback.json")).toThrow(
+      "不支持的角色卡格式",
+    );
+    expect(() => fromCharaCardV2({ name: "直接 data 对象" }, "fallback.json")).toThrow(
+      "不支持的角色卡格式",
+    );
   });
 
   test("imports Chara Card V3 data", () => {

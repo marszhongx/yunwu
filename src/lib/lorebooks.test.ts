@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchLorebook, normalizeLorebookEntries } from "@/lib/lorebooks";
+import { enabledEntries, normalizeLorebookEntries } from "@/lib/lorebooks";
 
 describe("lorebooks domain", () => {
   it("normalizeLorebookEntries turns comma and Chinese comma separated keys into array", () => {
@@ -12,8 +12,8 @@ describe("lorebooks domain", () => {
     ]);
   });
 
-  it("matchLorebook returns enabled contents", () => {
-    const result = matchLorebook([
+  it("enabledEntries returns enabled entry contents", () => {
+    const result = enabledEntries([
       { keys: ["雾"], content: "雾会低语。", enabled: true },
       { keys: ["火"], content: "火焰熄灭。", enabled: false },
     ]);
@@ -21,15 +21,12 @@ describe("lorebooks domain", () => {
     expect(result).toEqual(["雾会低语。"]);
   });
 
-  it("matchLorebook with includeDetails returns contents and matches", () => {
-    const entries = [
-      { keys: ["雾", "铃"], content: "铃声来自雾里。", enabled: true },
-      { keys: ["门"], content: "门不会打开。", enabled: false },
-    ];
+  it("enabledEntries skips entries without content", () => {
+    const result = enabledEntries([
+      { keys: ["雾"], content: "", enabled: true },
+      { keys: ["门"], content: "门不会打开。", enabled: true },
+    ]);
 
-    expect(matchLorebook(entries, { includeDetails: true })).toEqual({
-      contents: ["铃声来自雾里。"],
-      matches: [{ content: "铃声来自雾里。", keys: ["雾", "铃"] }],
-    });
+    expect(result).toEqual(["门不会打开。"]);
   });
 });

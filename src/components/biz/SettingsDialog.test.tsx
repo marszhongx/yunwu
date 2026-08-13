@@ -98,9 +98,7 @@ test("creates, edits, activates, and deletes providers without image provider fi
   fireEvent.change(screen.getByLabelText("模型"), { target: { value: "gemini-2.5-pro" } });
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-  await waitFor(() =>
-    expect(onChanged).toHaveBeenCalledTimes(1),
-  );
+  await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
   expect(screen.getByRole("button", { name: "编辑 Gemini 主线路" })).toBeInTheDocument();
   expect(screen.getByText("当前")).toBeInTheDocument();
@@ -118,9 +116,7 @@ test("creates, edits, activates, and deletes providers without image provider fi
   fireEvent.click(screen.getByRole("option", { name: "OpenAI 兼容" }));
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-  await waitFor(() =>
-    expect(onChanged).toHaveBeenCalledTimes(2),
-  );
+  await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(2));
 
   fireEvent.click(screen.getByRole("button", { name: "激活" }));
   await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(3));
@@ -163,9 +159,7 @@ test("previews the claude messages endpoint for Claude providers", () => {
   render(<SettingsDialog open onOpenChange={() => {}} />);
   fireEvent.click(screen.getByRole("button", { name: "编辑 Claude" }));
 
-  expect(
-    screen.getByText("预览：https://claude.example.com/v1/messages"),
-  ).toBeInTheDocument();
+  expect(screen.getByText("预览：https://claude.example.com/v1/messages")).toBeInTheDocument();
 });
 
 test("previews the gemini stream endpoint without leaking the api key", () => {
@@ -217,9 +211,7 @@ test("previews the responses endpoint for OpenAI Responses providers", () => {
   render(<SettingsDialog open onOpenChange={() => {}} />);
   fireEvent.click(screen.getByRole("button", { name: "编辑 Responses" }));
 
-  expect(
-    screen.getByText("预览：https://responses.example.com/v1/responses"),
-  ).toBeInTheDocument();
+  expect(screen.getByText("预览：https://responses.example.com/v1/responses")).toBeInTheDocument();
 });
 
 test("reloads providers from localStorage when dialog opens", () => {

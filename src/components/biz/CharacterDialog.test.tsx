@@ -280,7 +280,7 @@ test("returns to new character state after deleting the character being edited",
       },
     ])
     .mockResolvedValueOnce([]);
-  vi.mocked(characters.deleteCharacter).mockResolvedValue();
+  vi.mocked(characters.deleteCharacter).mockResolvedValue({ chatsDeleted: 0 });
 
   render(<CharacterDialog open onOpenChange={() => {}} />);
 
@@ -368,7 +368,7 @@ test("creates, edits, and deletes characters without avatar inputs", async () =>
     creator: "",
     character_version: "",
   });
-  vi.mocked(characters.deleteCharacter).mockResolvedValue();
+  vi.mocked(characters.deleteCharacter).mockResolvedValue({ chatsDeleted: 0 });
 
   render(<CharacterDialog open onOpenChange={() => {}} onChanged={onChanged} />);
 
@@ -433,7 +433,9 @@ test("saves lorebook entries without keys", async () => {
     opening_user_choices: [],
     entries: [{ keys: [], content: "始终注入。", enabled: true }],
   };
-  vi.mocked(characters.listCharacters).mockResolvedValueOnce([character]).mockResolvedValueOnce([character]);
+  vi.mocked(characters.listCharacters)
+    .mockResolvedValueOnce([character])
+    .mockResolvedValueOnce([character]);
   vi.mocked(characters.updateCharacter).mockResolvedValue(character);
 
   render(<CharacterDialog open onOpenChange={() => {}} />);

@@ -95,7 +95,10 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           const promptId = `system-prompt-${index}`;
 
           return (
-            <section key={promptId} className="space-y-2 rounded-xl border border-border/40 bg-card/40 p-4 backdrop-blur-sm">
+            <section
+              key={promptId}
+              className="space-y-2 rounded-xl border border-border/40 bg-card/40 p-4 backdrop-blur-sm"
+            >
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor={promptId}>内置系统提示词 {index + 1}</Label>
                 <Button

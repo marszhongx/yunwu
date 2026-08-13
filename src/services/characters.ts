@@ -1,7 +1,7 @@
 import { uuid } from "@/lib/ids";
 import { normalizeLorebookEntries } from "@/lib/lorebooks";
 import type { CharacterCard } from "@/types";
-import { deleteOne, getAll, getOne, putOne } from "@/services/db";
+import { deleteMessagesByChatId, deleteOne, getAll, getOne, putOne } from "@/services/db";
 
 type CharacterInput = Partial<Record<keyof CharacterCard, unknown>>;
 
@@ -31,8 +31,18 @@ export async function updateCharacter(
   return putOne("characters", character);
 }
 
-export function deleteCharacter(id: string): Promise<void> {
-  return deleteOne("characters", id);
+export async function deleteCharacter(id: string): Promise<{ chatsDeleted: number }> {
+  const chats = (await getAll("chats")).filter((chat) => chat.charId === id);
+
+  await Promise.all(
+    chats.map(async (chat) => {
+      await deleteMessagesByChatId(chat.id);
+      await deleteOne("chats", chat.id);
+    }),
+  );
+
+  await deleteOne("characters", id);
+  return { chatsDeleted: chats.length };
 }
 
 function normalizeCharacter(input: CharacterInput): CharacterCard {

@@ -312,11 +312,12 @@ function geminiRequest(
     }));
 
   return {
-    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "streamGenerateContent")}?alt=sse&key=${encodeURIComponent(provider.apiKey)}`,
+    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "streamGenerateContent")}?alt=sse`,
     init: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": provider.apiKey,
       },
       body: JSON.stringify({
         contents,
@@ -357,6 +358,7 @@ type NonStreamRequest = {
 function openAINonStreamRequest(
   provider: ProviderLike & { apiKey: string; model: string },
   messages: AssistantMessage[],
+  jsonMode: boolean,
 ): NonStreamRequest {
   return {
     url: openAIChatCompletionsUrl(provider.baseUrl || ""),
@@ -370,7 +372,7 @@ function openAINonStreamRequest(
         model: provider.model,
         messages,
         stream: false,
-        response_format: { type: "json_object" },
+        ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
         ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
       }),
     },
@@ -446,6 +448,7 @@ function claudeNonStreamRequest(
 function geminiNonStreamRequest(
   provider: ProviderLike & { apiKey: string; model: string },
   messages: AssistantMessage[],
+  jsonMode: boolean,
 ): NonStreamRequest {
   const system = messages
     .filter((message) => message.role === "system")
@@ -459,11 +462,12 @@ function geminiNonStreamRequest(
     }));
 
   return {
-    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "generateContent")}?key=${encodeURIComponent(provider.apiKey)}`,
+    url: geminiModelUrl(provider.baseUrl || "", provider.model, "generateContent"),
     init: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": provider.apiKey,
       },
       body: JSON.stringify({
         contents,
@@ -471,7 +475,7 @@ function geminiNonStreamRequest(
         safetySettings: GEMINI_SAFETY_SETTINGS.google.safetySettings,
         generationConfig: {
           ...(provider.maxTokens ? { maxOutputTokens: provider.maxTokens } : {}),
-          responseMimeType: "application/json",
+          ...(jsonMode ? { responseMimeType: "application/json" } : {}),
         },
       }),
     },
@@ -493,9 +497,10 @@ function geminiNonStreamRequest(
 function createNonStreamRequest(
   provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
+  jsonMode: boolean,
 ): NonStreamRequest {
   if (provider.type === ProviderType.OPENAI) {
-    return openAINonStreamRequest(provider, messages);
+    return openAINonStreamRequest(provider, messages, jsonMode);
   }
 
   if (provider.type === ProviderType.OPENAI_RESPONSE) {
@@ -506,7 +511,7 @@ function createNonStreamRequest(
     return claudeNonStreamRequest(provider, messages);
   }
 
-  return geminiNonStreamRequest(provider, messages);
+  return geminiNonStreamRequest(provider, messages, jsonMode);
 }
 
 function parsePayload(payload: string): unknown {
@@ -575,10 +580,13 @@ async function readStream(
   }
 
   if (text === "" && buffer.trim() !== "") {
-    const chunk = extractText(parsePayload(buffer.trim()));
-    if (chunk !== "") {
-      text = chunk;
-      onText?.(chunk);
+    const trimmed = buffer.trim();
+    if (!trimmed.startsWith("data:")) {
+      const chunk = extractText(parsePayload(trimmed));
+      if (chunk !== "") {
+        text = chunk;
+        onText?.(chunk);
+      }
     }
   }
 
@@ -645,12 +653,14 @@ export function streamAssistantTextRequest({
 export async function requestAssistantText({
   provider: inputProvider,
   messages,
+  jsonMode = true,
 }: {
   provider: ProviderLike | null;
   messages: AssistantMessage[];
+  jsonMode?: boolean;
 }): Promise<{ text: string }> {
   const provider = validateProvider(inputProvider);
-  const request = createNonStreamRequest(provider, messages);
+  const request = createNonStreamRequest(provider, messages, jsonMode);
   const abortController = new AbortController();
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), STREAM_TIMEOUT);
 
