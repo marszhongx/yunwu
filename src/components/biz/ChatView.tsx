@@ -168,9 +168,17 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
     (character?.opening_user_choices.length ?? 0) > 0;
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+
+  // 每次渲染：仅当用户当前贴底时跟随滚动（流式输出时用户上滑则不打扰）
   useEffect(() => {
-    if (bottomRef.current && "scrollIntoView" in bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    const viewport = scrollAreaRef.current?.querySelector<HTMLElement>(
+      "[data-radix-scroll-area-viewport]",
+    );
+    if (!viewport || !bottomRef.current) return;
+    const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    if (distance < 80) {
+      bottomRef.current.scrollIntoView?.({ behavior: "smooth" });
     }
   });
 
@@ -198,7 +206,10 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
   return (
     <section className="flex h-full min-h-[60vh] w-full flex-col gap-4">
-      <ScrollArea className="min-h-0 flex-1 rounded-3xl border border-border/40 bg-card/50 p-3 shadow-2xl shadow-primary/5 backdrop-blur-2xl sm:p-4">
+      <ScrollArea
+        ref={scrollAreaRef}
+        className="min-h-0 flex-1 rounded-3xl border border-border/40 bg-card/50 p-3 shadow-2xl shadow-primary/5 backdrop-blur-2xl sm:p-4"
+      >
         <div className="space-y-5 pr-3 sm:pr-4">
           {messages.map((message, index) => (
             <MessageBubble

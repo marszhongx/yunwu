@@ -18,15 +18,16 @@
 
 ## State And Persistence
 
-- `src/store/appState.ts` derives global settings and active providers from `src/services/settings.ts`; call `useAppState.getState().reload()` after local settings changes that must refresh UI state.
+- `src/store/appState.ts` derives global settings and active providers from `src/services/settings.ts`; call `useAppState.getState().reload()` after local settings changes that must refresh UI state. (`init` and `reload` are currently identical; keep them in sync if one changes.)
 - Settings and provider config are localStorage-backed in `src/services/settings.ts` under `yunwu.settings.v1`.
-- Structured data is IndexedDB-backed in `src/services/db.ts`; stores are `characters`, `lorebooks`, `chats`, and `messages`, with a `chatId` index on `messages`.
+- Structured data is IndexedDB-backed in `src/services/db.ts`. Stores are `characters`, `chats`, and `messages`, with a `chatId` index on `messages`. A `lorebooks` store is created but is currently unused dead code — lorebook entries are stored inline on `CharacterCard.entries`, not in the `lorebooks` store.
 - Character/chat CRUD normalization lives in `src/services/characters.ts` and `src/services/chats.ts`; avoid bypassing those services from UI code.
 
 ## AI And Prompt Flow
 
-- `src/services/ai.ts` owns direct browser calls for Gemini, Claude, OpenAI-compatible chat completions/responses, and image generation endpoints.
-- Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook matching lives in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
+- `src/services/ai.ts` owns direct browser calls for Gemini, Claude, OpenAI-compatible chat completions/responses, and image generation endpoints. `src/services/aiGeneration.ts` builds on it for AI character-card generation.
+- Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook helpers live in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
+- World book entries are injected wholesale: `enabledEntries` in `src/lib/lorebooks.ts` returns the content of every enabled entry, and `buildMessages` in `src/lib/messages.ts` appends them all as system messages. Entry `keys` are stored and normalized but are **not** used for runtime keyword matching — there is no selective/triggered injection.
 - Provider API keys are user-entered browser data; never commit sample real keys or assume server-side secret storage.
 - `api/proxy.ts` is a self-contained Vercel Edge Function (Hono + `hono/proxy` + `hono/vercel` `handle`) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). Forwarding is unconditional — any method, any target, all request headers pass through as-is (only hop-by-hop headers are handled per RFC 9110 by `hono/proxy`); no validation or allowlist exists by design. There is no dev equivalent: under `npm run dev` `/api/proxy` 404s — keep the `useProxy` setting off and use direct browser connections in dev; verify proxy flows against a Vercel (preview) deployment.
 - When changing `AppSettings`, update `normalizeSettings` in `src/services/settings.ts` and every exact `toEqual` settings assertion in tests.
