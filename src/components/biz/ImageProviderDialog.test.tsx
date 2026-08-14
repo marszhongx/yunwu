@@ -62,7 +62,7 @@ describe("ImageProviderDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "新建图片 Provider" }));
 
     expect(
-      screen.getByText("预览：https://api.openai.com/v1/images/generations"),
+      screen.getByText("预览：https://api.openai.com/v1/chat/completions"),
     ).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe("ImageProviderDialog", () => {
 
     const typeSelect = screen.getByRole("combobox", { name: "类型" });
     fireEvent.click(typeSelect);
-    fireEvent.click(screen.getByRole("option", { name: "Responses API" }));
+    fireEvent.click(screen.getByRole("option", { name: "OpenAI Responses" }));
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
@@ -105,6 +105,6 @@ describe("ImageProviderDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "编辑 My Responses" }));
     expect(screen.getByRole("heading", { name: "修改图片 Provider" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("Responses API");
+    expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("OpenAI Responses");
   });
 });

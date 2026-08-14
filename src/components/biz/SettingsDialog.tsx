@@ -17,8 +17,6 @@ import { ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import {
-  claudeMessagesUrl,
-  geminiModelUrl,
   openAIChatCompletionsUrl,
   openAIResponsesUrl,
 } from "@/services/ai";
@@ -61,9 +59,6 @@ const apiPreviewBuilders: Record<
   ProviderType,
   (form: Pick<ProviderForm, "baseUrl" | "model">) => string
 > = {
-  [ProviderType.GEMINI]: ({ baseUrl, model }) =>
-    `${geminiModelUrl(baseUrl, model.trim() || "model", "streamGenerateContent")}?alt=sse&key=API_KEY`,
-  [ProviderType.CLAUDE]: ({ baseUrl }) => claudeMessagesUrl(baseUrl),
   [ProviderType.OPENAI]: ({ baseUrl }) => openAIChatCompletionsUrl(baseUrl),
   [ProviderType.OPENAI_RESPONSE]: ({ baseUrl }) => openAIResponsesUrl(baseUrl),
 };
@@ -235,9 +230,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ProviderType.GEMINI}>Gemini</SelectItem>
-                  <SelectItem value={ProviderType.CLAUDE}>Claude</SelectItem>
-                  <SelectItem value={ProviderType.OPENAI}>OpenAI 兼容</SelectItem>
+                  <SelectItem value={ProviderType.OPENAI}>OpenAI</SelectItem>
                   <SelectItem value={ProviderType.OPENAI_RESPONSE}>OpenAI Responses</SelectItem>
                 </SelectContent>
               </Select>

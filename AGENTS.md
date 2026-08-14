@@ -25,7 +25,7 @@
 
 ## AI And Prompt Flow
 
-- `src/services/ai.ts` owns direct browser calls for Gemini, Claude, OpenAI-compatible chat completions/responses, and image generation endpoints. `src/services/aiGeneration.ts` builds on it for AI character-card generation.
+- `src/services/ai.ts` owns direct browser calls for OpenAI (chat completions) and OpenAI Responses, plus image generation endpoints. `src/services/aiGeneration.ts` builds on it for AI character-card generation.
 - Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook helpers live in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
 - World book entries are injected wholesale: `enabledEntries` in `src/lib/lorebooks.ts` returns the content of every enabled entry, and `buildMessages` in `src/lib/messages.ts` appends them all as system messages. Entry `keys` are stored and normalized but are **not** used for runtime keyword matching — there is no selective/triggered injection.
 - Provider API keys are user-entered browser data; never commit sample real keys or assume server-side secret storage.

@@ -1,14 +1,11 @@
 import type { AppSettings } from "@/types";
 
 export enum ProviderType {
-  GEMINI = "gemini",
   OPENAI = "openai",
   OPENAI_RESPONSE = "openai-response",
-  CLAUDE = "claude",
 }
 
 export enum ImageProviderType {
-  DALL_E_3 = "dall-e-3",
   OPENAI = "openai",
   OPENAI_RESPONSE = "openai-response",
 }
@@ -36,18 +33,6 @@ B: 一个具体可执行的玩家行动
 C: 一个具体可执行的玩家行动
 D: 一个具体可执行的玩家行动
 </choices>`;
-
-export const GEMINI_SAFETY_SETTINGS = {
-  google: {
-    safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" },
-    ],
-  },
-};
 
 export const STREAM_TIMEOUT = 180000;
 export const IMAGE_TIMEOUT = 120000;

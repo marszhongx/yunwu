@@ -1,10 +1,4 @@
-import {
-  GEMINI_SAFETY_SETTINGS,
-  ImageProviderType,
-  IMAGE_TIMEOUT,
-  ProviderType,
-  STREAM_TIMEOUT,
-} from "@/constants";
+import { ImageProviderType, IMAGE_TIMEOUT, ProviderType, STREAM_TIMEOUT } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { fetchWithOptionalProxy } from "@/services/proxy";
 
@@ -56,7 +50,7 @@ function validateProvider(provider: ProviderLike | null): ProviderLike & {
 
   return {
     ...provider,
-    type: provider.type ?? ProviderType.GEMINI,
+    type: provider.type ?? ProviderType.OPENAI,
     apiKey: provider.apiKey,
     model: provider.model,
   };
@@ -122,60 +116,12 @@ function getOpenAIResponseText(json: unknown): string {
   return text;
 }
 
-function getClaudeText(payload: unknown): string {
-  const type = textFromRecordPath(payload, ["type"]);
-
-  if (type !== "content_block_delta") {
-    return "";
-  }
-
-  const text = textFromRecordPath(payload, ["delta", "text"]);
-  return typeof text === "string" ? text : "";
-}
-
-function getGeminiText(payload: unknown): string {
-  const parts = textFromRecordPath(payload, ["candidates"]);
-  const firstCandidate = Array.isArray(parts) ? parts[0] : undefined;
-  const contentParts = textFromRecordPath(firstCandidate, ["content", "parts"]);
-
-  if (!Array.isArray(contentParts)) {
-    return "";
-  }
-
-  return contentParts
-    .map((part) => {
-      const text = textFromRecordPath(part, ["text"]);
-      return typeof text === "string" ? text : "";
-    })
-    .join("");
-}
-
 function normalizedOpenAIBaseUrl(baseUrl: string): string {
   return (baseUrl.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
 }
 
-function normalizedClaudeBaseUrl(baseUrl: string): string {
-  return (baseUrl.trim() || "https://api.anthropic.com/v1").replace(/\/+$/, "");
-}
-
-function normalizedGeminiBaseUrl(baseUrl: string): string {
-  return (baseUrl.trim() || "https://generativelanguage.googleapis.com/v1beta").replace(/\/+$/, "");
-}
-
-export function claudeMessagesUrl(baseUrl: string): string {
-  return `${normalizedClaudeBaseUrl(baseUrl)}/messages`;
-}
-
-export function geminiModelUrl(baseUrl: string, model: string, action: string): string {
-  return `${normalizedGeminiBaseUrl(baseUrl)}/models/${encodeURIComponent(model)}:${action}`;
-}
-
 export function openAIChatCompletionsUrl(baseUrl: string): string {
   return `${normalizedOpenAIBaseUrl(baseUrl)}/chat/completions`;
-}
-
-export function openAIImagesGenerationsUrl(baseUrl: string): string {
-  return `${normalizedOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
 export function openAIResponsesUrl(baseUrl: string): string {
@@ -253,100 +199,15 @@ function openAIResponsesRequest(
   };
 }
 
-function claudeSystemBlocks(
-  messages: AssistantMessage[],
-): { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[] {
-  const systemMessages = messages.filter((message) => message.role === "system");
-
-  return systemMessages.map((message, index) => ({
-    type: "text" as const,
-    text: message.content,
-    ...(index === systemMessages.length - 1
-      ? { cache_control: { type: "ephemeral" as const } }
-      : {}),
-  }));
-}
-
-function claudeRequest(
-  provider: ProviderLike & { apiKey: string; model: string },
-  messages: AssistantMessage[],
-): StreamRequest {
-  const system = claudeSystemBlocks(messages);
-  const userMessages = messages.filter((message) => message.role !== "system");
-
-  return {
-    url: claudeMessagesUrl(provider.baseUrl || ""),
-    init: {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": provider.apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: provider.model,
-        system,
-        messages: userMessages,
-        stream: true,
-        ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
-      }),
-    },
-    extractText: getClaudeText,
-  };
-}
-
-function geminiRequest(
-  provider: ProviderLike & { apiKey: string; model: string },
-  messages: AssistantMessage[],
-): StreamRequest {
-  const system = messages
-    .filter((message) => message.role === "system")
-    .map((message) => message.content)
-    .join("\n\n");
-  const contents = messages
-    .filter((message) => message.role !== "system")
-    .map((message) => ({
-      role: message.role === "assistant" ? "model" : "user",
-      parts: [{ text: message.content }],
-    }));
-
-  return {
-    url: `${geminiModelUrl(provider.baseUrl || "", provider.model, "streamGenerateContent")}?alt=sse`,
-    init: {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": provider.apiKey,
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: { parts: [{ text: system }] },
-        safetySettings: GEMINI_SAFETY_SETTINGS.google.safetySettings,
-        generationConfig: provider.maxTokens ? { maxOutputTokens: provider.maxTokens } : {},
-      }),
-    },
-    extractText: getGeminiText,
-  };
-}
-
 function createRequest(
   provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
 ): StreamRequest {
-  if (provider.type === ProviderType.OPENAI) {
-    return openAIRequest(provider, messages);
-  }
-
   if (provider.type === ProviderType.OPENAI_RESPONSE) {
     return openAIResponsesRequest(provider, messages);
   }
 
-  if (provider.type === ProviderType.CLAUDE) {
-    return claudeRequest(provider, messages);
-  }
-
-  return geminiRequest(provider, messages);
+  return openAIRequest(provider, messages);
 }
 
 type NonStreamRequest = {
@@ -403,115 +264,16 @@ function openAIResponsesNonStreamRequest(
   };
 }
 
-function claudeNonStreamRequest(
-  provider: ProviderLike & { apiKey: string; model: string },
-  messages: AssistantMessage[],
-): NonStreamRequest {
-  const system = claudeSystemBlocks(messages);
-  const userMessages = messages.filter((message) => message.role !== "system");
-
-  return {
-    url: claudeMessagesUrl(provider.baseUrl || ""),
-    init: {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": provider.apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: provider.model,
-        system,
-        messages: userMessages,
-        stream: false,
-        ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
-      }),
-    },
-    responseText: (json) => {
-      if (typeof json !== "object" || json === null) return "";
-      const content = (json as Record<string, unknown>).content;
-      if (!Array.isArray(content)) return "";
-      return content
-        .filter(
-          (block): block is { type: string; text: string } =>
-            typeof block === "object" &&
-            block !== null &&
-            (block as { type?: string }).type === "text",
-        )
-        .map((block) => block.text)
-        .join("");
-    },
-  };
-}
-
-function geminiNonStreamRequest(
-  provider: ProviderLike & { apiKey: string; model: string },
-  messages: AssistantMessage[],
-  jsonMode: boolean,
-): NonStreamRequest {
-  const system = messages
-    .filter((message) => message.role === "system")
-    .map((message) => message.content)
-    .join("\n\n");
-  const contents = messages
-    .filter((message) => message.role !== "system")
-    .map((message) => ({
-      role: message.role === "assistant" ? "model" : "user",
-      parts: [{ text: message.content }],
-    }));
-
-  return {
-    url: geminiModelUrl(provider.baseUrl || "", provider.model, "generateContent"),
-    init: {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": provider.apiKey,
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: { parts: [{ text: system }] },
-        safetySettings: GEMINI_SAFETY_SETTINGS.google.safetySettings,
-        generationConfig: {
-          ...(provider.maxTokens ? { maxOutputTokens: provider.maxTokens } : {}),
-          ...(jsonMode ? { responseMimeType: "application/json" } : {}),
-        },
-      }),
-    },
-    responseText: (json) => {
-      const candidates = textFromRecordPath(json, ["candidates"]);
-      const firstCandidate = Array.isArray(candidates) ? candidates[0] : undefined;
-      const parts = textFromRecordPath(firstCandidate, ["content", "parts"]);
-      if (!Array.isArray(parts)) return "";
-      return parts
-        .map((part) => {
-          const text = textFromRecordPath(part, ["text"]);
-          return typeof text === "string" ? text : "";
-        })
-        .join("");
-    },
-  };
-}
-
 function createNonStreamRequest(
   provider: ProviderLike & { type: ProviderType; apiKey: string; model: string },
   messages: AssistantMessage[],
   jsonMode: boolean,
 ): NonStreamRequest {
-  if (provider.type === ProviderType.OPENAI) {
-    return openAINonStreamRequest(provider, messages, jsonMode);
-  }
-
   if (provider.type === ProviderType.OPENAI_RESPONSE) {
     return openAIResponsesNonStreamRequest(provider, messages);
   }
 
-  if (provider.type === ProviderType.CLAUDE) {
-    return claudeNonStreamRequest(provider, messages);
-  }
-
-  return geminiNonStreamRequest(provider, messages, jsonMode);
+  return openAINonStreamRequest(provider, messages, jsonMode);
 }
 
 function parsePayload(payload: string): unknown {
@@ -707,74 +469,11 @@ export async function generateImage({
   prompt: string;
   type?: ImageProviderType;
 }): Promise<string> {
-  if (type === ImageProviderType.OPENAI) {
-    return generateChatImage({ apiKey, baseUrl, model, prompt });
-  }
-
   if (type === ImageProviderType.OPENAI_RESPONSE) {
     return generateResponsesImage({ apiKey, baseUrl, model, prompt });
   }
 
-  return generateDALLEImage({ apiKey, baseUrl, model, prompt });
-}
-
-async function generateDALLEImage({
-  apiKey,
-  baseUrl,
-  model,
-  prompt,
-}: {
-  apiKey: string;
-  baseUrl: string;
-  model: string;
-  prompt: string;
-}): Promise<string> {
-  const url = openAIImagesGenerationsUrl(baseUrl);
-  const abortController = new AbortController();
-  const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
-
-  try {
-    const response = await fetchWithOptionalProxy(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        prompt,
-        size: "1024x1024",
-        response_format: "b64_json",
-      }),
-      signal: abortController.signal,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(`图片生成请求失败：${response.status} ${errorText}`.trim());
-    }
-
-    const json = (await response.json()) as { data?: { b64_json?: string; url?: string }[] };
-    const image = json.data?.[0];
-
-    if (image?.url) {
-      return image.url;
-    }
-
-    if (image?.b64_json) {
-      return `data:image/png;base64,${image.b64_json}`;
-    }
-
-    throw new Error("图片生成返回了空响应");
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("图片生成请求超时");
-    }
-
-    throw error;
-  } finally {
-    globalThis.clearTimeout(timeoutId);
-  }
+  return generateChatImage({ apiKey, baseUrl, model, prompt });
 }
 
 async function generateChatImage({

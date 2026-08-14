@@ -18,7 +18,7 @@ function toStringValue(value: unknown): string {
 function normalizeProviderType(value: unknown): ProviderType {
   return typeof value === "string" && Object.values(ProviderType).includes(value as ProviderType)
     ? (value as ProviderType)
-    : ProviderType.GEMINI;
+    : ProviderType.OPENAI;
 }
 
 function normalizeTheme(value: unknown): AppSettings["theme"] {
@@ -64,7 +64,7 @@ function normalizeImageProvider(value: unknown): ImageProviderSettings {
     typeof input.type === "string" &&
     Object.values(ImageProviderType).includes(input.type as ImageProviderType)
       ? (input.type as ImageProviderType)
-      : ImageProviderType.DALL_E_3;
+      : ImageProviderType.OPENAI;
   const model = toStringValue(input.model);
   const name = toStringValue(input.name) || model || "图片生成";
   const baseUrl = toStringValue(input.baseUrl);
@@ -75,7 +75,7 @@ function normalizeImageProvider(value: unknown): ImageProviderSettings {
     type,
     apiKey: toStringValue(input.apiKey),
     baseUrl: baseUrl || "https://api.openai.com/v1",
-    model: model || (type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : ""),
+    model,
   };
 }
 

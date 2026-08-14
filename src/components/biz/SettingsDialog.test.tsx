@@ -79,7 +79,7 @@ test("shows an empty state before creating the first provider", () => {
   expect(screen.getByRole("button", { name: "返回列表" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "编辑 新建 Provider" })).not.toBeInTheDocument();
   expect(screen.getByLabelText("名称")).toHaveValue("");
-  expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("OpenAI 兼容");
+  expect(screen.getByRole("combobox", { name: "类型" })).toHaveTextContent("OpenAI");
   expect(screen.getByText("预览：https://api.openai.com/v1/chat/completions")).toBeInTheDocument();
 });
 
@@ -94,8 +94,8 @@ test("creates, edits, activates, and deletes providers without image provider fi
 
   fireEvent.click(screen.getAllByRole("button", { name: "新建 Provider" })[0]);
   fireEvent.change(screen.getByLabelText("名称"), { target: { value: "Gemini 主线路" } });
-  fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "gemini-key" } });
-  fireEvent.change(screen.getByLabelText("模型"), { target: { value: "gemini-2.5-pro" } });
+  fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "openai-key" } });
+  fireEvent.change(screen.getByLabelText("模型"), { target: { value: "gpt-4o" } });
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
@@ -106,14 +106,14 @@ test("creates, edits, activates, and deletes providers without image provider fi
   fireEvent.click(screen.getByRole("button", { name: "编辑 Gemini 主线路" }));
   expect(screen.getByRole("heading", { name: "修改 Provider" })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "Gemini 主线路" })).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText("名称"), { target: { value: "OpenAI 兼容" } });
+  fireEvent.change(screen.getByLabelText("名称"), { target: { value: "OpenAI" } });
   fireEvent.change(screen.getByLabelText("API 地址"), {
     target: { value: "https://api.example.com/v1/" },
   });
   expect(screen.getByText("预览：https://api.example.com/v1/chat/completions")).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("模型"), { target: { value: "gpt-4o" } });
   fireEvent.click(screen.getByRole("combobox", { name: "类型" }));
-  fireEvent.click(screen.getByRole("option", { name: "OpenAI 兼容" }));
+  fireEvent.click(screen.getByRole("option", { name: "OpenAI" }));
   fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(2));
@@ -124,9 +124,9 @@ test("creates, edits, activates, and deletes providers without image provider fi
   const settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
   expect(settings.providers).toHaveLength(1);
   expect(settings.providers[0]).toMatchObject({
-    name: "OpenAI 兼容",
+    name: "OpenAI",
     type: "openai",
-    apiKey: "gemini-key",
+    apiKey: "openai-key",
     baseUrl: "https://api.example.com/v1/",
     model: "gpt-4o",
   });
@@ -136,58 +136,6 @@ test("creates, edits, activates, and deletes providers without image provider fi
 
   await waitFor(() => expect(screen.getByText("还没有 Provider")).toBeInTheDocument());
   expect(onChanged).toHaveBeenCalledTimes(4);
-});
-
-test("previews the claude messages endpoint for Claude providers", () => {
-  localStorage.setItem(
-    "yunwu.settings.v1",
-    JSON.stringify({
-      activeProviderId: "provider-1",
-      providers: [
-        {
-          id: "provider-1",
-          name: "Claude",
-          type: "claude",
-          apiKey: "key",
-          baseUrl: "https://claude.example.com/v1/",
-          model: "claude-sonnet-4-5",
-        },
-      ],
-    }),
-  );
-
-  render(<SettingsDialog open onOpenChange={() => {}} />);
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Claude" }));
-
-  expect(screen.getByText("预览：https://claude.example.com/v1/messages")).toBeInTheDocument();
-});
-
-test("previews the gemini stream endpoint without leaking the api key", () => {
-  localStorage.setItem(
-    "yunwu.settings.v1",
-    JSON.stringify({
-      activeProviderId: "provider-1",
-      providers: [
-        {
-          id: "provider-1",
-          name: "Gemini",
-          type: "gemini",
-          apiKey: "secret-key",
-          baseUrl: "https://gemini.example.com/v1beta/",
-          model: "gemini-2.5-pro",
-        },
-      ],
-    }),
-  );
-
-  render(<SettingsDialog open onOpenChange={() => {}} />);
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Gemini" }));
-
-  const preview = screen.getByText(
-    "预览：https://gemini.example.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=API_KEY",
-  );
-  expect(preview).toBeInTheDocument();
-  expect(preview.textContent).not.toContain("secret-key");
 });
 
 test("previews the responses endpoint for OpenAI Responses providers", () => {
@@ -223,22 +171,22 @@ test("reloads providers from localStorage when dialog opens", () => {
       providers: [
         {
           id: "provider-1",
-          name: "Claude",
-          type: "claude",
+          name: "OpenAI",
+          type: "openai",
           apiKey: "key",
           baseUrl: "",
-          model: "claude-sonnet-4-5",
+          model: "gpt-4o",
         },
       ],
     }),
   );
 
   const { rerender } = render(<SettingsDialog open={false} onOpenChange={() => {}} />);
-  expect(screen.queryByText("Claude")).not.toBeInTheDocument();
+  expect(screen.queryByText("OpenAI")).not.toBeInTheDocument();
 
   rerender(<SettingsDialog open onOpenChange={() => {}} />);
 
-  expect(screen.getByRole("button", { name: "编辑 Claude" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "编辑 OpenAI" })).toBeInTheDocument();
   expect(screen.getByText("当前")).toBeInTheDocument();
   expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
 });

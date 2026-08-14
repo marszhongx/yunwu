@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test } from "vitest";
 import {
   DEFAULT_SETTINGS,
   DEFAULT_SYSTEM_PROMPTS,
-  ImageProviderType,
   ProviderType,
 } from "@/constants";
 import {
@@ -41,17 +40,17 @@ describe("settings service", () => {
 
   test("adds and activates first provider", async () => {
     const provider = await addProvider({
-      type: ProviderType.GEMINI,
+      type: ProviderType.OPENAI,
       apiKey: "key",
-      model: "gemini-1.5-pro",
+      model: "gpt-4o",
     });
 
     expect(provider).toMatchObject({
-      name: "gemini-1.5-pro",
-      type: ProviderType.GEMINI,
+      name: "gpt-4o",
+      type: ProviderType.OPENAI,
       apiKey: "key",
       baseUrl: "",
-      model: "gemini-1.5-pro",
+      model: "gpt-4o",
     });
     expect(provider.id).not.toBe("");
     expect(getSettings()).toEqual({
@@ -66,7 +65,7 @@ describe("settings service", () => {
   });
 
   test("updates provider and getActiveProvider reflects update", async () => {
-    const provider = await addProvider({ type: ProviderType.GEMINI, model: "old-model" });
+    const provider = await addProvider({ type: ProviderType.OPENAI, model: "old-model" });
 
     const updated = await updateProvider(provider.id, {
       id: "ignored-id",
@@ -97,7 +96,7 @@ describe("settings service", () => {
   });
 
   test("deleting active provider clears active id and removes it", async () => {
-    const provider = await addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
+    const provider = await addProvider({ type: ProviderType.OPENAI, model: "gpt-4o" });
 
     const settings = await deleteProvider(provider.id);
 
@@ -107,8 +106,8 @@ describe("settings service", () => {
   });
 
   test("sets active provider and theme", async () => {
-    const first = await addProvider({ type: ProviderType.GEMINI, model: "gemini-pro" });
-    const second = await addProvider({ type: ProviderType.CLAUDE, model: "claude-3" });
+    const first = await addProvider({ type: ProviderType.OPENAI, model: "gpt-4o" });
+    const second = await addProvider({ type: ProviderType.OPENAI_RESPONSE, model: "gpt-5.1" });
 
     expect((await setActiveProvider(second.id)).activeProviderId).toBe(second.id);
     expect((await setActiveProvider("missing")).activeProviderId).toBe(second.id);
@@ -195,15 +194,15 @@ describe("settings service", () => {
   test("adds and activates first image provider", async () => {
     const provider = await addImageProvider({
       apiKey: "img-key",
-      model: ImageProviderType.DALL_E_3,
+      model: "gpt-4o",
     });
 
     expect(provider).toMatchObject({
-      name: "dall-e-3",
-      type: "dall-e-3",
+      name: "gpt-4o",
+      type: "openai",
       apiKey: "img-key",
       baseUrl: "https://api.openai.com/v1",
-      model: ImageProviderType.DALL_E_3,
+      model: "gpt-4o",
     });
     expect(provider.id).not.toBe("");
     expect(getSettings().activeImageProviderId).toBe(provider.id);
@@ -212,16 +211,16 @@ describe("settings service", () => {
   });
 
   test("updates image provider", async () => {
-    const provider = await addImageProvider({ apiKey: "old-key", model: "dall-e-3" });
+    const provider = await addImageProvider({ apiKey: "old-key", model: "gpt-4o" });
 
     const updated = await updateImageProvider(provider.id, {
-      name: "My DALL-E",
+      name: "My Image",
       apiKey: "new-key",
     });
 
     expect(updated).toMatchObject({
       id: provider.id,
-      name: "My DALL-E",
+      name: "My Image",
       apiKey: "new-key",
     });
     expect(getActiveImageProvider()).toEqual(updated);
@@ -229,7 +228,7 @@ describe("settings service", () => {
   });
 
   test("deleting active image provider clears active id", async () => {
-    const provider = await addImageProvider({ apiKey: "key", model: "dall-e-3" });
+    const provider = await addImageProvider({ apiKey: "key", model: "gpt-4o" });
 
     const settings = await deleteImageProvider(provider.id);
 
@@ -239,8 +238,8 @@ describe("settings service", () => {
   });
 
   test("sets active image provider", async () => {
-    await addImageProvider({ apiKey: "k1", model: "dall-e-2" });
-    const second = await addImageProvider({ apiKey: "k2", model: "dall-e-3" });
+    await addImageProvider({ apiKey: "k1", model: "gpt-4o" });
+    const second = await addImageProvider({ apiKey: "k2", model: "gpt-5.1" });
 
     expect((await setActiveImageProvider(second.id)).activeImageProviderId).toBe(second.id);
     expect((await setActiveImageProvider("missing")).activeImageProviderId).toBe(second.id);

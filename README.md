@@ -10,8 +10,8 @@
 
 ## 主要能力
 
-- 支持用户自行配置模型 Provider,覆盖 Gemini、Claude、OpenAI 兼容 Chat Completions、OpenAI Responses 四种类型
-- 支持图片生成 Provider(DALL-E / Images API、Chat Completions、Responses API)
+- 支持用户自行配置模型 Provider,覆盖 OpenAI、OpenAI Responses 两种类型
+- 支持图片生成 Provider(OpenAI、OpenAI Responses)
 - 支持角色卡管理:手动编辑、AI 生成、JSON / PNG(带 metadata)导入导出
 - 支持世界书(角色卡内嵌条目)与多会话管理
 - 支持剧情摘要、开场选项、XML 标签化回复解析与流式输出

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ProviderType } from "@/constants";
+import { ImageProviderType, ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import {
   streamAssistantText,
@@ -96,54 +96,6 @@ describe("streamAssistantText", () => {
     ).rejects.toThrow("Provider 缺少模型名");
   });
 
-  test("sends Claude system messages separately and streams content deltas", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        streamResponse([
-          'data: {"type":"content_block_delta","delta":{"text":"旁白"}}\n\n',
-          "data: [DONE]\n\n",
-        ]),
-      ) as FetchMock;
-    vi.stubGlobal("fetch", fetchMock);
-
-    const result = await streamAssistantText({
-      provider: provider({ type: ProviderType.CLAUDE, model: "claude-3-5-sonnet" }),
-      messages: [
-        { role: "system", content: "规则一" },
-        { role: "system", content: "规则二" },
-        { role: "user", content: "开始" },
-        { role: "assistant", content: "好的" },
-      ],
-    });
-
-    expect(result).toEqual({ text: "旁白" });
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://example.com/v1/messages",
-      expect.objectContaining({
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": "api-key",
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet",
-          system: [
-            { type: "text", text: "规则一" },
-            { type: "text", text: "规则二", cache_control: { type: "ephemeral" } },
-          ],
-          messages: [
-            { role: "user", content: "开始" },
-            { role: "assistant", content: "好的" },
-          ],
-          stream: true,
-        }),
-      }),
-    );
-  });
-
   test("streams OpenAI Responses output_text deltas with instructions", async () => {
     const fetchMock = vi
       .fn()
@@ -187,41 +139,41 @@ describe("streamAssistantText", () => {
     );
   });
 
-  test("falls back to the official Claude endpoint when base URL is empty", async () => {
+  test("falls back to the official OpenAI endpoint when base URL is empty", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
         streamResponse([
-          'data: {"type":"content_block_delta","delta":{"text":"好"}}\n\n',
+          'data: {"choices":[{"delta":{"content":"好"}}]}\n\n',
           "data: [DONE]\n\n",
         ]),
       ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await streamAssistantText({
-      provider: provider({ type: ProviderType.CLAUDE, baseUrl: " ", model: "claude-3-5-sonnet" }),
+      provider: provider({ type: ProviderType.OPENAI, baseUrl: " " }),
       messages: [{ role: "user", content: "hello" }],
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.anthropic.com/v1/messages",
+      "https://api.openai.com/v1/chat/completions",
       expect.anything(),
     );
   });
 
-  test("sends Gemini safety settings at the request body top level", async () => {
+  test("sends OpenAI chat completions request body", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
         streamResponse([
-          'data: {"candidates":[{"content":{"parts":[{"text":"回应"}]}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":"回应"}}]}\n\n',
           "data: [DONE]\n\n",
         ]),
       ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await streamAssistantText({
-      provider: provider({ type: ProviderType.GEMINI, model: "gemini-2.5-pro" }),
+      provider: provider({ type: ProviderType.OPENAI, model: "gpt-4o" }),
       messages: [
         { role: "system", content: "系统规则" },
         { role: "user", content: "开始" },
@@ -231,25 +183,18 @@ describe("streamAssistantText", () => {
 
     expect(result).toEqual({ text: "回应" });
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://example.com/v1/models/gemini-2.5-pro:streamGenerateContent?alt=sse");
-    expect(new Headers(init.headers).get("x-goog-api-key")).toBe("api-key");
+    expect(url).toBe("https://example.com/v1/chat/completions");
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer api-key");
     const body = JSON.parse(String(init.body));
     expect(body).toMatchObject({
-      contents: [
-        { role: "user", parts: [{ text: "开始" }] },
-        { role: "model", parts: [{ text: "继续" }] },
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "系统规则" },
+        { role: "user", content: "开始" },
+        { role: "assistant", content: "继续" },
       ],
-      systemInstruction: { parts: [{ text: "系统规则" }] },
-      generationConfig: {},
+      stream: true,
     });
-    expect(body.safetySettings).toEqual([
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" },
-    ]);
-    expect(body.google).toBeUndefined();
   });
 
   test("throws provider request error for non-ok responses", async () => {
@@ -344,32 +289,6 @@ describe("requestAssistantText", () => {
     expect(body.response_format).toEqual({ type: "json_object" });
   });
 
-  test("requests Claude with stream false", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        jsonResponse({ content: [{ type: "text", text: '{"name":"测试"}' }] }),
-      ) as FetchMock;
-    vi.stubGlobal("fetch", fetchMock);
-
-    const result = await requestAssistantText({
-      provider: provider({ type: ProviderType.CLAUDE, model: "claude-3-5-sonnet" }),
-      messages: [
-        { role: "system", content: "输出 JSON" },
-        { role: "user", content: "生成角色" },
-      ],
-    });
-
-    expect(result).toEqual({ text: '{"name":"测试"}' });
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://example.com/v1/messages");
-    const body = JSON.parse(String(init.body));
-    expect(body.stream).toBe(false);
-    expect(body.system).toEqual([
-      { type: "text", text: "输出 JSON", cache_control: { type: "ephemeral" } },
-    ]);
-  });
-
   test("requests OpenAI Responses with stream false and parses output items", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
@@ -404,16 +323,16 @@ describe("requestAssistantText", () => {
     });
   });
 
-  test("requests Gemini with json responseMimeType and no streaming URL", async () => {
+  test("requests OpenAI with json responseMimeType and no streaming URL", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: '{"name":"测试"}' }] } }] }),
+        jsonResponse({ choices: [{ message: { content: '{"name":"测试"}' } }] }),
       ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await requestAssistantText({
-      provider: provider({ type: ProviderType.GEMINI, model: "gemini-2.5-pro" }),
+      provider: provider({ type: ProviderType.OPENAI, model: "gpt-4o" }),
       messages: [
         { role: "system", content: "输出 JSON" },
         { role: "user", content: "生成角色" },
@@ -422,11 +341,10 @@ describe("requestAssistantText", () => {
 
     expect(result).toEqual({ text: '{"name":"测试"}' });
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toContain("generateContent");
-    expect(url).not.toContain("streamGenerateContent");
-    expect(new Headers(init.headers).get("x-goog-api-key")).toBe("api-key");
+    expect(url).toContain("chat/completions");
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer api-key");
     const body = JSON.parse(String(init.body));
-    expect(body.generationConfig.responseMimeType).toBe("application/json");
+    expect(body.response_format).toEqual({ type: "json_object" });
   });
 
   test("throws on empty response", async () => {
@@ -456,59 +374,77 @@ describe("requestAssistantText", () => {
 });
 
 describe("generateImage", () => {
-  test("returns data URL from b64_json response", async () => {
+  test("generates image via chat completions and returns image URL", async () => {
+    const imageUrl = "https://pub.example.com/generated.jpg";
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] })) as FetchMock;
+      .mockResolvedValue(
+        jsonResponse({
+          choices: [{ message: { content: [{ type: "image_url", image_url: { url: imageUrl } }] } }],
+        }),
+      ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await generateImage({
       apiKey: "test-key",
       baseUrl: "https://api.example.com/v1",
-      model: "dall-e-3",
+      model: "gpt-4o",
       prompt: "a cat",
     });
 
-    expect(result).toBe("data:image/png;base64,aGVsbG8=");
+    expect(result).toBe(imageUrl);
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://api.example.com/v1/images/generations");
+    expect(url).toBe("https://api.example.com/v1/chat/completions");
     const body = JSON.parse(init.body);
     expect(body).toEqual({
-      model: "dall-e-3",
-      prompt: "a cat",
-      size: "1024x1024",
-      response_format: "b64_json",
+      model: "gpt-4o",
+      messages: [{ role: "user", content: "a cat" }],
     });
   });
 
-  test("defaults base URL to openai", async () => {
+  test("defaults base URL to openai for chat completions", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(jsonResponse({ data: [{ b64_json: "aGVsbG8=" }] })) as FetchMock;
+      .mockResolvedValue(
+        jsonResponse({
+          choices: [{ message: { content: [{ type: "image_url", image_url: { url: "u" } }] } }],
+        }),
+      ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await generateImage({ apiKey: "k", baseUrl: "", model: "m", prompt: "p" });
 
     const [url] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://api.openai.com/v1/images/generations");
+    expect(url).toBe("https://api.openai.com/v1/chat/completions");
   });
 
-  test("returns image URL from url response", async () => {
+  test("generates image via responses API", async () => {
     const imageUrl = "https://pub.example.com/generated.jpg";
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(jsonResponse({ data: [{ url: imageUrl }] })) as FetchMock;
+      .mockResolvedValue(
+        jsonResponse({
+          output: [
+            { type: "message", content: [{ type: "image_url", image_url: { url: imageUrl } }] },
+          ],
+        }),
+      ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await generateImage({
       apiKey: "test-key",
       baseUrl: "https://api.example.com/v1",
-      model: "gpt-image-1",
+      model: "gpt-5.1",
       prompt: "a cat",
+      type: ImageProviderType.OPENAI_RESPONSE,
     });
 
     expect(result).toBe(imageUrl);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.example.com/v1/responses");
+    const body = JSON.parse(init.body);
+    expect(body).toEqual({ model: "gpt-5.1", input: "a cat" });
   });
 
   test("throws on API error", async () => {
@@ -523,7 +459,9 @@ describe("generateImage", () => {
   });
 
   test("throws on empty response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: [] })) as FetchMock;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ choices: [{ message: { content: [] } }] })) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(

@@ -17,7 +17,6 @@ import type { ImageProviderSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   openAIChatCompletionsUrl,
-  openAIImagesGenerationsUrl,
   openAIResponsesUrl,
 } from "@/services/ai";
 import {
@@ -45,10 +44,10 @@ type ImageProviderForm = {
 
 const emptyForm: ImageProviderForm = {
   name: "",
-  type: ImageProviderType.DALL_E_3,
+  type: ImageProviderType.OPENAI,
   apiKey: "",
   baseUrl: "https://api.openai.com/v1",
-  model: ImageProviderType.DALL_E_3,
+  model: "",
 };
 
 export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogProps) {
@@ -72,23 +71,11 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   }
 
   function updateProviderType(value: ImageProviderType) {
-    setForm((current) => {
-      const previousDefault =
-        current.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "";
-      const model =
-        current.model === "" || current.model === previousDefault
-          ? value === ImageProviderType.DALL_E_3
-            ? ImageProviderType.DALL_E_3
-            : ""
-          : current.model;
-
-      return {
-        ...current,
-        type: value,
-        baseUrl: current.baseUrl || "https://api.openai.com/v1",
-        model,
-      };
-    });
+    setForm((current) => ({
+      ...current,
+      type: value,
+      baseUrl: current.baseUrl || "https://api.openai.com/v1",
+    }));
   }
 
   function startCreate() {
@@ -167,13 +154,11 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
   }
 
   const apiPreview =
-    form.type === ImageProviderType.DALL_E_3
-      ? openAIImagesGenerationsUrl(form.baseUrl)
-      : form.type === ImageProviderType.OPENAI
-        ? openAIChatCompletionsUrl(form.baseUrl)
-        : form.type === ImageProviderType.OPENAI_RESPONSE
-          ? openAIResponsesUrl(form.baseUrl)
-          : "";
+    form.type === ImageProviderType.OPENAI
+      ? openAIChatCompletionsUrl(form.baseUrl)
+      : form.type === ImageProviderType.OPENAI_RESPONSE
+        ? openAIResponsesUrl(form.baseUrl)
+        : "";
   const isEditing = creating || selectedId !== null;
   const dialogTitle = creating
     ? "新建图片 Provider"
@@ -234,9 +219,8 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ImageProviderType.DALL_E_3}>DALL-E / Images API</SelectItem>
-                  <SelectItem value={ImageProviderType.OPENAI}>Chat Completions</SelectItem>
-                  <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>Responses API</SelectItem>
+                  <SelectItem value={ImageProviderType.OPENAI}>OpenAI</SelectItem>
+                  <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>OpenAI Responses</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -248,9 +232,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
             />
             <Field
               label="模型"
-              placeholder={
-                form.type === ImageProviderType.DALL_E_3 ? ImageProviderType.DALL_E_3 : "gpt-4o"
-              }
+              placeholder="gpt-4o"
               value={form.model}
               onChange={(value) => updateField("model", value)}
             />

@@ -685,11 +685,11 @@ function character(overrides: Partial<CharacterCard> = {}): CharacterCard {
 function activeProvider(overrides: Partial<ProviderSettings> = {}): ProviderSettings {
   return {
     id: "provider-1",
-    name: "Gemini",
-    type: ProviderType.GEMINI,
+    name: "OpenAI",
+    type: ProviderType.OPENAI,
     apiKey: "key",
     baseUrl: "",
-    model: "gemini-test",
+    model: "gpt-4o",
     ...overrides,
   };
 }
