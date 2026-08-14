@@ -167,7 +167,6 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
     messages.every((message) => message.role !== "user") &&
     (character?.opening_user_choices.length ?? 0) > 0;
 
-  const bottomRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   // 每次渲染：仅当用户当前贴底时跟随滚动（流式输出时用户上滑则不打扰）
@@ -175,10 +174,10 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
     const viewport = scrollAreaRef.current?.querySelector<HTMLElement>(
       "[data-radix-scroll-area-viewport]",
     );
-    if (!viewport || !bottomRef.current) return;
+    if (!viewport) return;
     const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
     if (distance < 80) {
-      bottomRef.current.scrollIntoView?.({ behavior: "smooth" });
+      viewport.scrollTop = viewport.scrollHeight;
     }
   });
 
@@ -251,7 +250,6 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
           {generatingImageId && generatingChatId === chat.id ? (
             <LoadingBubble label="图片生成中" />
           ) : null}
-          <div ref={bottomRef} />
         </div>
       </ScrollArea>
       <div className="flex items-end gap-2 rounded-3xl border border-border/40 bg-card/60 p-2.5 shadow-xl shadow-primary/5 backdrop-blur-2xl sm:p-3">
