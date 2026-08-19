@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
-import { PasswordInput } from "@/components/ui/password-input";
+import { ListItemButton } from "@/components/ui/list-item-button";
 import {
   Select,
   SelectContent,
@@ -15,11 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
-import { cn } from "@/lib/utils";
-import {
-  openAIChatCompletionsUrl,
-  openAIResponsesUrl,
-} from "@/services/ai";
+import { openAIChatCompletionsUrl, openAIResponsesUrl } from "@/services/ai";
 import {
   addProvider,
   deleteProvider,
@@ -219,6 +216,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
         <>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
+              id="provider-name"
               label="名称"
               value={form.name}
               onChange={(value) => updateField("name", value)}
@@ -236,18 +234,21 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
               </Select>
             </div>
             <Field
+              id="provider-api-key"
               label="API Key"
               type="password"
               value={form.apiKey}
               onChange={(value) => updateField("apiKey", value)}
             />
             <Field
+              id="provider-model"
               label="模型"
               value={form.model}
               onChange={(value) => updateField("model", value)}
             />
             <div className="space-y-2 md:col-span-2">
               <Field
+                id="provider-base-url"
                 label="API 地址"
                 placeholder="https://api.example.com/v1"
                 value={form.baseUrl}
@@ -269,6 +270,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
               {showAdvanced ? (
                 <div className="grid gap-4 pt-3 md:grid-cols-2">
                   <Field
+                    id="provider-max-tokens"
                     label="最大输出 Token"
                     type="number"
                     placeholder="不填则使用模型默认值"
@@ -318,22 +320,22 @@ type ProviderListProps = {
 function ProviderList({ providers, activeProviderId, onEdit, onCreate }: ProviderListProps) {
   if (providers.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
-        <h3 className="text-base font-medium">还没有 Provider</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          先创建一个 Provider，再开始调用 AI 模型。
-        </p>
-        <Button type="button" className="mt-4" onClick={onCreate}>
+      <EmptyState
+        icon={<KeyRound className="size-5" />}
+        title="还没有 Provider"
+        description="先创建一个 Provider，再开始调用 AI 模型。"
+      >
+        <Button type="button" onClick={onCreate}>
           新建 Provider
         </Button>
-      </div>
+      </EmptyState>
     );
   }
 
   return (
     <div className="w-full min-w-0 space-y-2">
       {providers.map((provider) => (
-        <ProviderListButton
+        <ListItemButton
           key={provider.id}
           current={provider.id === activeProviderId}
           label={provider.name}
@@ -341,79 +343,7 @@ function ProviderList({ providers, activeProviderId, onEdit, onCreate }: Provide
           onClick={() => onEdit(provider)}
         />
       ))}
-      <ProviderListButton dashed label="新建 Provider" onClick={onCreate} />
-    </div>
-  );
-}
-
-type ProviderListButtonProps = {
-  active?: boolean;
-  current?: boolean;
-  dashed?: boolean;
-  label: string;
-  description?: string;
-  onClick: () => void;
-};
-
-function ProviderListButton({
-  active,
-  current = false,
-  dashed = false,
-  label,
-  description,
-  onClick,
-}: ProviderListButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
-        dashed &&
-          "justify-center border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
-        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
-      )}
-      aria-current={active ? "true" : undefined}
-      aria-label={`编辑 ${label}`}
-      onClick={onClick}
-    >
-      {dashed ? <Plus className="size-4" /> : null}
-      <span className={cn("flex min-w-0 flex-1 flex-col gap-0.5", dashed && "flex-none")}>
-        <span className="block min-w-0 truncate text-sm">{label}</span>
-        {description ? (
-          <span className="block min-w-0 truncate text-xs text-muted-foreground">
-            {description}
-          </span>
-        ) : null}
-      </span>
-      {current ? <span className="shrink-0 text-xs text-muted-foreground">当前</span> : null}
-    </button>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  placeholder?: string;
-};
-
-function Field({ label, value, onChange, type = "text", placeholder }: FieldProps) {
-  const inputProps = {
-    id: `provider-${label}`,
-    placeholder,
-    value,
-    onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
-  };
-
-  return (
-    <div className="min-w-0">
-      <Label htmlFor={`provider-${label}`}>{label}</Label>
-      {type === "password" ? (
-        <PasswordInput {...inputProps} />
-      ) : (
-        <Input type={type} {...inputProps} />
-      )}
+      <ListItemButton dashed label="新建 Provider" onClick={onCreate} />
     </div>
   );
 }

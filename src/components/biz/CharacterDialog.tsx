@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { Loader2, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2, Upload, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListItemButton } from "@/components/ui/list-item-button";
 import { Textarea } from "@/components/ui/textarea";
 import { fromCharaCardV2, toCharaCardV2 } from "@/lib/charaCardV2";
 import { downloadBlob, exportToJson, importFromJson, safeFilename } from "@/lib/export";
 import { fileToDataUrl, readCharaCardFromPng, writeCharaCardToPng } from "@/lib/pngMetadata";
-import { cn } from "@/lib/utils";
 import {
   createCharacter,
   deleteCharacter,
@@ -367,19 +369,30 @@ export function CharacterDialog({
               </Button>
             </section>
           ) : null}
-          <Field label="名称" value={form.name} onChange={(value) => updateField("name", value)} />
-          <TextField
+          <Field
+            id="character-name"
+            label="名称"
+            value={form.name}
+            onChange={(value) => updateField("name", value)}
+          />
+          <Field
+            id="character-description"
             label="描述"
+            multiline
             value={form.description}
             onChange={(value) => updateField("description", value)}
           />
-          <TextField
+          <Field
+            id="character-personality"
             label="性格"
+            multiline
             value={form.personality}
             onChange={(value) => updateField("personality", value)}
           />
-          <TextField
+          <Field
+            id="character-scenario"
             label="场景"
+            multiline
             value={form.scenario}
             onChange={(value) => updateField("scenario", value)}
           />
@@ -444,13 +457,17 @@ export function CharacterDialog({
               })}
             </div>
           </div>
-          <TextField
+          <Field
+            id="character-first-mes"
             label="开场白"
+            multiline
             value={form.first_mes}
             onChange={(value) => updateField("first_mes", value)}
           />
-          <TextField
+          <Field
+            id="character-mes-example"
             label="示例对话"
+            multiline
             value={form.mes_example}
             onChange={(value) => updateField("mes_example", value)}
           />
@@ -505,10 +522,12 @@ function CharacterList({
 
   if (characters.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
-        <h3 className="text-base font-medium">还没有角色</h3>
-        <p className="mt-2 text-sm text-muted-foreground">先创建一个角色卡，再用它开启对话。</p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+      <>
+        <EmptyState
+          icon={<UserRound className="size-5" />}
+          title="还没有角色"
+          description="先创建一个角色卡，再用它开启对话。"
+        >
           <Button type="button" onClick={onCreate}>
             新建角色
           </Button>
@@ -516,9 +535,9 @@ function CharacterList({
             <Upload className="mr-2 size-4" />
             导入角色
           </Button>
-        </div>
+        </EmptyState>
         {fileInput}
-      </div>
+      </>
     );
   }
 
@@ -526,13 +545,13 @@ function CharacterList({
     <div className="space-y-2">
       <h3 className="text-base font-medium">选择一个角色</h3>
       {characters.map((character) => (
-        <CharacterListButton
+        <ListItemButton
           key={character.id}
           label={character.name}
           onClick={() => onEdit(character)}
         />
       ))}
-      <CharacterListButton dashed label="新建角色" onClick={onCreate} />
+      <ListItemButton dashed label="新建角色" onClick={onCreate} />
       <Button
         type="button"
         variant="outline"
@@ -543,65 +562,6 @@ function CharacterList({
         导入角色
       </Button>
       {fileInput}
-    </div>
-  );
-}
-
-type CharacterListButtonProps = {
-  active?: boolean;
-  dashed?: boolean;
-  label: string;
-  onClick: () => void;
-};
-
-function CharacterListButton({ active, dashed = false, label, onClick }: CharacterListButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "block w-full rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
-        dashed &&
-          "flex items-center justify-center gap-2 border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
-        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
-      )}
-      aria-current={active ? "true" : undefined}
-      aria-label={`编辑 ${label}`}
-      onClick={onClick}
-    >
-      {dashed ? <Plus className="size-4" /> : null}
-      {label}
-    </button>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-};
-
-function Field({ label, value, onChange }: FieldProps) {
-  return (
-    <div>
-      <Label htmlFor={`character-${label}`}>{label}</Label>
-      <Input
-        id={`character-${label}`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
-  );
-}
-
-function TextField({ label, value, onChange }: FieldProps) {
-  return (
-    <div>
-      <Label htmlFor={`character-${label}`}>{label}</Label>
-      <Textarea
-        id={`character-${label}`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
     </div>
   );
 }
