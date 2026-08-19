@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListItemButton } from "@/components/ui/list-item-button";
 import {
   Select,
   SelectContent,
@@ -12,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { listCharacters } from "@/services/characters";
 import { createChat, deleteChat, listChats, renameChat } from "@/services/chats";
 import type { CharacterCard, Chat } from "@/types";
@@ -251,70 +252,29 @@ type ChatListProps = {
 function ChatList({ chats, currentChatId, onEdit, onCreate }: ChatListProps) {
   if (chats.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
-        <h3 className="text-base font-medium">还没有对话</h3>
-        <p className="mt-2 text-sm text-muted-foreground">先创建一个对话，再继续角色扮演。</p>
-        <Button type="button" className="mt-4" onClick={onCreate}>
+      <EmptyState
+        icon={<MessageSquareText className="size-5" />}
+        title="还没有对话"
+        description="先创建一个对话，再继续角色扮演。"
+      >
+        <Button type="button" onClick={onCreate}>
           新建对话
         </Button>
-      </div>
+      </EmptyState>
     );
   }
 
   return (
     <div className="space-y-2">
       {chats.map((chat) => (
-        <ChatListButton
+        <ListItemButton
           key={chat.id}
           current={chat.id === currentChatId}
           label={chat.title}
           onClick={() => onEdit(chat)}
         />
       ))}
-      <ChatListButton dashed label="新建对话" onClick={onCreate} />
+      <ListItemButton dashed label="新建对话" onClick={onCreate} />
     </div>
-  );
-}
-
-type ChatListButtonProps = {
-  active?: boolean;
-  current?: boolean;
-  dashed?: boolean;
-  label: string;
-  onClick: () => void;
-};
-
-function ChatListButton({
-  active,
-  current = false,
-  dashed = false,
-  label,
-  onClick,
-}: ChatListButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "block w-full rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
-        dashed &&
-          "flex items-center justify-center gap-2 border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
-        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
-      )}
-      aria-current={active ? "true" : undefined}
-      aria-label={`编辑 ${label}`}
-      onClick={onClick}
-    >
-      {dashed ? (
-        <>
-          <Plus className="size-4" />
-          {label}
-        </>
-      ) : (
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate">{label}</span>
-          {current ? <span className="shrink-0 text-xs text-muted-foreground">当前</span> : null}
-        </span>
-      )}
-    </button>
   );
 }

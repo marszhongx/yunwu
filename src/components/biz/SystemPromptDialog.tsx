@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_SETTINGS } from "@/constants";
@@ -120,9 +121,7 @@ export function SystemPromptDialog({ open, onOpenChange, onChanged }: SystemProm
           );
         })}
         {systemPrompts.length === 0 ? (
-          <div className="flex min-h-full flex-1 items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center text-sm text-muted-foreground backdrop-blur-sm">
-            暂无系统提示词，保存时会恢复默认值，也可以先新增一条。
-          </div>
+          <EmptyState description="暂无系统提示词，保存时会恢复默认值，也可以先新增一条。" />
         ) : null}
       </div>
     </ConfigDialogLayout>

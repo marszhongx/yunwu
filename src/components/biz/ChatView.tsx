@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageRenderer } from "@/components/biz/MessageRenderer";
+import { MessageRenderer, assistantBubbleClass } from "@/components/biz/MessageRenderer";
 import { buildMessages, parseMessage } from "@/lib/messages";
 import { enabledEntries } from "@/lib/lorebooks";
 import { Copy, Download, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
@@ -252,7 +252,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
           ) : null}
         </div>
       </ScrollArea>
-      <div className="flex items-end gap-2 rounded-3xl border border-border/40 bg-card/60 p-2.5 shadow-xl shadow-primary/5 backdrop-blur-2xl sm:p-3">
+      <div className="flex items-end gap-2 rounded-3xl border border-border/40 bg-card/60 p-2.5 shadow-xl shadow-primary/5 backdrop-blur-2xl transition-all duration-200 focus-within:border-primary/30 focus-within:shadow-primary/10 sm:p-3">
         <Textarea
           value={draft}
           placeholder="输入行动，Ctrl/⌘ + Enter 发送"
@@ -305,7 +305,7 @@ function LoadingBubble({ label }: { label: string }) {
   return (
     <div className="group flex justify-start">
       <div className="max-w-[82%]">
-        <div className="whitespace-pre-wrap rounded-3xl rounded-bl-md border border-border/40 bg-card/70 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-primary/5 backdrop-blur-xl">
+        <div className={assistantBubbleClass}>
           <LoadingDots label={label} />
         </div>
       </div>
@@ -392,7 +392,7 @@ function MessageBubble({
       <div className="group flex animate-fade-in-up justify-start">
         <div className="max-w-[88%] sm:max-w-[82%]">
           {onDelete && (
-            <div className="mb-1 flex gap-1 justify-start opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="mb-1 flex gap-1 justify-start opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
               <MessageActionButton
                 icon={<Download className="h-3 w-3" />}
                 label="下载图片"
@@ -430,7 +430,7 @@ function MessageBubble({
         {onDelete && (
           <div
             className={cn(
-              "mb-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100",
+              "mb-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
               isUser ? "justify-end" : "justify-start",
             )}
           >
@@ -462,7 +462,7 @@ function MessageBubble({
           </div>
         )}
         {loading ? (
-          <div className="rounded-3xl rounded-bl-md border border-border/40 bg-card/75 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-primary/5 backdrop-blur-xl">
+          <div className={assistantBubbleClass}>
             <LoadingDots label="回复生成中" />
           </div>
         ) : isUser ? (

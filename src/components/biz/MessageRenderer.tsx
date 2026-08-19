@@ -18,6 +18,9 @@ type MessageRendererProps = {
   registry?: MessageMarkupRegistry;
 };
 
+export const assistantBubbleClass =
+  "rounded-3xl rounded-bl-md border border-border/40 bg-card/75 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-primary/5 backdrop-blur-xl";
+
 const defaultRegistry: MessageMarkupRegistry = {
   content: ContentRegion,
   summary: SummaryRegion,
@@ -42,7 +45,7 @@ export function MessageRenderer({
 
   return (
     <>
-      <div className="rounded-3xl rounded-bl-md border border-border/40 bg-card/75 px-4 py-3 text-sm leading-7 text-card-foreground shadow-lg shadow-primary/5 backdrop-blur-xl">
+      <div className={assistantBubbleClass}>
         {contentNodes.length > 0
           ? contentNodes.map((node, index) => {
               const Component = components[node.name] ?? Fragment;

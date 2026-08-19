@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { CharacterDialog } from "@/components/biz/CharacterDialog";
 import { ChatListDialog } from "@/components/biz/ChatListDialog";
 import { ChatSidebar } from "@/components/biz/ChatSidebar";
@@ -19,6 +19,7 @@ import {
   Sun,
   UserRound,
 } from "lucide-react";
+import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { getCharacter } from "@/services/characters";
 import { createChat, getChat } from "@/services/chats";
@@ -111,14 +112,7 @@ export default function App() {
     <>
       <div className="flex h-[100dvh] max-w-[1600px] mx-auto overflow-hidden bg-background/90 text-foreground">
         <aside className="hidden w-80 shrink-0 flex-col border-r border-border/40 bg-card/60 p-5 shadow-2xl shadow-primary/5 backdrop-blur-2xl lg:flex">
-          <h1 className="mb-5 text-2xl font-semibold tracking-tight">
-            <span className="text-foreground">云雾聊天室</span>
-            {activeProviderName ? (
-              <span className="ml-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 align-middle text-xs font-medium text-primary shadow-sm shadow-primary/10">
-                {activeProviderName}
-              </span>
-            ) : null}
-          </h1>
+          <BrandTitle activeProviderName={activeProviderName} />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <ChatSidebar chat={currentChat} character={currentCharacter} />
           </div>
@@ -151,81 +145,37 @@ export default function App() {
           </main>
         </div>
         <nav className="flex shrink-0 flex-col items-center gap-1 border-l border-border/40 bg-card/60 p-1.5 shadow-2xl shadow-primary/5 backdrop-blur-2xl lg:p-2">
-          <Button
-            size="icon"
-            variant="ghost"
+          <NavButton
+            icon={History}
+            label="记录"
+            active={chatsOpen}
             onClick={() => setChatsOpen(true)}
-            title="记录"
-            aria-label="记录"
-            className={cn(
-              "h-9 w-9 lg:h-10 lg:w-10",
-              chatsOpen && "bg-accent/60 text-accent-foreground",
-            )}
-          >
-            <History className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
+          />
+          <NavButton
+            icon={UserRound}
+            label="角色"
+            active={charactersOpen}
             onClick={() => setCharactersOpen(true)}
-            title="角色"
-            aria-label="角色"
-            className={cn(
-              "h-9 w-9 lg:h-10 lg:w-10",
-              charactersOpen && "bg-accent/60 text-accent-foreground",
-            )}
-          >
-            <UserRound className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
+          />
+          <NavButton
+            icon={MessageSquareText}
+            label="提示词"
+            active={systemPromptOpen}
             onClick={() => setSystemPromptOpen(true)}
-            title="提示词"
-            aria-label="提示词"
-            className={cn(
-              "h-9 w-9 lg:h-10 lg:w-10",
-              systemPromptOpen && "bg-accent/60 text-accent-foreground",
-            )}
-          >
-            <MessageSquareText className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
+          />
+          <NavButton
+            icon={Settings}
+            label="设置"
+            active={settingsOpen}
             onClick={() => setSettingsOpen(true)}
-            title="设置"
-            aria-label="设置"
-            className={cn(
-              "h-9 w-9 lg:h-10 lg:w-10",
-              settingsOpen && "bg-accent/60 text-accent-foreground",
-            )}
-          >
-            <Settings className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
+          />
+          <NavButton
+            icon={Image}
+            label="图片生成"
+            active={imageProviderOpen}
             onClick={() => setImageProviderOpen(true)}
-            title="图片生成"
-            aria-label="图片生成"
-            className={cn(
-              "h-9 w-9 lg:h-10 lg:w-10",
-              imageProviderOpen && "bg-accent/60 text-accent-foreground",
-            )}
-          >
-            <Image className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => void toggleTheme()}
-            title="切换主题"
-            aria-label="切换主题"
-            className="h-9 w-9 lg:h-10 lg:w-10"
-          >
-            <ThemeIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
+          />
+          <NavButton icon={ThemeIcon} label="切换主题" onClick={() => void toggleTheme()} />
         </nav>
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent
@@ -233,20 +183,14 @@ export default function App() {
             className="w-80 border-border/40 bg-card/90 p-5 backdrop-blur-2xl lg:hidden"
           >
             <SheetTitle className="sr-only">侧栏</SheetTitle>
-            <h1 className="mb-5 text-2xl font-semibold tracking-tight">
-              <span className="text-foreground">云雾聊天室</span>
-              {activeProviderName ? (
-                <span className="ml-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 align-middle text-xs font-medium text-primary">
-                  {activeProviderName}
-                </span>
-              ) : null}
-            </h1>
+            <BrandTitle activeProviderName={activeProviderName} />
             <div className="min-h-0 flex-1 overflow-y-auto">
               <ChatSidebar chat={currentChat} character={currentCharacter} />
             </div>
           </SheetContent>
         </Sheet>
       </div>
+      <Toaster theme={theme} richColors position="top-center" />
       {settingsOpen ? (
         <SettingsDialog
           open={settingsOpen}
@@ -286,5 +230,40 @@ export default function App() {
         />
       ) : null}
     </>
+  );
+}
+
+function BrandTitle({ activeProviderName }: { activeProviderName: string }) {
+  return (
+    <h1 className="mb-5 text-2xl font-semibold tracking-tight">
+      <span className="text-foreground">云雾聊天室</span>
+      {activeProviderName ? (
+        <span className="ml-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 align-middle text-xs font-medium text-primary shadow-sm shadow-primary/10">
+          {activeProviderName}
+        </span>
+      ) : null}
+    </h1>
+  );
+}
+
+type NavButtonProps = {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+};
+
+function NavButton({ icon: Icon, label, active = false, onClick }: NavButtonProps) {
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={cn("h-9 w-9 lg:h-10 lg:w-10", active && "bg-accent/60 text-accent-foreground")}
+    >
+      <Icon className="h-4 w-4 lg:h-5 lg:w-5" />
+    </Button>
   );
 }

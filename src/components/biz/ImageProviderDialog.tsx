@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
+import { ListItemButton } from "@/components/ui/list-item-button";
 import {
   Select,
   SelectContent,
@@ -14,11 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ImageProviderType } from "@/constants";
 import type { ImageProviderSettings } from "@/types";
-import { cn } from "@/lib/utils";
-import {
-  openAIChatCompletionsUrl,
-  openAIResponsesUrl,
-} from "@/services/ai";
+import { openAIChatCompletionsUrl, openAIResponsesUrl } from "@/services/ai";
 import {
   addImageProvider,
   deleteImageProvider,
@@ -208,6 +206,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
         <>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
+              id="image-provider-name"
               label="名称"
               value={form.name}
               onChange={(value) => updateField("name", value)}
@@ -220,17 +219,21 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ImageProviderType.OPENAI}>OpenAI</SelectItem>
-                  <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>OpenAI Responses</SelectItem>
+                  <SelectItem value={ImageProviderType.OPENAI_RESPONSE}>
+                    OpenAI Responses
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Field
+              id="image-provider-api-key"
               label="API Key"
               type="password"
               value={form.apiKey}
               onChange={(value) => updateField("apiKey", value)}
             />
             <Field
+              id="image-provider-model"
               label="模型"
               placeholder="gpt-4o"
               value={form.model}
@@ -238,6 +241,7 @@ export function ImageProviderDialog({ open, onOpenChange }: ImageProviderDialogP
             />
             <div className="space-y-2 md:col-span-2">
               <Field
+                id="image-provider-base-url"
                 label="API 地址"
                 placeholder="https://api.openai.com/v1"
                 value={form.baseUrl}
@@ -274,92 +278,29 @@ function ImageProviderList({
 }: ImageProviderListProps) {
   if (providers.length === 0) {
     return (
-      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center backdrop-blur-sm">
-        <h3 className="text-base font-medium">还没有图片 Provider</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          先创建一个图片 Provider，再开始生成图片。
-        </p>
-        <Button type="button" className="mt-4" onClick={onCreate}>
+      <EmptyState
+        icon={<ImagePlus className="size-5" />}
+        title="还没有图片 Provider"
+        description="先创建一个图片 Provider，再开始生成图片。"
+      >
+        <Button type="button" onClick={onCreate}>
           新建图片 Provider
         </Button>
-      </div>
+      </EmptyState>
     );
   }
 
   return (
     <div className="w-full min-w-0 space-y-2">
       {providers.map((provider) => (
-        <ImageProviderListButton
+        <ListItemButton
           key={provider.id}
           current={provider.id === activeImageProviderId}
           label={provider.name}
           onClick={() => onEdit(provider)}
         />
       ))}
-      <ImageProviderListButton dashed label="新建图片 Provider" onClick={onCreate} />
-    </div>
-  );
-}
-
-type ImageProviderListButtonProps = {
-  active?: boolean;
-  current?: boolean;
-  dashed?: boolean;
-  label: string;
-  onClick: () => void;
-};
-
-function ImageProviderListButton({
-  active,
-  current = false,
-  dashed = false,
-  label,
-  onClick,
-}: ImageProviderListButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-left text-sm backdrop-blur-sm transition-all duration-200 hover:bg-accent/60 hover:shadow-sm",
-        dashed &&
-          "justify-center border-dashed border-foreground/30 text-center text-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-accent-foreground",
-        active && "border-primary/40 bg-accent/60 text-accent-foreground shadow-sm",
-      )}
-      aria-current={active ? "true" : undefined}
-      aria-label={`编辑 ${label}`}
-      onClick={onClick}
-    >
-      {dashed ? <Plus className="size-4" /> : null}
-      <span
-        className="block min-w-0 truncate text-sm"
-        style={{ flex: dashed ? "0 1 auto" : "1 1 0%", maxWidth: "100%" }}
-      >
-        {label}
-      </span>
-      {current ? <span className="shrink-0 text-xs text-muted-foreground">当前</span> : null}
-    </button>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  placeholder?: string;
-};
-
-function Field({ label, value, onChange, type = "text", placeholder }: FieldProps) {
-  return (
-    <div className="min-w-0">
-      <Label htmlFor={`image-provider-${label}`}>{label}</Label>
-      <Input
-        id={`image-provider-${label}`}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <ListItemButton dashed label="新建图片 Provider" onClick={onCreate} />
     </div>
   );
 }
