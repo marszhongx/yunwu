@@ -52,13 +52,13 @@ npm run build
 
 构建产物位于 `dist/`,可部署到静态站点托管服务。
 
-### Vercel(推荐)
+### Vercel
 
 直接导入仓库即可,项目自带 `vercel.json`(Vite 构建)和 Edge Function `api/proxy.ts`:
 
 - 遇到个别 API 中转站不支持浏览器跨域(CORS)时,可在 Provider 设置中开启“通过服务器代理转发 API 请求”:LLM 请求经 `/api/proxy` 同源转发绕开限制;关闭时一律浏览器直连。
-- 代理只做转发,不解析、不存储任何数据;API Key 仍只保存在用户自己的浏览器里。
 - 代理为无条件透传(任意方法、任意目标地址),请只在自己掌控的部署上开启。
+- 域名若套 Cloudflare 橙云,免费版约 100 秒就会切断等待首字节的请求——需要长推理请将该子域设为灰云(DNS only)直连 Vercel。
 
 纯静态部署(无 Serverless 能力)时应用仍完全可用,只是代理开关无效。
 

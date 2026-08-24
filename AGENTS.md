@@ -4,6 +4,7 @@
 
 - `npm install` uses the committed `package-lock.json`; keep npm as the package manager unless the lockfile changes.
 - `npm run dev` starts the Vite app; use it for browser verification of UI flows.
+- `npm start` has been removed; production is deployed to Vercel (static build + the `api/proxy.ts` Edge Function).
 - `npm run build` is the production static build into `dist/`.
 - `npm run lint` runs type-aware `oxlint --type-aware --type-check src` and is the repo's typecheck gate.
 - `npm run format` only checks formatting with `oxfmt --check src`.
@@ -11,7 +12,7 @@
 
 ## App Shape
 
-- This is a static browser-only React app; do not add a backend requirement or move provider secrets out of browser-owned settings. The only server-side piece is the optional pass-through proxy (`api/proxy.ts`), which stores nothing and receives credentials per request from the browser.
+- This is a browser-only React app backed by localStorage/IndexedDB; do not move provider secrets out of browser-owned settings. The only server-side piece is the optional pass-through proxy (`api/proxy.ts`, Vercel Edge Function), which stores nothing and receives credentials per request from the browser.
 - `src/main.tsx` mounts `App` and Sonner; `src/App.tsx` owns top-level dialog/screen state, selected chat/character, mobile sheet state, and theme toggling.
 - Business UI is under `src/components/biz/`; low-level Radix/Tailwind wrappers are under `src/components/ui/`.
 - Use the `@/` alias for `src` imports. Do not add barrel/re-export files; import from the defining module.
@@ -29,7 +30,7 @@
 - Prompt history shaping and response XML parsing helpers live in `src/lib/messages.ts`; lorebook helpers live in `src/lib/lorebooks.ts`; import/export helpers live in `src/lib/export.ts`.
 - World book entries are injected wholesale: `enabledEntries` in `src/lib/lorebooks.ts` returns the content of every enabled entry, and `buildMessages` in `src/lib/messages.ts` appends them all as system messages. Entry `keys` are stored and normalized but are **not** used for runtime keyword matching — there is no selective/triggered injection.
 - Provider API keys are user-entered browser data; never commit sample real keys or assume server-side secret storage.
-- `api/proxy.ts` is a self-contained Vercel Edge Function (Hono + `hono/proxy` + `hono/vercel` `handle`) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). Forwarding is unconditional — any method, any target, all request headers pass through as-is (only hop-by-hop headers are handled per RFC 9110 by `hono/proxy`); no validation or allowlist exists by design. There is no dev equivalent: under `npm run dev` `/api/proxy` 404s — keep the `useProxy` setting off and use direct browser connections in dev; verify proxy flows against a Vercel (preview) deployment.
+- `api/proxy.ts` is a self-contained Vercel Edge Function (Hono + `hono/proxy` + `hono/vercel` `handle`) that forwards browser requests to LLM APIs to avoid CORS blocks; the client wrapper is `src/services/proxy.ts` (`fetchWithOptionalProxy` only proxies when the user's `useProxy` setting is on — no automatic fallback; target URL carried in the `x-proxy-target` header). Forwarding is unconditional — any method, any target, all request headers pass through as-is (only hop-by-hop headers are handled per RFC 9110 by `hono/proxy`); no validation or allowlist exists by design. There is no dev equivalent: under `npm run dev` `/api/proxy` 404s — keep the `useProxy` setting off in dev and rely on the system proxy for direct browser connections.
 - When changing `AppSettings`, update `normalizeSettings` in `src/services/settings.ts` and every exact `toEqual` settings assertion in tests.
 
 ## Tests And UI Checks

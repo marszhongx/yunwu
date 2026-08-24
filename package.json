@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "node server.js",
     "lint": "oxlint --type-aware --type-check src",
     "format": "oxfmt --check src",
     "test": "vitest run"
@@ -22,7 +23,7 @@
     "@tailwindcss/postcss": "^4.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "hono": "^4.13.1",
+    "hono": "^4.13.3",
     "lucide-react": "^1.14.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
