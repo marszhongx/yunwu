@@ -195,16 +195,10 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
 
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
-  // 每次渲染：仅当用户当前贴底时跟随滚动（流式输出时用户上滑则不打扰）
+  // 内容变化后贴底：流式正文、思考与选项按钮都会把内容撑高
   useEffect(() => {
-    const viewport = scrollAreaRef.current?.querySelector<HTMLElement>(
-      "[data-radix-scroll-area-viewport]",
-    );
-    if (!viewport) return;
-    const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-    if (distance < 80) {
-      viewport.scrollTop = viewport.scrollHeight;
-    }
+    const viewport = scrollViewport(scrollAreaRef.current);
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
   });
 
   if (!chat) {
@@ -312,6 +306,10 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
       </div>
     </section>
   );
+}
+
+function scrollViewport(scrollArea: HTMLDivElement | null): HTMLElement | null {
+  return scrollArea?.querySelector<HTMLElement>("[data-radix-scroll-area-viewport]") ?? null;
 }
 
 function getLastNonImageMessageIndex(messages: ChatMessage[]) {
