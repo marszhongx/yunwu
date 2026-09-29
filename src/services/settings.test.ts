@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_SYSTEM_PROMPTS,
   ProviderType,
+  ReasoningEffort,
 } from "@/constants";
 import {
   addImageProvider,
@@ -81,9 +82,33 @@ describe("settings service", () => {
       apiKey: "",
       baseUrl: "",
       model: "new-model",
+      reasoningEffort: "auto",
     });
     expect(getActiveProvider()).toEqual(updated);
     await expect(updateProvider("missing", { name: "Missing" })).resolves.toBeNull();
+  });
+
+  test("defaults reasoning effort to auto and keeps a valid level", async () => {
+    const provider = await addProvider({ type: ProviderType.OPENAI, model: "gpt-5" });
+    expect(provider.reasoningEffort).toBe(ReasoningEffort.AUTO);
+
+    const updated = await updateProvider(provider.id, {
+      reasoningEffort: ReasoningEffort.HIGH,
+    });
+
+    expect(updated?.reasoningEffort).toBe(ReasoningEffort.HIGH);
+    expect(getSettings().providers[0]?.reasoningEffort).toBe(ReasoningEffort.HIGH);
+  });
+
+  test("falls back to auto for an unknown reasoning effort", async () => {
+    localStorage.setItem(
+      "yunwu.settings.v1",
+      JSON.stringify({
+        providers: [{ id: "p1", type: "openai", model: "m", reasoningEffort: "turbo" }],
+      }),
+    );
+
+    expect(getSettings().providers[0]?.reasoningEffort).toBe(ReasoningEffort.AUTO);
   });
 
   test("saves and normalizes useProxy flag", async () => {

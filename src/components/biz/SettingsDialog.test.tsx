@@ -190,3 +190,21 @@ test("reloads providers from localStorage when dialog opens", () => {
   expect(screen.getByText("当前")).toBeInTheDocument();
   expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
 });
+
+test("saves the reasoning effort chosen in advanced settings", async () => {
+  render(<SettingsDialog open onOpenChange={() => {}} />);
+
+  fireEvent.click(screen.getAllByRole("button", { name: "新建 Provider" })[0]);
+  fireEvent.click(screen.getByRole("button", { name: /高级设置/ }));
+  const effort = screen.getByRole("combobox", { name: "思考等级" });
+  expect(effort).toHaveTextContent("Auto");
+
+  fireEvent.click(effort);
+  fireEvent.click(screen.getByRole("option", { name: "High" }));
+  fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+  await waitFor(() => {
+    const settings = JSON.parse(localStorage.getItem("yunwu.settings.v1") ?? "{}");
+    expect(settings.providers?.[0]?.reasoningEffort).toBe("high");
+  });
+});

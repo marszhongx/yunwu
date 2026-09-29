@@ -1,4 +1,4 @@
-import type { ImageProviderType, ProviderType } from "@/constants";
+import type { ImageProviderType, ProviderType, ReasoningEffort } from "@/constants";
 
 export type ProviderSettings = {
   id: string;
@@ -8,6 +8,7 @@ export type ProviderSettings = {
   baseUrl: string;
   model: string;
   maxTokens?: number;
+  reasoningEffort: ReasoningEffort;
 };
 
 export type ImageProviderSettings = {

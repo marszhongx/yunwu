@@ -1,4 +1,10 @@
-import { ImageProviderType, IMAGE_TIMEOUT, ProviderType, STREAM_TIMEOUT } from "@/constants";
+import {
+  ImageProviderType,
+  IMAGE_TIMEOUT,
+  ProviderType,
+  ReasoningEffort,
+  STREAM_TIMEOUT,
+} from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { fetchWithOptionalProxy } from "@/services/proxy";
 
@@ -141,10 +147,18 @@ function mergeSystemMessages(messages: AssistantMessage[]): AssistantMessage[] {
   ];
 }
 
+// 思考等级：auto 表示不传该参数，由服务端与模型自行决定
+function chosenReasoningEffort(provider: ProviderLike): ReasoningEffort | undefined {
+  const effort = provider.reasoningEffort;
+  return effort && effort !== ReasoningEffort.AUTO ? effort : undefined;
+}
+
 function openAIRequest(
   provider: ProviderLike & { apiKey: string; model: string },
   messages: AssistantMessage[],
 ): StreamRequest {
+  const effort = chosenReasoningEffort(provider);
+
   return {
     url: openAIChatCompletionsUrl(provider.baseUrl || ""),
     init: {
@@ -158,6 +172,7 @@ function openAIRequest(
         messages: mergeSystemMessages(messages),
         stream: true,
         ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
+        ...(effort ? { reasoning_effort: effort } : {}),
       }),
     },
     extractText: getOpenAIText,
@@ -171,6 +186,7 @@ type ResponsesPayload = {
   input: { role: string; content: string }[];
   stream: boolean;
   max_output_tokens?: number;
+  reasoning?: { effort: ReasoningEffort };
 };
 
 function openAIResponsesPayload(
@@ -185,6 +201,7 @@ function openAIResponsesPayload(
   const input = messages
     .filter((message) => message.role !== "system")
     .map((message) => ({ role: message.role, content: message.content }));
+  const effort = chosenReasoningEffort(provider);
 
   return {
     model: provider.model,
@@ -192,6 +209,7 @@ function openAIResponsesPayload(
     input,
     stream,
     ...(provider.maxTokens ? { max_output_tokens: provider.maxTokens } : {}),
+    ...(effort ? { reasoning: { effort } } : {}),
   };
 }
 
@@ -235,6 +253,8 @@ function openAINonStreamRequest(
   messages: AssistantMessage[],
   jsonMode: boolean,
 ): NonStreamRequest {
+  const effort = chosenReasoningEffort(provider);
+
   return {
     url: openAIChatCompletionsUrl(provider.baseUrl || ""),
     init: {
@@ -249,6 +269,7 @@ function openAINonStreamRequest(
         stream: false,
         ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
         ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
+        ...(effort ? { reasoning_effort: effort } : {}),
       }),
     },
     responseText: (json) => {

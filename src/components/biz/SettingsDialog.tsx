@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProviderType } from "@/constants";
+import { ProviderType, ReasoningEffort } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import { openAIChatCompletionsUrl, openAIResponsesUrl } from "@/services/ai";
 import {
@@ -41,6 +41,7 @@ type ProviderForm = {
   baseUrl: string;
   model: string;
   maxTokens: string;
+  reasoningEffort: ReasoningEffort;
 };
 
 const emptyForm: ProviderForm = {
@@ -50,6 +51,18 @@ const emptyForm: ProviderForm = {
   baseUrl: "",
   model: "",
   maxTokens: "",
+  reasoningEffort: ReasoningEffort.AUTO,
+};
+
+const reasoningEffortLabels: Record<ReasoningEffort, string> = {
+  [ReasoningEffort.AUTO]: "Auto",
+  [ReasoningEffort.NONE]: "None",
+  [ReasoningEffort.MINIMAL]: "Minimal",
+  [ReasoningEffort.LOW]: "Low",
+  [ReasoningEffort.MEDIUM]: "Medium",
+  [ReasoningEffort.HIGH]: "High",
+  [ReasoningEffort.XHIGH]: "XHigh",
+  [ReasoningEffort.MAX]: "Max",
 };
 
 const apiPreviewBuilders: Record<
@@ -80,6 +93,10 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
     setForm((current) => ({ ...current, type: value }));
   }
 
+  function updateReasoningEffort(value: ReasoningEffort) {
+    setForm((current) => ({ ...current, reasoningEffort: value }));
+  }
+
   function startCreate() {
     setSelectedId(null);
     setCreating(true);
@@ -106,6 +123,7 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
       baseUrl: provider.baseUrl,
       model: provider.model,
       maxTokens: provider.maxTokens != null ? String(provider.maxTokens) : "",
+      reasoningEffort: provider.reasoningEffort,
     });
   }
 
@@ -277,6 +295,21 @@ export function SettingsDialog({ open, onOpenChange, onChanged }: SettingsDialog
                     value={form.maxTokens}
                     onChange={(value) => updateField("maxTokens", value)}
                   />
+                  <div>
+                    <Label htmlFor="provider-reasoning-effort">思考等级</Label>
+                    <Select value={form.reasoningEffort} onValueChange={updateReasoningEffort}>
+                      <SelectTrigger id="provider-reasoning-effort" aria-label="思考等级">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(ReasoningEffort).map((effort) => (
+                          <SelectItem key={effort} value={effort}>
+                            {reasoningEffortLabels[effort]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ) : null}
             </div>

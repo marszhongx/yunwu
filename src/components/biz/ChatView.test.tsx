@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { ChatView } from "@/components/biz/ChatView";
-import { ProviderType } from "@/constants";
+import { ProviderType, ReasoningEffort } from "@/constants";
 import type { CharacterCard, Chat, ChatMessage, ProviderSettings } from "@/types";
 import * as chats from "@/services/chats";
 import * as ai from "@/services/ai";
@@ -818,6 +818,7 @@ function activeProvider(overrides: Partial<ProviderSettings> = {}): ProviderSett
     apiKey: "key",
     baseUrl: "",
     model: "gpt-4o",
+    reasoningEffort: ReasoningEffort.AUTO,
     ...overrides,
   };
 }
