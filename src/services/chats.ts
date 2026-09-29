@@ -137,6 +137,10 @@ function normalizeMessage(chatId: string, input: MessageInput): StoredMessage {
     createdAt: text(input.createdAt) || nowIso(),
   };
 
+  if (typeof input.reasoning === "string") {
+    message.reasoning = input.reasoning;
+  }
+
   if ("usage" in input) {
     message.usage = input.usage;
   }

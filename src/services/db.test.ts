@@ -88,6 +88,34 @@ describe("IndexedDB data services", () => {
     expect(await getChat(chat.id)).toBeNull();
   });
 
+  test("stores reasoning separately without adding it to chat summaries", async () => {
+    const chat = await createChat({ charId: "" });
+    await addMessage(chat.id, {
+      role: "assistant",
+      content: "<content>正文</content><summary>剧情摘要</summary>",
+      reasoning: "先分析场景。<summary>思考中的摘要</summary>",
+    });
+
+    const saved = await getChat(chat.id);
+    expect(saved?.messages[0]).toMatchObject({
+      content: "<content>正文</content><summary>剧情摘要</summary>",
+      reasoning: "先分析场景。<summary>思考中的摘要</summary>",
+    });
+    expect(saved?.summaries).toEqual(["剧情摘要"]);
+  });
+
+  test("saves streamed reasoning on update and preserves it during later content edits", async () => {
+    const chat = await createChat({ charId: "" });
+    const message = await addMessage(chat.id, { role: "assistant", content: "" });
+    await updateMessage(chat.id, message.id, { content: "正文", reasoning: "思考内容" });
+    await updateMessage(chat.id, message.id, { content: "修改后的正文" });
+
+    expect((await getChat(chat.id))?.messages[0]).toMatchObject({
+      content: "修改后的正文",
+      reasoning: "思考内容",
+    });
+  });
+
   test("addMessage collects summaries into array and tracks latest summary", async () => {
     const character = await createCharacter({ name: "云雾" });
     const chat = await createChat({ charId: character.id });

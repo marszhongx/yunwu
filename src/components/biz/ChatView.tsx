@@ -6,7 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageRenderer, assistantBubbleClass } from "@/components/biz/MessageRenderer";
 import { buildMessages, parseMessage } from "@/lib/messages";
 import { enabledEntries } from "@/lib/lorebooks";
-import { Copy, Download, Image as ImageIcon, Loader2, ScrollText, Square, X } from "lucide-react";
+import {
+  ChevronRight,
+  Copy,
+  Download,
+  Image as ImageIcon,
+  Loader2,
+  ScrollText,
+  Square,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateImage, streamAssistantTextRequest } from "@/services/ai";
 import { addMessage, deleteMessage, updateMessage } from "@/services/chats";
@@ -28,6 +37,7 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
   const [streamingId, setStreamingId] = useState("");
   const [streamingChatId, setStreamingChatId] = useState("");
   const [streamingText, setStreamingText] = useState("");
+  const [streamingReasoning, setStreamingReasoning] = useState("");
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pendingChatId, setPendingChatId] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -65,12 +75,14 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
       const userMessage = await addMessage(chatId, { role: "user", content });
       const assistantMessage = await addMessage(chatId, { role: "assistant", content: "" });
       let fullText = "";
+      let fullReasoning = "";
 
       setPendingChatId(chatId);
       setPendingMessages([userMessage, assistantMessage]);
       setStreamingChatId(chatId);
       setStreamingId(assistantMessage.id);
       setStreamingText("");
+      setStreamingReasoning("");
       onChanged?.();
 
       try {
@@ -88,24 +100,38 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
             fullText += text;
             setStreamingText(fullText);
           },
+          onReasoning: (text) => {
+            fullReasoning += text;
+            setStreamingReasoning(fullReasoning);
+          },
         });
         generationAbortRef.current = request.abort;
         await request.promise;
-        await updateMessage(chatId, assistantMessage.id, { content: fullText });
+        await updateMessage(chatId, assistantMessage.id, {
+          content: fullText,
+          ...(fullReasoning ? { reasoning: fullReasoning } : {}),
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "请求失败";
         if (error instanceof DOMException && error.name === "AbortError") {
-          await updateMessage(chatId, assistantMessage.id, { content: fullText });
+          await updateMessage(chatId, assistantMessage.id, {
+            content: fullText,
+            ...(fullReasoning ? { reasoning: fullReasoning } : {}),
+          });
           toast.error("已停止生成");
           return;
         }
 
-        await updateMessage(chatId, assistantMessage.id, { content: `请求失败：${message}` });
+        await updateMessage(chatId, assistantMessage.id, {
+          content: `请求失败：${message}`,
+          ...(fullReasoning ? { reasoning: fullReasoning } : {}),
+        });
         toast.error(message);
       } finally {
         setStreamingId("");
         setStreamingChatId("");
         setStreamingText("");
+        setStreamingReasoning("");
         setPendingMessages([]);
         setPendingChatId("");
         onChanged?.();
@@ -219,7 +245,12 @@ export function ChatView({ chat, character, onChanged, onCreateChat }: ChatViewP
                   ? streamingText
                   : message.content
               }
-              loading={message.id === streamingId && streamingText === ""}
+              reasoning={
+                message.id === streamingId && streamingChatId === chat.id
+                  ? streamingReasoning
+                  : message.reasoning
+              }
+              loading={message.id === streamingId && isStreaming && streamingText === ""}
               onChoice={
                 message.role === "assistant" && index === lastNonImageIndex
                   ? (choice) => void sendMessage(choice)
@@ -364,6 +395,7 @@ function MessageActionButton({
 type MessageBubbleProps = {
   message: ChatMessage;
   text: string;
+  reasoning?: string;
   loading?: boolean;
   extraChoices?: string[];
   onChoice?: (choice: string) => void;
@@ -376,6 +408,7 @@ type MessageBubbleProps = {
 function MessageBubble({
   message,
   text,
+  reasoning = "",
   loading = false,
   extraChoices = [],
   onChoice,
@@ -461,22 +494,39 @@ function MessageBubble({
             />
           </div>
         )}
+        {!isUser && reasoning && (
+          <details
+            open={loading}
+            className="group/reasoning mb-2 rounded-2xl border border-border/40 bg-card/50 text-muted-foreground"
+          >
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2 text-xs [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/reasoning:rotate-90" />
+              {loading ? "思考中" : "思考过程"}
+              {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+            </summary>
+            <div className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words px-4 pb-3 text-xs leading-6">
+              {reasoning}
+            </div>
+          </details>
+        )}
         {loading ? (
-          <div className={assistantBubbleClass}>
-            <LoadingDots label="回复生成中" />
-          </div>
+          reasoning ? null : (
+            <div className={assistantBubbleClass}>
+              <LoadingDots label="回复生成中" />
+            </div>
+          )
         ) : isUser ? (
           <div className="whitespace-pre-wrap rounded-3xl rounded-br-md bg-primary px-4 py-3 text-sm leading-7 text-primary-foreground shadow-md shadow-primary/15">
             {bodyText || (message.id ? " " : "")}
           </div>
-        ) : (
+        ) : text || !reasoning ? (
           <MessageRenderer
             content={text}
             extraChoices={extraChoices}
             onChoice={onChoice}
             choicesDisabled={choicesDisabled}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );
