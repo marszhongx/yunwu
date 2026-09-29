@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ImageProviderType, ProviderType } from "@/constants";
+import { ImageProviderType, ProviderType, STREAM_TIMEOUT } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import {
   type AssistantMessage,
@@ -41,6 +41,28 @@ function streamResponse(chunks: string[], init: ResponseInit = {}): Response {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+function stallingResponse(init?: RequestInit): {
+  response: Response;
+  emit: (text: string) => void;
+  close: () => void;
+} {
+  let controller!: ReadableStreamDefaultController<Uint8Array>;
+  const stream = new ReadableStream<Uint8Array>({
+    start(streamController) {
+      controller = streamController;
+      init?.signal?.addEventListener("abort", () =>
+        streamController.error(new DOMException("Aborted", "AbortError")),
+      );
+    },
+  });
+
+  return {
+    response: new Response(stream, { status: 200 }),
+    emit: (text) => controller.enqueue(encoder.encode(text)),
+    close: () => controller.close(),
+  };
+}
 
 describe("streamAssistantText", () => {
   test("streams OpenAI-compatible chunks and returns concatenated text", async () => {
@@ -254,6 +276,65 @@ describe("streamAssistantText", () => {
       ],
       stream: true,
     });
+  });
+
+  test("keeps streaming while chunks keep arriving past the timeout", async () => {
+    vi.useFakeTimers();
+    try {
+      let streamed!: ReturnType<typeof stallingResponse>;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((_url: string, init?: RequestInit) => {
+          streamed = stallingResponse(init);
+          return Promise.resolve(streamed.response);
+        }),
+      );
+
+      const request = streamAssistantText({
+        provider: provider(),
+        messages: [{ role: "user", content: "继续" }],
+      });
+
+      // 每段间隔都短于超时，但总时长超过超时：思考很久也不能被中断
+      const gap = STREAM_TIMEOUT * 0.6;
+      for (const text of ["思考一", "思考二", "思考三"]) {
+        streamed.emit(`data: {"choices":[{"delta":{"content":"${text}"}}]}\n\n`);
+        await vi.advanceTimersByTimeAsync(gap);
+      }
+      streamed.emit("data: [DONE]\n\n");
+      streamed.close();
+
+      await expect(request).resolves.toEqual({ text: "思考一思考二思考三" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("times out when the stream goes silent beyond the timeout", async () => {
+    vi.useFakeTimers();
+    try {
+      let streamed!: ReturnType<typeof stallingResponse>;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((_url: string, init?: RequestInit) => {
+          streamed = stallingResponse(init);
+          return Promise.resolve(streamed.response);
+        }),
+      );
+
+      const request = streamAssistantText({
+        provider: provider(),
+        messages: [{ role: "user", content: "继续" }],
+      });
+      const expectation = expect(request).rejects.toThrow("Provider 请求超时");
+      streamed.emit('data: {"choices":[{"delta":{"content":"思考中"}}]}\n\n');
+      await vi.advanceTimersByTimeAsync(STREAM_TIMEOUT * 0.6);
+      await vi.advanceTimersByTimeAsync(STREAM_TIMEOUT * 2);
+
+      await expectation;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test("throws provider request error for non-ok responses", async () => {

@@ -389,10 +389,22 @@ export function streamAssistantTextRequest({
   const request = createRequest(provider, messages);
   const abortController = new AbortController();
   let timedOut = false;
-  const timeoutId = globalThis.setTimeout(() => {
-    timedOut = true;
-    abortController.abort();
-  }, STREAM_TIMEOUT);
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | undefined;
+
+  function armTimeout(): void {
+    timeoutId = globalThis.setTimeout(() => {
+      timedOut = true;
+      abortController.abort();
+    }, STREAM_TIMEOUT);
+  }
+
+  // 超时指流中断而非总时长：模型思考期间会持续输出，只要还在收到数据就重新计时
+  function refreshTimeout(): void {
+    globalThis.clearTimeout(timeoutId);
+    armTimeout();
+  }
+
+  armTimeout();
 
   const promise = (async () => {
     try {
@@ -414,6 +426,7 @@ export function streamAssistantTextRequest({
         text: await readStream(
           response.body,
           (payload) => {
+            refreshTimeout();
             const reasoning = request.extractReasoning?.(payload);
             if (reasoning) onReasoning?.(reasoning);
             return request.extractText(payload);
