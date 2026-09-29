@@ -34,7 +34,7 @@ C: 一个具体可执行的玩家行动
 D: 一个具体可执行的玩家行动
 </choices>`;
 
-export const STREAM_TIMEOUT = 180000;
+export const STREAM_TIMEOUT = 600000;
 export const IMAGE_TIMEOUT = 120000;
 
 export const DEFAULT_SYSTEM_PROMPTS = [NARRATOR_SYSTEM_PROMPT, RESPONSE_INSTRUCTION];
