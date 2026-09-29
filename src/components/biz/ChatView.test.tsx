@@ -139,6 +139,130 @@ test("adds user and assistant messages and displays streamed text", async () => 
   expect(onChanged).toHaveBeenCalledTimes(2);
 });
 
+test("shows live reasoning separately, collapses it for the answer, and saves it", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "继续" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", content: "" }));
+  let emitReasoning: ((text: string) => void) | undefined;
+  let emitText: ((text: string) => void) | undefined;
+  let finishStream: (() => void) | undefined;
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onReasoning, onText }) => {
+    emitReasoning = onReasoning;
+    emitText = onText;
+    return streamRequest(
+      new Promise((resolve) => {
+        onReasoning?.("先分析");
+        finishStream = () => resolve({ text: "<content>雾来了</content>" });
+      }),
+    );
+  });
+  const { rerender } = render(<ChatView chat={chat()} character={null} />);
+
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "继续" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+
+  expect(await screen.findByText("先分析")).toBeVisible();
+  expect(screen.getByText("思考中").closest("details")).toHaveAttribute("open");
+  expect(screen.queryByLabelText("回复生成中")).not.toBeInTheDocument();
+  act(() => emitReasoning?.("场景。"));
+  expect(screen.getByText("先分析场景。")).toBeVisible();
+  act(() => emitText?.("<content>雾来了</content>"));
+  expect(screen.getByText("雾来了")).toBeVisible();
+  expect(screen.getByText("思考过程").closest("details")).not.toHaveAttribute("open");
+
+  await act(async () => finishStream?.());
+  await waitFor(() =>
+    expect(chats.updateMessage).toHaveBeenCalledWith("chat-1", "assistant-1", {
+      content: "<content>雾来了</content>",
+      reasoning: "先分析场景。",
+    }),
+  );
+  rerender(
+    <ChatView
+      chat={chat({
+        messages: [message({ content: "<content>雾来了</content>", reasoning: "先分析场景。" })],
+      })}
+      character={null}
+    />,
+  );
+  expect(screen.getByText("雾来了")).toBeVisible();
+  expect(screen.getByText("先分析场景。").closest("details")).not.toHaveAttribute("open");
+});
+
+test("keeps a manually expanded thinking panel open while typing the next action", () => {
+  render(
+    <ChatView
+      chat={chat({
+        messages: [
+          message({ content: "<content>正文</content>", reasoning: "已经结束的思考内容" }),
+        ],
+      })}
+      character={null}
+    />,
+  );
+  const details = screen.getByText("思考过程").closest("details")!;
+  expect(details).not.toHaveAttribute("open");
+
+  fireEvent.click(screen.getByText("思考过程"));
+  expect(details).toHaveAttribute("open");
+
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "下一步" },
+  });
+
+  expect(details).toHaveAttribute("open");
+  expect(screen.getByText("已经结束的思考内容")).toBeVisible();
+});
+
+test.each(["complete", "stop", "error"] as const)(
+  "preserves reasoning when a reasoning-only stream ends with %s",
+  async (ending) => {
+    vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+    vi.mocked(chats.addMessage)
+      .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "继续" }))
+      .mockResolvedValueOnce(message({ id: "assistant-1", content: "" }));
+    let endStream: (() => void) | undefined;
+    vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onReasoning }) => {
+      const controller = new AbortController();
+      return {
+        signal: controller.signal,
+        abort: () => controller.abort(),
+        promise: new Promise((resolve, reject) => {
+          onReasoning?.("尚未生成正文的思考");
+          controller.signal.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
+          endStream = () =>
+            ending === "error" ? reject(new Error("网络断开")) : resolve({ text: "" });
+        }),
+      };
+    });
+    render(<ChatView chat={chat()} character={null} />);
+    fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+      target: { value: "继续" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送" }));
+    expect(await screen.findByText("尚未生成正文的思考")).toBeVisible();
+
+    if (ending === "stop") {
+      fireEvent.click(screen.getByRole("button", { name: "停止" }));
+    } else {
+      await act(async () => endStream?.());
+    }
+
+    await waitFor(() =>
+      expect(chats.updateMessage).toHaveBeenCalledWith("chat-1", "assistant-1", {
+        content: ending === "error" ? "请求失败：网络断开" : "",
+        reasoning: "尚未生成正文的思考",
+      }),
+    );
+    expect(screen.queryByText("思考中")).not.toBeInTheDocument();
+  },
+);
+
 test("streams partial choices as disabled buttons", async () => {
   vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
   vi.mocked(chats.addMessage)
@@ -177,6 +301,7 @@ test("shows a visual loading indicator instead of loading text", async () => {
 
   expect(await screen.findByLabelText("回复生成中")).toBeInTheDocument();
   expect(screen.queryByText("生成中")).not.toBeInTheDocument();
+  expect(screen.queryByText("思考过程")).not.toBeInTheDocument();
 });
 
 test("stops active generation and saves streamed partial text", async () => {
@@ -355,6 +480,7 @@ test("copies only assistant body source text", () => {
             role: "assistant",
             content:
               "<content>这是 **正文**</content><summary>摘要</summary><choices>- 前进</choices>",
+            reasoning: "不应复制的思考内容",
           }),
         ],
       })}
@@ -535,9 +661,10 @@ test("does not leak pending streaming state when switching chats mid-stream", as
   vi.mocked(chats.updateMessage).mockResolvedValue(
     message({ id: "assistant-1", role: "assistant", content: "雾来了" }),
   );
-  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) =>
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText, onReasoning }) =>
     streamRequest(
       new Promise(() => {
+        onReasoning?.("仅属于第一个对话的思考");
         onText?.("雾");
       }),
     ),
@@ -556,6 +683,7 @@ test("does not leak pending streaming state when switching chats mid-stream", as
   );
 
   expect(screen.queryByText("走进雾中")).not.toBeInTheDocument();
+  expect(screen.queryByText("仅属于第一个对话的思考")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "停止" })).toBeEnabled();
 });
 

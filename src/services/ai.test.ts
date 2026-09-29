@@ -82,6 +82,64 @@ describe("streamAssistantText", () => {
     );
   });
 
+  test("streams reasoning separately before content, including split SSE events", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          streamResponse([
+            'data: {"choices":[{"delta":{"role":"assistant","content":null}}]}\n\n',
+            'data: {"choices":[{"delta":{"reasoning_con',
+            'tent":"先分析","content":null}}]}\n\n',
+            'data: {"choices":[{"delta":{"reasoning_content":"场景。","content":"<content>"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"雾来了</content>"}}]}\n\n',
+            "data: [DONE]\n\n",
+          ]),
+        ),
+    );
+    const events: string[] = [];
+
+    const result = await streamAssistantText({
+      provider: provider(),
+      messages: [{ role: "user", content: "继续" }],
+      onReasoning: (text) => events.push(`reasoning:${text}`),
+      onText: (text) => events.push(`content:${text}`),
+    });
+
+    expect(events).toEqual([
+      "reasoning:先分析",
+      "reasoning:场景。",
+      "content:<content>",
+      "content:雾来了</content>",
+    ]);
+    expect(result).toEqual({ text: "<content>雾来了</content>" });
+  });
+
+  test.each([
+    ['data: {"choices":[{"delta":{"reasoning_content":"还在思考"}}]}', "还在思考", ""],
+    [
+      '{"choices":[{"message":{"reasoning_content":"分析完成","content":"正文"}}]}',
+      "分析完成",
+      "正文",
+    ],
+  ])(
+    "reads reasoning from a final event or JSON fallback: %s",
+    async (payload, reasoning, text) => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(streamResponse([payload])));
+      const reasoningChunks: string[] = [];
+
+      const result = await streamAssistantText({
+        provider: provider(),
+        messages: [{ role: "user", content: "继续" }],
+        onReasoning: (chunk) => reasoningChunks.push(chunk),
+      });
+
+      expect(reasoningChunks).toEqual([reasoning]);
+      expect(result).toEqual({ text });
+    },
+  );
+
   test("throws clear error when provider is missing", async () => {
     await expect(
       streamAssistantText({ provider: null, messages: [{ role: "user", content: "hello" }] }),

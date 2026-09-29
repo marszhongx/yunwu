@@ -17,6 +17,7 @@ type StreamAssistantTextInput = {
   provider: ProviderLike | null;
   messages: AssistantMessage[];
   onText?: (text: string) => void;
+  onReasoning?: (text: string) => void;
 };
 
 type StreamAssistantTextRequest = {
@@ -29,6 +30,7 @@ type StreamRequest = {
   url: string;
   init: RequestInit;
   extractText: (payload: unknown) => string;
+  extractReasoning?: (payload: unknown) => string;
 };
 
 function validateProvider(provider: ProviderLike | null): ProviderLike & {
@@ -66,12 +68,12 @@ function textFromRecordPath(value: unknown, path: string[]): unknown {
   }, value);
 }
 
-function getOpenAIText(payload: unknown): string {
+function getOpenAIText(payload: unknown, field = "content"): string {
   const choices = textFromRecordPath(payload, ["choices"]);
   const firstChoice = Array.isArray(choices) ? choices[0] : undefined;
   const content =
-    textFromRecordPath(firstChoice, ["delta", "content"]) ??
-    textFromRecordPath(firstChoice, ["message", "content"]);
+    textFromRecordPath(firstChoice, ["delta", field]) ??
+    textFromRecordPath(firstChoice, ["message", field]);
   return typeof content === "string" ? content : "";
 }
 
@@ -159,6 +161,7 @@ function openAIRequest(
       }),
     },
     extractText: getOpenAIText,
+    extractReasoning: (payload) => getOpenAIText(payload, "reasoning_content"),
   };
 }
 
@@ -370,14 +373,17 @@ export async function streamAssistantText({
   provider: inputProvider,
   messages,
   onText,
+  onReasoning,
 }: StreamAssistantTextInput): Promise<{ text: string }> {
-  return streamAssistantTextRequest({ provider: inputProvider, messages, onText }).promise;
+  return streamAssistantTextRequest({ provider: inputProvider, messages, onText, onReasoning })
+    .promise;
 }
 
 export function streamAssistantTextRequest({
   provider: inputProvider,
   messages,
   onText,
+  onReasoning,
 }: StreamAssistantTextInput): StreamAssistantTextRequest {
   const provider = validateProvider(inputProvider);
   const request = createRequest(provider, messages);
@@ -404,7 +410,17 @@ export function streamAssistantTextRequest({
         throw new Error("Provider 未返回流式响应");
       }
 
-      return { text: await readStream(response.body, request.extractText, onText) };
+      return {
+        text: await readStream(
+          response.body,
+          (payload) => {
+            const reasoning = request.extractReasoning?.(payload);
+            if (reasoning) onReasoning?.(reasoning);
+            return request.extractText(payload);
+          },
+          onText,
+        ),
+      };
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError" && timedOut) {
         throw new Error("Provider 请求超时");

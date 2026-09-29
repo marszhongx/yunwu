@@ -35,6 +35,7 @@ export type ChatMessage = {
   id: string;
   role: MessageRole;
   content: string;
+  reasoning?: string;
   usage?: unknown;
   createdAt?: string;
   chatId?: string;

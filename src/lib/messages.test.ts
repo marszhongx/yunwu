@@ -55,6 +55,27 @@ describe("messages domain", () => {
     ]);
   });
 
+  it("does not include stored reasoning in the next prompt", () => {
+    const result = buildMessages({
+      systemPrompts: ["规则"],
+      messages: [
+        {
+          id: "a1",
+          role: "assistant",
+          content: "<content>正文</content><summary>摘要</summary>",
+          reasoning: "不要发送的思考内容",
+        },
+        { id: "u1", role: "user", content: "继续" },
+      ],
+    });
+
+    expect(result).toEqual([
+      { role: "system", content: "规则" },
+      { role: "assistant", content: "正文" },
+      { role: "user", content: "继续" },
+    ]);
+  });
+
   it("uses custom system prompts when provided", () => {
     expect(buildMessages({ systemPrompts: ["第一条", "第二条"] }).slice(0, 2)).toEqual([
       { role: "system", content: "第一条" },
