@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, ImageProviderType, ProviderType } from "@/constants";
+import { DEFAULT_SETTINGS, ImageProviderType, ProviderType, ReasoningEffort } from "@/constants";
 import { uuid } from "@/lib/ids";
 import type { AppSettings, ImageProviderSettings, ProviderSettings } from "@/types";
 
@@ -23,6 +23,13 @@ function normalizeProviderType(value: unknown): ProviderType {
 
 function normalizeTheme(value: unknown): AppSettings["theme"] {
   return value === "light" ? "light" : "dark";
+}
+
+function normalizeReasoningEffort(value: unknown): ReasoningEffort {
+  return typeof value === "string" &&
+    Object.values(ReasoningEffort).includes(value as ReasoningEffort)
+    ? (value as ReasoningEffort)
+    : ReasoningEffort.AUTO;
 }
 
 function normalizeSystemPrompts(value: unknown): string[] {
@@ -55,6 +62,7 @@ function normalizeProvider(value: unknown): ProviderSettings {
     baseUrl: toStringValue(input.baseUrl),
     model,
     maxTokens,
+    reasoningEffort: normalizeReasoningEffort(input.reasoningEffort),
   };
 }
 

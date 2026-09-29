@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { ProviderType } from "@/constants";
+import { ProviderType, ReasoningEffort } from "@/constants";
 import { beforeEach, expect, test, vi } from "vitest";
 import { CharacterDialog } from "@/components/biz/CharacterDialog";
 import * as exportLib from "@/lib/export";
@@ -124,6 +124,7 @@ test("generates a new character from the generation description", async () => {
     apiKey: "key",
     baseUrl: "https://example.test",
     model: "test-model",
+    reasoningEffort: ReasoningEffort.AUTO,
     enabled: true,
   };
   vi.mocked(characters.listCharacters).mockResolvedValueOnce([]);
@@ -173,6 +174,7 @@ test("does not generate a character without a generation description", async () 
     apiKey: "key",
     baseUrl: "https://example.test",
     model: "test-model",
+    reasoningEffort: ReasoningEffort.AUTO,
     enabled: true,
   };
   vi.mocked(characters.listCharacters).mockResolvedValueOnce([]);

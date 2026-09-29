@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ImageProviderType, ProviderType } from "@/constants";
+import { ImageProviderType, ProviderType, ReasoningEffort } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import {
   type AssistantMessage,
@@ -21,6 +21,7 @@ function provider(overrides: Partial<ProviderSettings> = {}): ProviderSettings {
     apiKey: "api-key",
     baseUrl: "https://example.com/v1/",
     model: "model-name",
+    reasoningEffort: ReasoningEffort.AUTO,
     ...overrides,
   };
 }
@@ -256,6 +257,44 @@ describe("streamAssistantText", () => {
     });
   });
 
+  test("sends reasoning effort for chat completions only when a level is chosen", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(streamResponse(["data: [DONE]\n\n"])),
+    ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await streamAssistantText({
+      provider: provider({ reasoningEffort: ReasoningEffort.NONE }),
+      messages: [{ role: "user", content: "hello" }],
+    });
+    await streamAssistantText({
+      provider: provider({ reasoningEffort: ReasoningEffort.AUTO }),
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    const [chosen, auto] = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)));
+    expect(chosen.reasoning_effort).toBe("none");
+    expect(auto).not.toHaveProperty("reasoning_effort");
+  });
+
+  test("sends reasoning effort as reasoning.effort for the Responses API", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(streamResponse(['data: {"type":"response.completed"}\n\n'])) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await streamAssistantText({
+      provider: provider({
+        type: ProviderType.OPENAI_RESPONSE,
+        reasoningEffort: ReasoningEffort.HIGH,
+      }),
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(init.body)).reasoning).toEqual({ effort: "high" });
+  });
+
   test("throws provider request error for non-ok responses", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("bad key", { status: 401 })));
 
@@ -420,6 +459,22 @@ describe.each([true, false])("Chat Completions system messages (stream: %s)", (s
 });
 
 describe("requestAssistantText", () => {
+  test("sends reasoning effort for non-streaming requests", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ choices: [{ message: { content: '{"name":"测试"}' } }] }),
+      ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestAssistantText({
+      provider: provider({ reasoningEffort: ReasoningEffort.MINIMAL }),
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(init.body)).reasoning_effort).toBe("minimal");
+  });
   test("requests OpenAI with json_object response format and stream false", async () => {
     const fetchMock = vi
       .fn()
