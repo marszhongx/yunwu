@@ -278,9 +278,9 @@ describe("streamAssistantText", () => {
   });
 
   test("sends reasoning effort as reasoning.effort for the Responses API", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(streamResponse(['data: {"type":"response.completed"}\n\n'])) as FetchMock;
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(streamResponse(['data: {"type":"response.completed"}\n\n'])),
+    ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await streamAssistantText({
@@ -290,9 +290,17 @@ describe("streamAssistantText", () => {
       }),
       messages: [{ role: "user", content: "hello" }],
     });
+    await streamAssistantText({
+      provider: provider({
+        type: ProviderType.OPENAI_RESPONSE,
+        reasoningEffort: ReasoningEffort.AUTO,
+      }),
+      messages: [{ role: "user", content: "hello" }],
+    });
 
-    const [, init] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(init.body)).reasoning).toEqual({ effort: "high" });
+    const [chosen, auto] = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)));
+    expect(chosen.reasoning).toEqual({ effort: "high" });
+    expect(auto).not.toHaveProperty("reasoning");
   });
 
   test("throws provider request error for non-ok responses", async () => {
@@ -460,20 +468,23 @@ describe.each([true, false])("Chat Completions system messages (stream: %s)", (s
 
 describe("requestAssistantText", () => {
   test("sends reasoning effort for non-streaming requests", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        jsonResponse({ choices: [{ message: { content: '{"name":"测试"}' } }] }),
-      ) as FetchMock;
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(jsonResponse({ choices: [{ message: { content: '{"name":"测试"}' } }] })),
+    ) as FetchMock;
     vi.stubGlobal("fetch", fetchMock);
 
     await requestAssistantText({
       provider: provider({ reasoningEffort: ReasoningEffort.MINIMAL }),
       messages: [{ role: "user", content: "hello" }],
     });
+    await requestAssistantText({
+      provider: provider({ reasoningEffort: ReasoningEffort.AUTO }),
+      messages: [{ role: "user", content: "hello" }],
+    });
 
-    const [, init] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(init.body)).reasoning_effort).toBe("minimal");
+    const [chosen, auto] = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)));
+    expect(chosen.reasoning_effort).toBe("minimal");
+    expect(auto).not.toHaveProperty("reasoning_effort");
   });
   test("requests OpenAI with json_object response format and stream false", async () => {
     const fetchMock = vi
