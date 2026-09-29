@@ -54,6 +54,7 @@ beforeEach(() => {
     imageProviders: [],
     activeImageProviderId: "",
     useProxy: false,
+    sidebarCollapsed: false,
   });
 });
 
@@ -358,6 +359,7 @@ test("passes custom system prompts into AI request", async () => {
     imageProviders: [],
     activeImageProviderId: "",
     useProxy: false,
+    sidebarCollapsed: false,
   });
   vi.mocked(chats.addMessage)
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "走进雾中" }))
@@ -728,6 +730,7 @@ test("shows opening user choices before the first user message and sends the sel
     imageProviders: [],
     activeImageProviderId: "",
     useProxy: false,
+    sidebarCollapsed: false,
   });
   vi.mocked(chats.addMessage)
     .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "观察四周" }))
