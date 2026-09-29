@@ -128,6 +128,17 @@ export function openAIResponsesUrl(baseUrl: string): string {
   return `${normalizedOpenAIBaseUrl(baseUrl)}/responses`;
 }
 
+// Some OpenAI-compatible chat templates only accept one leading system message.
+function mergeSystemMessages(messages: AssistantMessage[]): AssistantMessage[] {
+  const systemMessages = messages.filter((message) => message.role === "system");
+  if (systemMessages.length === 0) return messages;
+
+  return [
+    { role: "system", content: systemMessages.map((message) => message.content).join("\n\n") },
+    ...messages.filter((message) => message.role !== "system"),
+  ];
+}
+
 function openAIRequest(
   provider: ProviderLike & { apiKey: string; model: string },
   messages: AssistantMessage[],
@@ -142,7 +153,7 @@ function openAIRequest(
       },
       body: JSON.stringify({
         model: provider.model,
-        messages,
+        messages: mergeSystemMessages(messages),
         stream: true,
         ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
       }),
@@ -231,7 +242,7 @@ function openAINonStreamRequest(
       },
       body: JSON.stringify({
         model: provider.model,
-        messages,
+        messages: mergeSystemMessages(messages),
         stream: false,
         ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
         ...(provider.maxTokens ? { max_tokens: provider.maxTokens } : {}),
