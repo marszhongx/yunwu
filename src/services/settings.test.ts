@@ -14,6 +14,7 @@ import {
   getActiveProvider,
   getSettings,
   saveSystemPrompts,
+  saveSidebarCollapsed,
   saveTheme,
   saveUseProxy,
   setActiveImageProvider,
@@ -36,6 +37,7 @@ describe("settings service", () => {
       imageProviders: [],
       activeImageProviderId: "",
       useProxy: false,
+      sidebarCollapsed: false,
     });
   });
 
@@ -62,6 +64,7 @@ describe("settings service", () => {
       imageProviders: [],
       activeImageProviderId: "",
       useProxy: false,
+      sidebarCollapsed: false,
     });
   });
 
@@ -160,7 +163,18 @@ describe("settings service", () => {
       imageProviders: [],
       activeImageProviderId: "",
       useProxy: false,
+      sidebarCollapsed: false,
     });
+  });
+
+  test("saves and normalizes sidebar collapse", async () => {
+    expect(getSettings().sidebarCollapsed).toBe(false);
+    expect((await saveSidebarCollapsed(true)).sidebarCollapsed).toBe(true);
+    expect(getSettings().sidebarCollapsed).toBe(true);
+    expect((await saveSidebarCollapsed(false)).sidebarCollapsed).toBe(false);
+
+    localStorage.setItem("yunwu.settings.v1", JSON.stringify({ sidebarCollapsed: "yes" }));
+    expect(getSettings().sidebarCollapsed).toBe(false);
   });
 
   test("normalizes missing, invalid, empty, and legacy system prompts", () => {

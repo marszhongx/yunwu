@@ -15,6 +15,8 @@ import {
   Menu,
   MessageSquareText,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Sun,
   UserRound,
@@ -23,11 +25,12 @@ import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { getCharacter } from "@/services/characters";
 import { createChat, getChat } from "@/services/chats";
-import { saveTheme } from "@/services/settings";
+import { saveSidebarCollapsed, saveTheme } from "@/services/settings";
 import { useAppState } from "@/store/appState";
 
 export default function App() {
   const theme = useAppState((s) => s.settings.theme);
+  const sidebarCollapsed = useAppState((s) => s.settings.sidebarCollapsed);
   const activeProviderName = useAppState((s) => s.activeProvider?.name ?? "");
   const [chatsOpen, setChatsOpen] = useState(false);
   const [charactersOpen, setCharactersOpen] = useState(false);
@@ -106,28 +109,63 @@ export default function App() {
     useAppState.getState().reload();
   }
 
+  async function toggleSidebar() {
+    await saveSidebarCollapsed(!sidebarCollapsed);
+    useAppState.getState().reload();
+  }
+
   const ThemeIcon = theme === "dark" ? Sun : Moon;
 
   return (
     <>
       <div className="flex h-[100dvh] max-w-[1600px] mx-auto overflow-hidden bg-background/90 text-foreground">
-        <aside className="hidden w-80 shrink-0 flex-col border-r border-border/40 bg-card/60 p-5 shadow-2xl shadow-primary/5 backdrop-blur-2xl lg:flex">
-          <BrandTitle activeProviderName={activeProviderName} />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <ChatSidebar chat={currentChat} character={currentCharacter} />
-          </div>
-        </aside>
+        {sidebarCollapsed ? null : (
+          <aside className="hidden w-80 shrink-0 flex-col border-r border-border/40 bg-card/60 p-5 shadow-2xl shadow-primary/5 backdrop-blur-2xl lg:flex">
+            <div className="flex items-start justify-between gap-2">
+              <BrandTitle activeProviderName={activeProviderName} />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => void toggleSidebar()}
+                title="收起侧栏"
+                aria-label="收起侧栏"
+              >
+                <PanelLeftClose className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <ChatSidebar chat={currentChat} character={currentCharacter} />
+            </div>
+          </aside>
+        )}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-2 border-b border-border/40 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-2xl lg:hidden">
+          <header
+            className={cn(
+              "flex items-center gap-2 border-b border-border/40 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-2xl",
+              !sidebarCollapsed && "lg:hidden",
+            )}
+          >
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setSidebarOpen(true)}
               title="菜单"
               aria-label="菜单"
+              className="lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </Button>
+            {sidebarCollapsed ? (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => void toggleSidebar()}
+                title="展开侧栏"
+                aria-label="展开侧栏"
+              >
+                <PanelLeftOpen className="h-5 w-5" />
+              </Button>
+            ) : null}
             <span className="text-base font-semibold tracking-tight">云雾聊天室</span>
             {activeProviderName ? (
               <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

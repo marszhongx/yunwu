@@ -28,6 +28,7 @@ export type AppSettings = {
   imageProviders: ImageProviderSettings[];
   activeImageProviderId: string;
   useProxy: boolean;
+  sidebarCollapsed: boolean;
 };
 
 export type MessageRole = "user" | "assistant" | "image";

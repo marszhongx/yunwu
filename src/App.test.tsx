@@ -13,10 +13,12 @@ vi.mock("@/services/settings", () => ({
     systemPrompts: ["默认系统提示"],
     imageProviders: [],
     activeImageProviderId: "",
+    sidebarCollapsed: false,
   }),
   getActiveProvider: vi.fn().mockReturnValue(null),
   getActiveImageProvider: vi.fn().mockReturnValue(null),
   saveTheme: vi.fn(),
+  saveSidebarCollapsed: vi.fn(),
 }));
 
 vi.mock("@/services/chats", () => ({
@@ -42,6 +44,7 @@ beforeEach(() => {
     imageProviders: [],
     activeImageProviderId: "",
     useProxy: false,
+    sidebarCollapsed: false,
   });
   vi.mocked(settings.getActiveProvider).mockReturnValue(null);
 });
@@ -134,6 +137,38 @@ test("clears the selected chat when it is deleted from the records dialog", asyn
   expect(screen.queryByText("旧摘要")).not.toBeInTheDocument();
 });
 
+test("collapses the sidebar and remembers the choice", async () => {
+  let collapsed = false;
+  vi.mocked(settings.getSettings).mockImplementation(() => settingsValue({ sidebarCollapsed: collapsed }));
+  vi.mocked(settings.saveSidebarCollapsed).mockImplementation(async (value: boolean) => {
+    collapsed = value;
+    return settingsValue({ sidebarCollapsed: value });
+  });
+
+  render(<App />);
+  expect(screen.getByRole("button", { name: "收起侧栏" })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "收起侧栏" }));
+
+  await waitFor(() => expect(settings.saveSidebarCollapsed).toHaveBeenCalledWith(true));
+  expect(await screen.findByRole("button", { name: "展开侧栏" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "收起侧栏" })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "展开侧栏" }));
+
+  await waitFor(() => expect(settings.saveSidebarCollapsed).toHaveBeenCalledWith(false));
+  expect(await screen.findByRole("button", { name: "收起侧栏" })).toBeInTheDocument();
+});
+
+test("starts collapsed when the stored setting says so", () => {
+  vi.mocked(settings.getSettings).mockReturnValue(settingsValue({ sidebarCollapsed: true }));
+
+  render(<App />);
+
+  expect(screen.getByRole("button", { name: "展开侧栏" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "收起侧栏" })).not.toBeInTheDocument();
+});
+
 test("reopens character dialog with a fresh initial state", async () => {
   vi.mocked(characters.listCharacters).mockResolvedValue([character({ name: "云雀" })]);
 
@@ -149,6 +184,22 @@ test("reopens character dialog with a fresh initial state", async () => {
   expect(await screen.findByRole("heading", { name: "选择一个角色" })).toBeInTheDocument();
   expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
 });
+
+function settingsValue(
+  overrides: Partial<ReturnType<typeof settings.getSettings>> = {},
+): ReturnType<typeof settings.getSettings> {
+  return {
+    activeProviderId: "",
+    providers: [],
+    theme: "dark",
+    systemPrompts: ["默认系统提示"],
+    imageProviders: [],
+    activeImageProviderId: "",
+    useProxy: false,
+    sidebarCollapsed: false,
+    ...overrides,
+  };
+}
 
 async function openChatFromDialog(title: string) {
   fireEvent.click(screen.getByRole("button", { name: "记录" }));

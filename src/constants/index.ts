@@ -58,4 +58,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   imageProviders: [],
   activeImageProviderId: "",
   useProxy: false,
+  sidebarCollapsed: false,
 };

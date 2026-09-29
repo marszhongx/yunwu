@@ -115,6 +115,7 @@ function normalizeSettings(value: unknown): AppSettings {
       ? activeImageProviderId
       : DEFAULT_SETTINGS.activeImageProviderId,
     useProxy: input.useProxy === true,
+    sidebarCollapsed: input.sidebarCollapsed === true,
   };
 }
 
@@ -217,6 +218,10 @@ export async function saveSystemPrompts(systemPrompts: unknown): Promise<AppSett
 
 export async function saveUseProxy(useProxy: boolean): Promise<AppSettings> {
   return await saveSettings({ ...getSettings(), useProxy });
+}
+
+export async function saveSidebarCollapsed(sidebarCollapsed: boolean): Promise<AppSettings> {
+  return await saveSettings({ ...getSettings(), sidebarCollapsed });
 }
 
 type ImageProviderInput = Partial<Record<keyof ImageProviderSettings, unknown>>;
