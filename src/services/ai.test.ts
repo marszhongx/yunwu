@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { ImageProviderType, ProviderType } from "@/constants";
 import type { ProviderSettings } from "@/types";
 import {
+  type AssistantMessage,
   streamAssistantText,
   streamAssistantTextRequest,
   requestAssistantText,
@@ -264,6 +265,101 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
     ...init,
   });
 }
+
+describe.each([true, false])("Chat Completions system messages (stream: %s)", (stream) => {
+  test.each<{
+    name: string;
+    messages: AssistantMessage[];
+    expected: AssistantMessage[];
+  }>([
+    {
+      name: "merges system content in order before the unchanged conversation",
+      messages: [
+        { role: "system", content: "叙事规则" },
+        { role: "system", content: "<content>正文</content>\n<summary>摘要</summary>" },
+        { role: "system", content: "角色设定\n世界书内容" },
+        { role: "assistant", content: "你来到驿站。" },
+        { role: "user", content: "推门进入" },
+      ],
+      expected: [
+        {
+          role: "system",
+          content:
+            "叙事规则\n\n<content>正文</content>\n<summary>摘要</summary>\n\n角色设定\n世界书内容",
+        },
+        { role: "assistant", content: "你来到驿站。" },
+        { role: "user", content: "推门进入" },
+      ],
+    },
+    {
+      name: "places interleaved system content first without reordering conversation turns",
+      messages: [
+        { role: "user", content: "开始" },
+        { role: "system", content: "规则" },
+        { role: "assistant", content: "继续" },
+        { role: "system", content: "背景" },
+        { role: "user", content: "前进" },
+      ],
+      expected: [
+        { role: "system", content: "规则\n\n背景" },
+        { role: "user", content: "开始" },
+        { role: "assistant", content: "继续" },
+        { role: "user", content: "前进" },
+      ],
+    },
+    {
+      name: "does not add a system message when none is provided",
+      messages: [
+        { role: "assistant", content: "开场白" },
+        { role: "user", content: "开始" },
+      ],
+      expected: [
+        { role: "assistant", content: "开场白" },
+        { role: "user", content: "开始" },
+      ],
+    },
+    {
+      name: "preserves a single system message including whitespace",
+      messages: [
+        { role: "system", content: "  规则\n" },
+        { role: "user", content: "开始" },
+      ],
+      expected: [
+        { role: "system", content: "  规则\n" },
+        { role: "user", content: "开始" },
+      ],
+    },
+    {
+      name: "preserves an explicitly empty system message",
+      messages: [
+        { role: "system", content: "" },
+        { role: "user", content: "开始" },
+      ],
+      expected: [
+        { role: "system", content: "" },
+        { role: "user", content: "开始" },
+      ],
+    },
+  ])("$name", async ({ messages, expected }) => {
+    const originalMessages = messages.map((message) => ({ ...message }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        stream
+          ? streamResponse(['data: {"choices":[{"delta":{"content":"回应"}}]}\n\n'])
+          : jsonResponse({ choices: [{ message: { content: "回应" } }] }),
+      ) as FetchMock;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const request = stream ? streamAssistantText : requestAssistantText;
+    const result = await request({ provider: provider(), messages });
+
+    expect(result).toEqual({ text: "回应" });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(init.body)).messages).toEqual(expected);
+    expect(messages).toEqual(originalMessages);
+  });
+});
 
 describe("requestAssistantText", () => {
   test("requests OpenAI with json_object response format and stream false", async () => {
