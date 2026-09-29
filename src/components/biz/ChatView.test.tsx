@@ -761,6 +761,128 @@ test("shows opening user choices before the first user message and sends the sel
   );
 });
 
+test("jumps to the newest message when entering a chat", () => {
+  const { rerender } = render(
+    <ChatView chat={chat({ messages: [message({ id: "a1", content: "旧对话" })] })} character={null} />,
+  );
+  const viewport = scrollViewport();
+  setScrollMetrics(viewport, { scrollHeight: 1400, clientHeight: 400 });
+  viewport.scrollTop = 0;
+
+  rerender(
+    <ChatView
+      chat={chat({ id: "chat-2", messages: [message({ id: "a2", content: "新对话" })] })}
+      character={null}
+    />,
+  );
+
+  expect(viewport.scrollTop).toBe(1000);
+});
+
+test("keeps following when a large block such as choices arrives at once", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "继续" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", content: "" }));
+  vi.mocked(chats.updateMessage).mockResolvedValue(message({ id: "assistant-1" }));
+  let emit: ((text: string) => void) | undefined;
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
+    emit = onText;
+    return streamRequest(new Promise(() => {}));
+  });
+
+  render(<ChatView chat={chat()} character={null} />);
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "继续" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  await waitFor(() => expect(ai.streamAssistantTextRequest).toHaveBeenCalled());
+
+  const viewport = scrollViewport();
+  setScrollMetrics(viewport, { scrollHeight: 1000, clientHeight: 400 });
+  viewport.scrollTop = 600;
+  await act(async () => emit?.("<content>正文</content>"));
+  expect(viewport.scrollTop).toBe(600);
+
+  // 选项一次性长出来：本轮新增高度远超过贴底阈值
+  setScrollHeight(viewport, 1400);
+  await act(async () => emit?.("<choices>\nA: 一\nB: 二\nC: 三\nD: 四\n</choices>"));
+
+  expect(screen.getByRole("button", { name: "A: 一" })).toBeInTheDocument();
+  expect(viewport.scrollTop).toBe(1000);
+});
+
+test("keeps following when older messages collapse and free up height", async () => {
+  vi.mocked(settings.getActiveProvider).mockReturnValue(activeProvider());
+  vi.mocked(chats.addMessage)
+    .mockResolvedValueOnce(message({ id: "user-1", role: "user", content: "继续" }))
+    .mockResolvedValueOnce(message({ id: "assistant-1", content: "" }));
+  vi.mocked(chats.updateMessage).mockResolvedValue(message({ id: "assistant-1" }));
+  let emit: ((text: string) => void) | undefined;
+  vi.mocked(ai.streamAssistantTextRequest).mockImplementation(({ onText }) => {
+    emit = onText;
+    return streamRequest(new Promise(() => {}));
+  });
+
+  render(<ChatView chat={chat()} character={null} />);
+  fireEvent.change(screen.getByPlaceholderText("输入行动，Ctrl/⌘ + Enter 发送"), {
+    target: { value: "继续" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  await waitFor(() => expect(ai.streamAssistantTextRequest).toHaveBeenCalled());
+
+  const viewport = scrollViewport();
+  setScrollMetrics(viewport, { scrollHeight: 1400, clientHeight: 400 });
+  viewport.scrollTop = 1000;
+  await act(async () => emit?.("<content>正文</content>"));
+  expect(viewport.scrollTop).toBe(1000);
+
+  // 上一条消息收起选项：内容变矮，浏览器保留锚点，视图离底部变远
+  setScrollHeight(viewport, 1274);
+  viewport.scrollTop = 776;
+  fireEvent.scroll(viewport);
+
+  setScrollHeight(viewport, 1636);
+  await act(async () => emit?.("<content>新正文</content>"));
+
+  expect(viewport.scrollTop).toBe(1236);
+});
+
+function scrollViewport(): HTMLElement {
+  const viewport = document.querySelector<HTMLElement>("[data-radix-scroll-area-viewport]");
+  if (!viewport) throw new Error("找不到滚动容器");
+  return viewport;
+}
+
+// jsdom 不做布局，这里按浏览器行为补上滚动尺寸与钳位
+function setScrollMetrics(
+  viewport: HTMLElement,
+  metrics: { scrollHeight: number; clientHeight: number },
+): void {
+  let scrollTop = 0;
+  Object.defineProperty(viewport, "scrollHeight", {
+    configurable: true,
+    get: () => metrics.scrollHeight,
+  });
+  Object.defineProperty(viewport, "clientHeight", {
+    configurable: true,
+    get: () => metrics.clientHeight,
+  });
+  Object.defineProperty(viewport, "scrollTop", {
+    configurable: true,
+    get: () => scrollTop,
+    set: (value: number) => {
+      scrollTop = Math.max(0, Math.min(value, metrics.scrollHeight - metrics.clientHeight));
+    },
+  });
+  (viewport as HTMLElement & { metrics?: typeof metrics }).metrics = metrics;
+}
+
+function setScrollHeight(viewport: HTMLElement, scrollHeight: number): void {
+  const metrics = (viewport as HTMLElement & { metrics?: { scrollHeight: number } }).metrics;
+  if (metrics) metrics.scrollHeight = scrollHeight;
+}
+
 function chat(
   overrides: Partial<Chat & { messages: ChatMessage[] }> = {},
 ): Chat & { messages: ChatMessage[] } {
