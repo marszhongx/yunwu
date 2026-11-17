@@ -10,6 +10,6 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
     passWithNoTests: true,
-    include: ["src/**/*.test.{ts,tsx}", "api/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

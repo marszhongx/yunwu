@@ -16,7 +16,6 @@ import {
   saveSystemPrompts,
   saveSidebarCollapsed,
   saveTheme,
-  saveUseProxy,
   setActiveImageProvider,
   setActiveProvider,
   updateImageProvider,
@@ -36,7 +35,6 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
-      useProxy: false,
       sidebarCollapsed: false,
     });
   });
@@ -63,7 +61,6 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
-      useProxy: false,
       sidebarCollapsed: false,
     });
   });
@@ -114,15 +111,6 @@ describe("settings service", () => {
     expect(getSettings().providers[0]?.reasoningEffort).toBe(ReasoningEffort.AUTO);
   });
 
-  test("saves and normalizes useProxy flag", async () => {
-    expect((await saveUseProxy(true)).useProxy).toBe(true);
-    expect(getSettings().useProxy).toBe(true);
-    expect((await saveUseProxy(false)).useProxy).toBe(false);
-
-    localStorage.setItem("yunwu.settings.v1", JSON.stringify({ useProxy: "yes" }));
-    expect(getSettings().useProxy).toBe(false);
-  });
-
   test("deleting active provider clears active id and removes it", async () => {
     const provider = await addProvider({ type: ProviderType.OPENAI, model: "gpt-4o" });
 
@@ -162,7 +150,6 @@ describe("settings service", () => {
       systemPrompts: DEFAULT_SETTINGS.systemPrompts,
       imageProviders: [],
       activeImageProviderId: "",
-      useProxy: false,
       sidebarCollapsed: false,
     });
   });

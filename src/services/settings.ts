@@ -114,7 +114,6 @@ function normalizeSettings(value: unknown): AppSettings {
     activeImageProviderId: hasActiveImageProvider
       ? activeImageProviderId
       : DEFAULT_SETTINGS.activeImageProviderId,
-    useProxy: input.useProxy === true,
     sidebarCollapsed: input.sidebarCollapsed === true,
   };
 }
@@ -214,10 +213,6 @@ export async function saveTheme(theme: unknown): Promise<AppSettings> {
 
 export async function saveSystemPrompts(systemPrompts: unknown): Promise<AppSettings> {
   return await saveSettings({ ...getSettings(), systemPrompts });
-}
-
-export async function saveUseProxy(useProxy: boolean): Promise<AppSettings> {
-  return await saveSettings({ ...getSettings(), useProxy });
 }
 
 export async function saveSidebarCollapsed(sidebarCollapsed: boolean): Promise<AppSettings> {

@@ -6,7 +6,6 @@ import {
   STREAM_TIMEOUT,
 } from "@/constants";
 import type { ProviderSettings } from "@/types";
-import { fetchWithOptionalProxy } from "@/services/proxy";
 
 export type AssistantMessageRole = "system" | "user" | "assistant";
 
@@ -417,7 +416,7 @@ export function streamAssistantTextRequest({
 
   const promise = (async () => {
     try {
-      const response = await fetchWithOptionalProxy(request.url, {
+      const response = await fetch(request.url, {
         ...request.init,
         signal: abortController.signal,
       });
@@ -475,7 +474,7 @@ export async function requestAssistantText({
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), STREAM_TIMEOUT);
 
   try {
-    const response = await fetchWithOptionalProxy(request.url, {
+    const response = await fetch(request.url, {
       ...request.init,
       signal: abortController.signal,
     });
@@ -540,7 +539,7 @@ async function generateChatImage({
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
 
   try {
-    const response = await fetchWithOptionalProxy(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -605,7 +604,7 @@ async function generateResponsesImage({
   const timeoutId = globalThis.setTimeout(() => abortController.abort(), IMAGE_TIMEOUT);
 
   try {
-    const response = await fetchWithOptionalProxy(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

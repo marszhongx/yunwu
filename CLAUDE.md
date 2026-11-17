@@ -51,4 +51,3 @@ Yunwu is a static, browser-only AI roleplay chat app inspired by SillyTavern. AI
 - This product has not been officially released yet; do not add backward-compatibility code for old internal formats unless explicitly requested.
 - When changing UI behavior, run the dev server and verify the flow in a browser in addition to running relevant tests.
 - Provider secrets are user-supplied browser settings; avoid moving them into committed config or server assumptions.
-- The optional proxy (`api/proxy.ts`) is an unconditional pass-through Edge Function; it stores nothing and receives credentials per request. There is no dev equivalent — under `npm run dev` `/api/proxy` 404s, so keep the `useProxy` setting off in dev and verify proxy flows against a Vercel (preview) deployment.

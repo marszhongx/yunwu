@@ -43,7 +43,6 @@ beforeEach(() => {
     systemPrompts: ["默认系统提示"],
     imageProviders: [],
     activeImageProviderId: "",
-    useProxy: false,
     sidebarCollapsed: false,
   });
   vi.mocked(settings.getActiveProvider).mockReturnValue(null);
@@ -195,7 +194,6 @@ function settingsValue(
     systemPrompts: ["默认系统提示"],
     imageProviders: [],
     activeImageProviderId: "",
-    useProxy: false,
     sidebarCollapsed: false,
     ...overrides,
   };
